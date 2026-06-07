@@ -18,6 +18,7 @@
 #include "DockModel.h"
 #include "AppBarController.h"
 #include "WindowEffects.h"
+#include "HoverTracker.h"
 #include "MacCursor.h"
 
 namespace {
@@ -181,6 +182,7 @@ int main(int argc, char *argv[])
     DockModel dockModel;
     AppBarController appBarController;
     WindowEffects windowEffects;
+    HoverTracker hoverTracker;
     MacCursor macCursor;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
@@ -192,6 +194,10 @@ int main(int argc, char *argv[])
     QObject::connect(&dockModel, &DockModel::logMessage, [](const QString& message) {
         appendLine(QString("[DockModel] %1").arg(message));
     });
+    QObject::connect(&taskbarController, &TaskbarController::explorerIconStyleChanged, &dockModel, [&dockModel, &taskbarController]() {
+        dockModel.setExplorerIconStyle(taskbarController.explorerIconStyle());
+    });
+    dockModel.setExplorerIconStyle(taskbarController.explorerIconStyle());
     QObject::connect(&taskbarController, &TaskbarController::shellActionLogged, [](const QString& message) {
         appendLine(QString("[TaskbarController] %1").arg(message));
     });
@@ -235,6 +241,7 @@ int main(int argc, char *argv[])
     topBarEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
+    topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
@@ -267,7 +274,7 @@ int main(int argc, char *argv[])
 
     dockModel.refresh();
 
-    auto installShellWindow = [&windowEffects](QQmlApplicationEngine& engine, bool applyGlass) {
+    auto installShellWindow = [&windowEffects](QQmlApplicationEngine& engine, bool applyGlass, bool enableHover = false) {
         if (engine.rootObjects().isEmpty()) {
             return;
         }
@@ -275,10 +282,13 @@ int main(int argc, char *argv[])
             if (applyGlass) {
                 windowEffects.applyDockGlass(shellWindow);
             }
+            if (enableHover) {
+                windowEffects.enableHoverTracking(shellWindow);
+            }
         }
     };
 
-    installShellWindow(topBarEngine, false);
+    installShellWindow(topBarEngine, false, true);
     installShellWindow(dockEngine, true);
     installShellWindow(controlEngine, false);
 

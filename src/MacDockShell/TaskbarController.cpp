@@ -581,6 +581,23 @@ void TaskbarController::tryAutostartShell()
     emit shellActionLogged(QStringLiteral("Autostart: shell activated."));
 }
 
+QString TaskbarController::explorerIconStyle() const
+{
+    return m_explorerIconStyle;
+}
+
+void TaskbarController::setExplorerIconStyle(const QString& style)
+{
+    const QString normalized = style == QStringLiteral("macos")
+            ? QStringLiteral("macos")
+            : QStringLiteral("default");
+    if (m_explorerIconStyle == normalized) {
+        return;
+    }
+    m_explorerIconStyle = normalized;
+    emit explorerIconStyleChanged();
+}
+
 void TaskbarController::loadSettings()
 {
     QSettings settings;
@@ -591,6 +608,7 @@ void TaskbarController::loadSettings()
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
     m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
     m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
+    setExplorerIconStyle(settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString());
     reconcileWindowsStartup();
 }
 
@@ -604,6 +622,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
     settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
     settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
+    settings.setValue(QStringLiteral("shell/explorerIconStyle"), m_explorerIconStyle);
 }
 
 void TaskbarController::updateTaskbarVisibility()
@@ -615,7 +634,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
@@ -624,6 +643,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int 
     setDockStaticIcons(dockStaticIcons);
     setDarkTheme(darkTheme);
     setStartWithWindows(startWithWindows);
+    setExplorerIconStyle(explorerIconStyle);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);

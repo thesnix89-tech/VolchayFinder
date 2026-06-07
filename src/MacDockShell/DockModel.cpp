@@ -107,6 +107,30 @@ QString defaultExplorerExePath()
     return iconLocationToExePath(QStringLiteral("%windir%\\explorer.exe"));
 }
 
+bool isExplorerEntry(const DockItemEntry& entry)
+{
+    if (entry.appUserModelId.compare(QLatin1String("Microsoft.Windows.Explorer"), Qt::CaseInsensitive) == 0) {
+        return true;
+    }
+    if (entry.appId.compare(QLatin1String("microsoft.windows.explorer"), Qt::CaseInsensitive) == 0) {
+        return true;
+    }
+    if (fileNameKey(entry.exePath) == QLatin1String("explorer.exe")) {
+        return true;
+    }
+    return entry.pinnedOnly
+            && (entry.label.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0
+                || entry.label.compare(QStringLiteral("Finder"), Qt::CaseInsensitive) == 0);
+}
+
+bool isExplorerOrderKey(const QString& key)
+{
+    if (key.compare(QLatin1String("microsoft.windows.explorer"), Qt::CaseInsensitive) == 0) {
+        return true;
+    }
+    return fileNameKey(key) == QLatin1String("explorer.exe");
+}
+
 QString executablePathFromHwnd(HWND hwnd)
 {
     DWORD pid = 0;
@@ -265,6 +289,11 @@ DockModel::DockModel(QObject* parent)
     QDir().mkpath(m_iconCacheDir);
     m_pinnedResolver = new PinnedTaskbarResolver(this);
     QObject::connect(m_pinnedResolver, &PinnedTaskbarResolver::logMessage, this, &DockModel::logMessage);
+    QSettings settings;
+    m_explorerIconStyle = settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString();
+    if (m_explorerIconStyle != QLatin1String("macos")) {
+        m_explorerIconStyle = QStringLiteral("default");
+    }
     loadOrder();
     refresh();
 }
@@ -385,11 +414,15 @@ QString DockModel::entryOrderKey(const DockItemEntry& entry) const
 
 void DockModel::applyCustomOrder()
 {
-    // Register any newly seen apps at the end, preserving their first-seen order.
+    // Register newly seen apps. Explorer goes to the far left by default (macOS Finder).
     for (const auto& entry : m_entries) {
         const QString key = entryOrderKey(entry);
         if (!m_customOrder.contains(key)) {
-            m_customOrder.append(key);
+            if (isExplorerEntry(entry)) {
+                m_customOrder.prepend(key);
+            } else {
+                m_customOrder.append(key);
+            }
         }
     }
 
@@ -398,6 +431,25 @@ void DockModel::applyCustomOrder()
                      [this](const DockItemEntry& a, const DockItemEntry& b) {
                          return m_customOrder.indexOf(entryOrderKey(a)) < m_customOrder.indexOf(entryOrderKey(b));
                      });
+}
+
+void DockModel::ensureExplorerLeadingInOrder()
+{
+    int explorerIndex = -1;
+    for (int i = 0; i < m_customOrder.size(); ++i) {
+        if (isExplorerOrderKey(m_customOrder.at(i))) {
+            explorerIndex = i;
+            break;
+        }
+    }
+
+    if (explorerIndex <= 0) {
+        return;
+    }
+
+    const QString explorerKey = m_customOrder.takeAt(explorerIndex);
+    m_customOrder.prepend(explorerKey);
+    saveOrder();
 }
 
 void DockModel::moveItem(int from, int to)
@@ -436,6 +488,7 @@ void DockModel::loadOrder()
 {
     QSettings settings;
     m_customOrder = settings.value(QStringLiteral("dock/customOrder")).toStringList();
+    ensureExplorerLeadingInOrder();
 }
 
 void DockModel::saveOrder()
@@ -646,7 +699,8 @@ void DockModel::ensureExplorerPin()
     for (auto& existing : m_entries) {
         if (existing.appUserModelId.compare(QStringLiteral("Microsoft.Windows.Explorer"), Qt::CaseInsensitive) != 0
             && !(existing.pinned
-                 && existing.label.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0)) {
+                 && (existing.label.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0
+                     || existing.label.compare(QStringLiteral("Finder"), Qt::CaseInsensitive) == 0))) {
             continue;
         }
 
@@ -675,8 +729,8 @@ void DockModel::ensureExplorerPin()
     explorer.appId = QStringLiteral("microsoft.windows.explorer");
     explorer.exePath = explorerExe;
     explorer.launchPath = explorerExe;
-    explorer.label = QStringLiteral("File Explorer");
-    explorer.iconHint = QStringLiteral("F");
+    explorer.label = explorerDisplayLabel();
+    explorer.iconHint = m_explorerIconStyle == QLatin1String("macos") ? QString() : QStringLiteral("F");
     explorer.pinned = true;
     explorer.pinnedOnly = true;
     upsertEntry(explorer);
@@ -829,6 +883,65 @@ QString DockModel::ensureIconFile(const QString& appId, const QString& exePath) 
     return QUrl::fromLocalFile(filePath).toString();
 }
 
+QString DockModel::explorerIconStyle() const
+{
+    return m_explorerIconStyle;
+}
+
+QString DockModel::explorerMacIconUrl() const
+{
+    return QStringLiteral("qrc:/src/MacDockShell/icons/finder_macos.png");
+}
+
+QString DockModel::explorerDefaultIconUrl() const
+{
+    return ensureIconFile(QStringLiteral("microsoft.windows.explorer"), defaultExplorerExePath());
+}
+
+QString DockModel::explorerDisplayLabel() const
+{
+    return m_explorerIconStyle == QLatin1String("macos")
+            ? QStringLiteral("Finder")
+            : QStringLiteral("File Explorer");
+}
+
+QString DockModel::resolveExplorerIconUrl(const DockItemEntry& entry) const
+{
+    if (m_explorerIconStyle == QLatin1String("macos")) {
+        return explorerMacIconUrl();
+    }
+
+    const QString appId = entry.appId.isEmpty() ? QStringLiteral("microsoft.windows.explorer") : entry.appId;
+    const QString iconSource = entry.exePath.isEmpty()
+            ? (entry.launchPath.isEmpty() ? defaultExplorerExePath() : entry.launchPath)
+            : entry.exePath;
+    return ensureIconFile(appId, iconSource);
+}
+
+void DockModel::applyExplorerPresentation(DockItemEntry& entry) const
+{
+    entry.iconUrl = resolveExplorerIconUrl(entry);
+    if (entry.pinnedOnly || (entry.pinned && !entry.running)) {
+        entry.label = explorerDisplayLabel();
+    }
+    entry.iconHint = m_explorerIconStyle == QLatin1String("macos") ? QString() : QStringLiteral("F");
+}
+
+void DockModel::setExplorerIconStyle(const QString& style)
+{
+    const QString normalized = style == QLatin1String("macos")
+            ? QLatin1String("macos")
+            : QLatin1String("default");
+    if (m_explorerIconStyle == normalized) {
+        return;
+    }
+
+    m_explorerIconStyle = normalized;
+    m_existingIconUrls.remove(QStringLiteral("microsoft.windows.explorer"));
+    emit explorerIconStyleChanged();
+    refresh();
+}
+
 void DockModel::upsertEntry(const DockItemEntry& entry)
 {
     DockItemEntry mutableEntry = entry;
@@ -844,6 +957,9 @@ void DockModel::upsertEntry(const DockItemEntry& entry)
         }
     }
     mutableEntry.iconUrl = iconUrl;
+    if (isExplorerEntry(mutableEntry)) {
+        applyExplorerPresentation(mutableEntry);
+    }
 
     for (auto& existing : m_entries) {
         const bool sameAppId = existing.appId == mutableEntry.appId;
@@ -888,6 +1004,10 @@ void DockModel::upsertEntry(const DockItemEntry& entry)
                 existing.pinnedOnly = false;
                 if (existing.launchPath.isEmpty())
                     existing.launchPath = existing.exePath;
+            }
+
+            if (isExplorerEntry(existing)) {
+                applyExplorerPresentation(existing);
             }
 
             if (existingBefore != existing.appId) {

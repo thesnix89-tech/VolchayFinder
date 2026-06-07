@@ -20,6 +20,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
     Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
     Q_PROPERTY(QString menuBarAppName READ menuBarAppName NOTIFY menuBarAppNameChanged)
+    Q_PROPERTY(QString explorerIconStyle READ explorerIconStyle WRITE setExplorerIconStyle NOTIFY explorerIconStyleChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -29,7 +30,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
     Q_INVOKABLE void tryAutostartShell();
 
     bool taskbarHidden() const;
@@ -53,6 +54,8 @@ public:
     bool startWithWindows() const;
     void setStartWithWindows(bool enabled);
     QString menuBarAppName() const;
+    QString explorerIconStyle() const;
+    void setExplorerIconStyle(const QString& style);
 
 signals:
     void taskbarHiddenChanged();
@@ -68,6 +71,7 @@ signals:
     void darkThemeChanged();
     void startWithWindowsChanged();
     void menuBarAppNameChanged();
+    void explorerIconStyleChanged();
 
 private:
     void loadSettings();
@@ -95,5 +99,6 @@ private:
     bool m_dockAutoHidden = false;
     bool m_dockRevealed = false;
     QString m_menuBarAppName = QStringLiteral("Finder");
+    QString m_explorerIconStyle = QStringLiteral("default");
     QTimer* m_fullscreenTimer = nullptr;
 };

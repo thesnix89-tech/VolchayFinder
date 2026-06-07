@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import "components"
 
 Window {
     id: topBarWindow
@@ -19,9 +20,17 @@ Window {
     readonly property color menuAccentTextColor: darkTheme ? "#FFFFFF" : "#1B1F27"
     readonly property int themeAnimMs: 320
 
+    // Frameless tool windows on Windows often skip hover until the surface is "woken up".
+    MouseArea {
+        anchors.fill: parent
+        z: -100
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+    }
+
     Rectangle {
         anchors.fill: parent
-        color: topBarWindow.darkTheme ? "#2C2C2E" : "#F6F3F4F6"
+        color: topBarWindow.darkTheme ? "#2C2C2E" : "#F5F5F7"
         border.width: 1
         border.color: topBarWindow.darkTheme ? "#3A3A3C" : "#E2E4E9"
 
@@ -127,30 +136,9 @@ Window {
 
             Item { Layout.fillWidth: true }
 
-            Text {
-                text: "Windows Dock Bridge"
-                color: topBarWindow.menuTextColor
-                font.pixelSize: 12
-                Behavior on color {
-                    ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                }
-            }
-
-            RowLayout {
-                spacing: 10
-
-                Repeater {
-                    model: ["⌃", "◌", "◎", Qt.formatTime(new Date(), "hh:mm")]
-                    delegate: Text {
-                        text: modelData
-                        color: topBarWindow.menuTextColor
-                        font.pixelSize: 12
-                        opacity: 0.92
-                        Behavior on color {
-                            ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                        }
-                    }
-                }
+            StatusArea {
+                darkTheme: topBarWindow.darkTheme
+                Layout.alignment: Qt.AlignVCenter
             }
         }
     }

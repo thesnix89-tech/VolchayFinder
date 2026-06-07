@@ -65,10 +65,16 @@ public:
     Q_INVOKABLE void revealIndex(int index);
     Q_INVOKABLE void moveItem(int from, int to);
     Q_INVOKABLE void setReorderActive(bool active);
+    Q_INVOKABLE void setExplorerIconStyle(const QString& style);
+
+    QString explorerIconStyle() const;
+    Q_INVOKABLE QString explorerDefaultIconUrl() const;
+    Q_INVOKABLE QString explorerMacIconUrl() const;
 
 signals:
     void logMessage(const QString& message);
     void activeAppWindowChanged(const QString& title, const QString& appLabel, bool active);
+    void explorerIconStyleChanged();
 
 private:
     void loadPinnedApps();
@@ -78,10 +84,14 @@ private:
     QString entryOrderKey(const DockItemEntry& entry) const;
     void loadOrder();
     void saveOrder();
+    void ensureExplorerLeadingInOrder();
     DockItemEntry makePinnedEntry(const PinnedShortcutEntry& shortcut) const;
     QString normalizeAppId(const QString& path) const;
     QString labelFromPath(const QString& path) const;
     void upsertEntry(const DockItemEntry& entry);
+    void applyExplorerPresentation(DockItemEntry& entry) const;
+    QString explorerDisplayLabel() const;
+    QString resolveExplorerIconUrl(const DockItemEntry& entry) const;
     void scheduleRunningStateRefresh();
     QPixmap extractFileIcon(const QString& exePath) const;
     QString ensureIconFile(const QString& appId, const QString& exePath) const;
@@ -106,4 +116,5 @@ private:
     // Set while the user is dragging an icon; suspends refresh so the drag is not
     // interrupted by the periodic model reset.
     bool m_reorderActive = false;
+    QString m_explorerIconStyle = QStringLiteral("default");
 };

@@ -7,6 +7,9 @@ Window {
     id: settingsWindow
     width: 680
     height: 520
+
+    property int settingsPage: 0
+    property string explorerIconStyle: taskbarController.explorerIconStyle
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
     visible: taskbarController.settingsVisible
@@ -149,7 +152,7 @@ Window {
                     Layout.rightMargin: 8
                     height: 30
                     radius: 6
-                    color: "#007AFF" // Active item in macOS blue accent
+                    color: settingsPage === 0 ? "#007AFF" : "transparent"
 
                     RowLayout {
                         anchors.fill: parent
@@ -164,11 +167,53 @@ Window {
 
                         Text {
                             text: "Рабочий стол и Док"
-                            color: "white"
+                            color: settingsPage === 0 ? "white" : "#1D1D1F"
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
                         }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: settingsPage = 0
+                    }
+                }
+
+                // Sidebar Item: Explorer
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    height: 30
+                    radius: 6
+                    color: settingsPage === 1 ? "#007AFF" : "transparent"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        spacing: 8
+
+                        Text {
+                            text: "📁"
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Text {
+                            text: "Проводник"
+                            color: settingsPage === 1 ? "white" : "#1D1D1F"
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: settingsPage = 1
                     }
                 }
             }
@@ -203,7 +248,7 @@ Window {
             // Header Title
             Text {
                 id: mainTitle
-                text: "Рабочий стол и Док"
+                text: settingsPage === 0 ? "Рабочий стол и Док" : "Проводник"
                 color: "#1D1D1F"
                 font.pixelSize: 17
                 font.weight: Font.Bold
@@ -215,11 +260,12 @@ Window {
             // Setting Rounded Box Group (macOS style grouped items)
             Rectangle {
                 id: settingsGroup
+                visible: settingsPage === 0
+                height: settingsPage === 0 ? innerLayout.implicitHeight + 24 : 0
                 anchors.top: mainTitle.bottom
                 anchors.topMargin: 16
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: innerLayout.implicitHeight + 24
                 radius: 10
                 color: "#FFFFFF"
                 border.width: 1
@@ -733,6 +779,120 @@ Window {
                 }
             }
 
+            component ExplorerIconCard : Rectangle {
+                id: card
+                signal clicked()
+
+                property alias previewSource: previewImage.source
+                property string title
+                property string subtitle
+                property bool selected
+
+                width: 148
+                height: 164
+                radius: 10
+                clip: true
+                color: "#FAFAFA"
+                border.width: selected ? 2 : 1
+                border.color: selected ? "#007AFF" : "#E5E5E5"
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Item {
+                        width: 64
+                        height: 64
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        Image {
+                            id: previewImage
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: true
+                        }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: card.title
+                        color: "#1D1D1F"
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: card.subtitle
+                        color: "#86868B"
+                        font.pixelSize: 10
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: card.clicked()
+                }
+            }
+
+            Rectangle {
+                id: explorerSettingsGroup
+                visible: settingsPage === 1
+                anchors.top: mainTitle.bottom
+                anchors.topMargin: 16
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 248
+                radius: 10
+                color: "#FFFFFF"
+                border.width: 1
+                border.color: "#E5E5E5"
+                clip: true
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 14
+
+                    Text {
+                        text: "Иконка проводника"
+                        color: "#1D1D1F"
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "Как отображать File Explorer в доке"
+                        color: "#86868B"
+                        font.pixelSize: 10
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Row {
+                        spacing: 16
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.explorerIconStyle === "default"
+                            previewSource: dockModel.explorerDefaultIconUrl()
+                            title: "Стандартная"
+                            subtitle: "Windows"
+                            onClicked: settingsWindow.explorerIconStyle = "default"
+                        }
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.explorerIconStyle === "macos"
+                            previewSource: dockModel.explorerMacIconUrl()
+                            title: "macOS Finder"
+                            subtitle: "Как на Mac"
+                            onClicked: settingsWindow.explorerIconStyle = "macos"
+                        }
+                    }
+                }
+            }
+
             // Bottom Buttons (Apply and Exit)
             RowLayout {
                 anchors.bottom: parent.bottom
@@ -789,7 +949,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
                     }
                 }
             }
