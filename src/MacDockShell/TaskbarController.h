@@ -12,7 +12,6 @@ class TaskbarController : public QObject
     Q_PROPERTY(int dockIconSize READ dockIconSize WRITE setDockIconSize NOTIFY dockIconSizeChanged)
     Q_PROPERTY(bool showTopBar READ showTopBar WRITE setShowTopBar NOTIFY showTopBarChanged)
     Q_PROPERTY(bool autoHideWindowsTaskbar READ autoHideWindowsTaskbar WRITE setAutoHideWindowsTaskbar NOTIFY autoHideWindowsTaskbarChanged)
-    Q_PROPERTY(bool macOSSelectionStyle READ macOSSelectionStyle WRITE setMacOSSelectionStyle NOTIFY macOSSelectionStyleChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -22,8 +21,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, bool macOSSelectionStyle, int iconSize);
-    Q_INVOKABLE void restartExplorer();
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize);
 
     bool taskbarHidden() const;
     bool shellActive() const;
@@ -36,8 +34,6 @@ public:
     void setShowTopBar(bool show);
     bool autoHideWindowsTaskbar() const;
     void setAutoHideWindowsTaskbar(bool autoHide);
-    bool macOSSelectionStyle() const;
-    void setMacOSSelectionStyle(bool enable);
 
 signals:
     void taskbarHiddenChanged();
@@ -47,7 +43,6 @@ signals:
     void dockIconSizeChanged();
     void showTopBarChanged();
     void autoHideWindowsTaskbarChanged();
-    void macOSSelectionStyleChanged();
 
 private:
     bool setTaskbarVisible(bool visible);
@@ -61,5 +56,4 @@ private:
     int m_dockIconSize = 54;
     bool m_showTopBar = true;
     bool m_autoHideWindowsTaskbar = true;
-    bool m_macOSSelectionStyle = false;
 };

@@ -16,14 +16,6 @@ constexpr auto kStartButtonClass = TEXT("Button");
 TaskbarController::TaskbarController(QObject* parent)
     : QObject(parent)
 {
-    QSettings settings(QStringLiteral("HKEY_CURRENT_USER\\Control Panel\\Colors"), QSettings::NativeFormat);
-    QSettings advSettings(QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), QSettings::NativeFormat);
-    const QString hilight = settings.value(QStringLiteral("Hilight")).toString();
-    const QString hotTracking = settings.value(QStringLiteral("HotTrackingColor")).toString();
-    const int alpha = advSettings.value(QStringLiteral("ListviewAlphaSelect"), 1).toInt();
-    if (hilight == QStringLiteral("255 255 255") && hotTracking == QStringLiteral("255 255 255") && alpha == 0) {
-        m_macOSSelectionStyle = true;
-    }
 }
 
 TaskbarController::~TaskbarController()
@@ -196,48 +188,11 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, bool macOSSelectionStyle, int iconSize)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
-    setMacOSSelectionStyle(macOSSelectionStyle);
     setDockIconSize(iconSize);
     setShellActive(true);
     setSettingsVisible(false);
-}
-
-bool TaskbarController::macOSSelectionStyle() const
-{
-    return m_macOSSelectionStyle;
-}
-
-void TaskbarController::setMacOSSelectionStyle(bool enable)
-{
-    if (m_macOSSelectionStyle == enable)
-        return;
-    m_macOSSelectionStyle = enable;
-    emit macOSSelectionStyleChanged();
-
-    QSettings settings(QStringLiteral("HKEY_CURRENT_USER\\Control Panel\\Colors"), QSettings::NativeFormat);
-    QSettings advSettings(QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), QSettings::NativeFormat);
-    if (enable) {
-        settings.setValue(QStringLiteral("Hilight"), QStringLiteral("255 255 255"));
-        settings.setValue(QStringLiteral("HotTrackingColor"), QStringLiteral("255 255 255"));
-        advSettings.setValue(QStringLiteral("ListviewAlphaSelect"), 0);
-    } else {
-        settings.setValue(QStringLiteral("Hilight"), QStringLiteral("0 120 212"));
-        settings.setValue(QStringLiteral("HotTrackingColor"), QStringLiteral("0 102 204"));
-        advSettings.setValue(QStringLiteral("ListviewAlphaSelect"), 1);
-    }
-
-    PostMessageW(HWND_BROADCAST, WM_SYSCOLORCHANGE, 0, 0);
-
-    // Restart explorer.exe to reload registry colors immediately
-    QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), QStringLiteral("taskkill /f /im explorer.exe && start explorer.exe")});
-}
-
-void TaskbarController::restartExplorer()
-{
-    emit shellActionLogged(QStringLiteral("Manually restarting explorer.exe"));
-    QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), QStringLiteral("taskkill /f /im explorer.exe && start explorer.exe")});
 }
