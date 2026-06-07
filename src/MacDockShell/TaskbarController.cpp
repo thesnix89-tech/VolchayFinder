@@ -276,6 +276,7 @@ TaskbarController::TaskbarController(QObject* parent)
     connect(m_fullscreenTimer, &QTimer::timeout, this, [this]() {
         updateForegroundMenuBar();
         updateFullscreenState();
+        enforceTaskbarHidden();
     });
     m_fullscreenTimer->start();
     m_menuBarItems = defaultMenuBarItems();
@@ -454,6 +455,66 @@ void TaskbarController::updateFullscreenState()
     }
     m_dockAutoHidden = hidden;
     emit dockAutoHiddenChanged();
+}
+
+void TaskbarController::enforceTaskbarHidden()
+{
+    if (!m_shellActive || !m_autoHideWindowsTaskbar) {
+        return;
+    }
+
+    bool restored = false;
+
+    auto hideIfVisible = [&](HWND hwnd) {
+        if (!hwnd || !IsWindowVisible(hwnd)) {
+            return;
+        }
+        ShowWindow(hwnd, SW_HIDE);
+        EnableWindow(hwnd, FALSE);
+        restored = true;
+    };
+
+    hideIfVisible(FindWindow(kTaskbarClass, nullptr));
+
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        wchar_t className[256] = {};
+        if (GetClassNameW(hwnd, className, 256) == 0) {
+            return TRUE;
+        }
+        if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+            return TRUE;
+        }
+        if (!IsWindowVisible(hwnd)) {
+            return TRUE;
+        }
+        ShowWindow(hwnd, SW_HIDE);
+        EnableWindow(hwnd, FALSE);
+        *reinterpret_cast<bool*>(lParam) = true;
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&restored));
+
+    HWND startButton = FindWindow(kStartButtonClass, nullptr);
+    hideIfVisible(startButton);
+
+    if (!restored) {
+        return;
+    }
+
+    HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+    if (taskbar) {
+        APPBARDATA abd = {};
+        abd.cbSize = sizeof(APPBARDATA);
+        abd.hWnd = taskbar;
+        abd.lParam = ABS_AUTOHIDE;
+        SHAppBarMessage(ABM_SETSTATE, &abd);
+    }
+    if (!m_taskbarHidden) {
+        m_taskbarHidden = true;
+        emit taskbarHiddenChanged();
+    }
+
+    emit shellActionLogged(QStringLiteral("Taskbar re-hidden after Windows shell interruption."));
+    emit shellLayoutRestoreNeeded();
 }
 
 bool TaskbarController::setTaskbarVisible(bool visible)

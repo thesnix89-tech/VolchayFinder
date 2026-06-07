@@ -34,6 +34,7 @@ public:
     Q_INVOKABLE void quitApplication();
     Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
     Q_INVOKABLE void tryAutostartShell();
+    Q_INVOKABLE void enforceTaskbarHidden();
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;
@@ -76,6 +77,7 @@ signals:
     void menuBarAppNameChanged();
     void menuBarItemsChanged();
     void explorerIconStyleChanged();
+    void shellLayoutRestoreNeeded();
 
 private:
     void loadSettings();

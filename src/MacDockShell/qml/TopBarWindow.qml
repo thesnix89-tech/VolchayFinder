@@ -7,7 +7,10 @@ import "components"
 Window {
     id: topBarWindow
     width: Screen.width
-    height: 34
+    readonly property int barHeight: 26
+    readonly property int appleSize: 17
+    readonly property string uiFontFamily: "SF Pro Text"
+    height: barHeight
     x: 0
     y: 0
     visible: taskbarController.shellActive && taskbarController.showTopBar
@@ -31,8 +34,8 @@ Window {
     Rectangle {
         anchors.fill: parent
         color: topBarWindow.darkTheme ? "#2C2C2E" : "#F5F5F7"
-        border.width: 1
-        border.color: topBarWindow.darkTheme ? "#3A3A3C" : "#E2E4E9"
+        border.width: topBarWindow.darkTheme ? 1 : 0
+        border.color: topBarWindow.darkTheme ? "#3A3A3C" : "transparent"
 
         Behavior on color {
             ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
@@ -43,88 +46,106 @@ Window {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 17
-            anchors.rightMargin: 14
-            spacing: 18
+            anchors.leftMargin: 14
+            anchors.rightMargin: 12
+            spacing: 14
 
             RowLayout {
-                spacing: 9
+                spacing: 2
 
-                Item {
-                    id: appleIconSlot
-                    Layout.rightMargin: 7
-                    readonly property int raster: Math.max(1, Math.round(18 * Screen.devicePixelRatio))
-                    width: 18
-                    height: 18
+                MenuBarHit {
+                    id: appleHit
+                    darkTheme: topBarWindow.darkTheme
+                    hitW: 24
+                    hitH: 20
+                    hPad: 4
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.rightMargin: 4
+                    onClicked: appleMenu.popup(appleHit, 0, appleHit.height + 8)
 
-                    Image {
-                        id: appleLogo
-                        anchors.fill: parent
-                        source: topBarWindow.darkTheme
-                                ? "qrc:/src/MacDockShell/qml/apple_logo_white.svg"
-                                : "qrc:/src/MacDockShell/qml/apple_logo.svg"
-                        sourceSize: Qt.size(appleIconSlot.raster, appleIconSlot.raster)
-                        fillMode: Image.PreserveAspectFit
-                        mipmap: false
-                        smooth: false
-                        antialiasing: true
-                    }
+                    Item {
+                        readonly property int raster: Math.max(1, Math.round(topBarWindow.appleSize * Screen.devicePixelRatio))
+                        width: topBarWindow.appleSize
+                        height: topBarWindow.appleSize
 
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: appleMenu.popup(appleLogo, 0, appleLogo.height + 8)
+                        Image {
+                            id: appleLogo
+                            anchors.fill: parent
+                            source: topBarWindow.darkTheme
+                                    ? "qrc:/src/MacDockShell/qml/apple_logo_white.svg"
+                                    : "qrc:/src/MacDockShell/qml/apple_logo.svg"
+                            sourceSize: Qt.size(parent.raster, parent.raster)
+                            fillMode: Image.PreserveAspectFit
+                            mipmap: false
+                            smooth: false
+                            antialiasing: true
+                        }
                     }
                 }
 
-                Text {
-                    id: menuAppNameText
-                    text: taskbarController.menuBarAppName
-                    color: topBarWindow.menuAccentTextColor
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
+                MenuBarHit {
+                    darkTheme: topBarWindow.darkTheme
+                    hitH: 20
+                    hPad: 8
                     Layout.alignment: Qt.AlignVCenter
-                    Layout.rightMargin: 3
+                    Layout.rightMargin: 1
 
-                    Behavior on color {
-                        ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                    }
+                    Text {
+                        id: menuAppNameText
+                        text: taskbarController.menuBarAppName
+                        color: topBarWindow.menuAccentTextColor
+                        font.family: topBarWindow.uiFontFamily
+                        font.styleName: "Semibold"
+                        font.pixelSize: 13
+                        font.weight: Font.Normal
 
-                    SequentialAnimation {
-                        id: menuAppNameSwap
-                        NumberAnimation {
-                            target: menuAppNameText
-                            property: "opacity"
-                            to: 0.25
-                            duration: 110
-                            easing.type: Easing.InCubic
+                        Behavior on color {
+                            ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
                         }
-                        NumberAnimation {
-                            target: menuAppNameText
-                            property: "opacity"
-                            to: 1.0
-                            duration: 220
-                            easing.type: Easing.OutCubic
-                        }
-                    }
 
-                    Connections {
-                        target: taskbarController
-                        function onMenuBarAppNameChanged() { menuAppNameSwap.restart() }
+                        SequentialAnimation {
+                            id: menuAppNameSwap
+                            NumberAnimation {
+                                target: menuAppNameText
+                                property: "opacity"
+                                to: 0.25
+                                duration: 110
+                                easing.type: Easing.InCubic
+                            }
+                            NumberAnimation {
+                                target: menuAppNameText
+                                property: "opacity"
+                                to: 1.0
+                                duration: 220
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Connections {
+                            target: taskbarController
+                            function onMenuBarAppNameChanged() { menuAppNameSwap.restart() }
+                        }
                     }
                 }
 
                 Repeater {
                     model: taskbarController.menuBarItems
-                    delegate: Text {
-                        text: modelData
-                        color: topBarWindow.menuTextColor
-                        font.pixelSize: 13
+                    delegate: MenuBarHit {
+                        darkTheme: topBarWindow.darkTheme
+                        hitH: 20
+                        hPad: 8
                         Layout.alignment: Qt.AlignVCenter
-                        Behavior on color {
-                            ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+
+                        Text {
+                            text: modelData
+                            color: topBarWindow.menuTextColor
+                            font.family: topBarWindow.uiFontFamily
+                            font.styleName: "Regular"
+                            font.pixelSize: 13
+                            font.weight: Font.Normal
+                            Behavior on color {
+                                ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                            }
                         }
                     }
                 }

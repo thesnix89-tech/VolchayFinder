@@ -33,6 +33,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/TopBarWindow.qml
         src/MacDockShell/qml/DockWindow.qml
         src/MacDockShell/qml/ControlWindow.qml
+        src/MacDockShell/qml/components/MenuBarHit.qml
         src/MacDockShell/qml/components/StatusArea.qml
         src/MacDockShell/qml/components/ControlCenterPanel.qml
         src/MacDockShell/qml/components/MacToggle.qml

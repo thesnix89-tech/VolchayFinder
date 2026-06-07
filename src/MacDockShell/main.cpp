@@ -362,6 +362,18 @@ int main(int argc, char *argv[])
         }
     });
 
+    QObject::connect(&appBarController, &AppBarController::layoutChanged, &taskbarController, [&taskbarController]() {
+        taskbarController.enforceTaskbarHidden();
+    });
+    QObject::connect(&taskbarController, &TaskbarController::shellLayoutRestoreNeeded, [&topBarEngine, &appBarController]() {
+        if (topBarEngine.rootObjects().isEmpty()) {
+            return;
+        }
+        if (auto* window = qobject_cast<QWindow*>(topBarEngine.rootObjects().constFirst())) {
+            appBarController.updateTopBarRect(reinterpret_cast<void*>(window->winId()), window->height());
+        }
+    });
+
     logTopLevelWindows();
     appendLine("Entering app event loop...");
 
