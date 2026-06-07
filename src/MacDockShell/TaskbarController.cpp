@@ -17,9 +17,11 @@ TaskbarController::TaskbarController(QObject* parent)
     : QObject(parent)
 {
     QSettings settings(QStringLiteral("HKEY_CURRENT_USER\\Control Panel\\Colors"), QSettings::NativeFormat);
+    QSettings advSettings(QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), QSettings::NativeFormat);
     const QString hilight = settings.value(QStringLiteral("Hilight")).toString();
     const QString hotTracking = settings.value(QStringLiteral("HotTrackingColor")).toString();
-    if (hilight == QStringLiteral("255 255 255") && hotTracking == QStringLiteral("255 255 255")) {
+    const int alpha = advSettings.value(QStringLiteral("ListviewAlphaSelect"), 1).toInt();
+    if (hilight == QStringLiteral("255 255 255") && hotTracking == QStringLiteral("255 255 255") && alpha == 0) {
         m_macOSSelectionStyle = true;
     }
 }
@@ -217,12 +219,15 @@ void TaskbarController::setMacOSSelectionStyle(bool enable)
     emit macOSSelectionStyleChanged();
 
     QSettings settings(QStringLiteral("HKEY_CURRENT_USER\\Control Panel\\Colors"), QSettings::NativeFormat);
+    QSettings advSettings(QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), QSettings::NativeFormat);
     if (enable) {
         settings.setValue(QStringLiteral("Hilight"), QStringLiteral("255 255 255"));
         settings.setValue(QStringLiteral("HotTrackingColor"), QStringLiteral("255 255 255"));
+        advSettings.setValue(QStringLiteral("ListviewAlphaSelect"), 0);
     } else {
         settings.setValue(QStringLiteral("Hilight"), QStringLiteral("0 120 212"));
         settings.setValue(QStringLiteral("HotTrackingColor"), QStringLiteral("0 102 204"));
+        advSettings.setValue(QStringLiteral("ListviewAlphaSelect"), 1);
     }
 
     PostMessageW(HWND_BROADCAST, WM_SYSCOLORCHANGE, 0, 0);
