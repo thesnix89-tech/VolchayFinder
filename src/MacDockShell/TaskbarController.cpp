@@ -120,11 +120,7 @@ void TaskbarController::setShellActive(bool active)
     m_shellActive = active;
     emit shellActiveChanged();
 
-    if (m_shellActive) {
-        hideTaskbar();
-    } else {
-        restoreShell();
-    }
+    updateTaskbarVisibility();
 }
 
 bool TaskbarController::settingsVisible() const
@@ -166,8 +162,33 @@ void TaskbarController::setShowTopBar(bool show)
     emit showTopBarChanged();
 }
 
-void TaskbarController::apply(bool showTopBar, int iconSize)
+bool TaskbarController::autoHideWindowsTaskbar() const
 {
+    return m_autoHideWindowsTaskbar;
+}
+
+void TaskbarController::setAutoHideWindowsTaskbar(bool autoHide)
+{
+    if (m_autoHideWindowsTaskbar == autoHide)
+        return;
+    m_autoHideWindowsTaskbar = autoHide;
+    emit autoHideWindowsTaskbarChanged();
+
+    updateTaskbarVisibility();
+}
+
+void TaskbarController::updateTaskbarVisibility()
+{
+    if (m_shellActive && m_autoHideWindowsTaskbar) {
+        hideTaskbar();
+    } else {
+        restoreShell();
+    }
+}
+
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize)
+{
+    setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
     setDockIconSize(iconSize);
     setShellActive(true);

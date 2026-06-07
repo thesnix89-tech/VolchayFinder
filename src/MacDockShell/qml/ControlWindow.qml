@@ -5,7 +5,7 @@ import QtQuick.Layouts
 
 Window {
     id: settingsWindow
-    width: 520
+    width: 680
     height: 380
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
@@ -19,18 +19,26 @@ Window {
         anchors.fill: parent
         radius: 14
         color: "#F6F6F6"
-        border.width: 1
-        border.color: "#C5C5C5"
         clip: true
 
         // Sidebar Pane
         Rectangle {
             id: sidebar
-            width: 170
+            width: 180
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             color: "#EAEAEA"
+            radius: 14 // Round the left corners to match the window container
+
+            // Overlap helper rectangle to keep the dividing border edge sharp
+            Rectangle {
+                width: 20
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                color: "#EAEAEA"
+            }
 
             // Drag area to move the frameless window
             MouseArea {
@@ -232,34 +240,37 @@ Window {
                         ColumnLayout {
                             spacing: 2
                             Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
                             Text {
                                 text: "Автоматически скрывать панель задач Windows"
                                 color: "#1D1D1F"
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                             Text {
                                 text: "Скрывает стандартную панель задач для лучшего вида"
                                 color: "#86868B"
                                 font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
 
-                        Item { Layout.fillWidth: true }
-
-                        // Custom Toggle Switch (Rectangle-based to prevent 0x0 scaling in RowLayout)
+                        // Custom Toggle Switch (Rectangle-based with property declared at top)
                         Rectangle {
                             id: hideTaskbarToggle
+                            property bool checked: taskbarController.autoHideWindowsTaskbar
                             width: 36
                             height: 20
                             Layout.preferredWidth: 36
                             Layout.preferredHeight: 20
                             Layout.alignment: Qt.AlignVCenter
                             radius: 10
-                            color: hideTaskbarToggle.checked ? "#34C759" : "#E9E9EA"
+                            color: checked ? "#34C759" : "#E9E9EA"
                             border.width: 1
-                            border.color: hideTaskbarToggle.checked ? "#34C759" : "#D1D1D6"
-                            property bool checked: true
+                            border.color: checked ? "#34C759" : "#D1D1D6"
 
                             Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -296,34 +307,37 @@ Window {
                         ColumnLayout {
                             spacing: 2
                             Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
                             Text {
                                 text: "Показывать строку меню macOS"
                                 color: "#1D1D1F"
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                             Text {
                                 text: "Отображает статус-бар в верхней части экрана"
                                 color: "#86868B"
                                 font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
 
-                        Item { Layout.fillWidth: true }
-
-                        // Custom Toggle Switch (Rectangle-based to prevent 0x0 scaling in RowLayout)
+                        // Custom Toggle Switch (Rectangle-based with property declared at top)
                         Rectangle {
                             id: showTopBarToggle
+                            property bool checked: taskbarController.showTopBar
                             width: 36
                             height: 20
                             Layout.preferredWidth: 36
                             Layout.preferredHeight: 20
                             Layout.alignment: Qt.AlignVCenter
                             radius: 10
-                            color: showTopBarToggle.checked ? "#34C759" : "#E9E9EA"
+                            color: checked ? "#34C759" : "#E9E9EA"
                             border.width: 1
-                            border.color: showTopBarToggle.checked ? "#34C759" : "#D1D1D6"
-                            property bool checked: taskbarController.showTopBar
+                            border.color: checked ? "#34C759" : "#D1D1D6"
 
                             Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -360,20 +374,23 @@ Window {
                         ColumnLayout {
                             spacing: 2
                             Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
                             Text {
                                 text: "Размер иконок дока"
                                 color: "#1D1D1F"
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                             Text {
                                 text: "Выбор размера значков панели (в пикселях)"
                                 color: "#86868B"
                                 font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
-
-                        Item { Layout.fillWidth: true }
 
                         // Custom Slider
                         Slider {
@@ -486,13 +503,19 @@ Window {
                     }
 
                     onClicked: {
-                        if (!hideTaskbarToggle.checked) {
-                            taskbarController.showTaskbar();
-                        }
-                        taskbarController.apply(showTopBarToggle.checked, Math.round(iconSizeSlider.value));
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value));
                     }
                 }
             }
+        }
+        // Window Border on top of everything
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            border.width: 1
+            border.color: "#C5C5C5"
+            radius: 14
+            z: 100
         }
     }
 }

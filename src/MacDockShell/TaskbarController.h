@@ -11,6 +11,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool settingsVisible READ settingsVisible WRITE setSettingsVisible NOTIFY settingsVisibleChanged)
     Q_PROPERTY(int dockIconSize READ dockIconSize WRITE setDockIconSize NOTIFY dockIconSizeChanged)
     Q_PROPERTY(bool showTopBar READ showTopBar WRITE setShowTopBar NOTIFY showTopBarChanged)
+    Q_PROPERTY(bool autoHideWindowsTaskbar READ autoHideWindowsTaskbar WRITE setAutoHideWindowsTaskbar NOTIFY autoHideWindowsTaskbarChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -20,7 +21,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool showTopBar, int iconSize);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize);
 
     bool taskbarHidden() const;
     bool shellActive() const;
@@ -31,6 +32,8 @@ public:
     void setDockIconSize(int size);
     bool showTopBar() const;
     void setShowTopBar(bool show);
+    bool autoHideWindowsTaskbar() const;
+    void setAutoHideWindowsTaskbar(bool autoHide);
 
 signals:
     void taskbarHiddenChanged();
@@ -39,9 +42,11 @@ signals:
     void settingsVisibleChanged();
     void dockIconSizeChanged();
     void showTopBarChanged();
+    void autoHideWindowsTaskbarChanged();
 
 private:
     bool setTaskbarVisible(bool visible);
+    void updateTaskbarVisibility();
 
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
@@ -50,4 +55,5 @@ private:
     bool m_settingsVisible = true;
     int m_dockIconSize = 54;
     bool m_showTopBar = true;
+    bool m_autoHideWindowsTaskbar = true;
 };

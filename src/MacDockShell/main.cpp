@@ -110,6 +110,7 @@ void loadQml(QQmlApplicationEngine& engine, const QString& resourcePath)
 
 int main(int argc, char *argv[])
 {
+    qputenv("QT_QUICK_CONTROLS_STYLE", "Basic");
     QGuiApplication::setApplicationName("MacDockShell");
     QGuiApplication::setOrganizationName("ENI");
 
