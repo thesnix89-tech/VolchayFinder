@@ -38,6 +38,7 @@ target_link_libraries(MacDockShell
     PRIVATE psapi
     PRIVATE shell32
     PRIVATE ole32
+    PRIVATE dwmapi
 )
 
 include(GNUInstallDirs)
