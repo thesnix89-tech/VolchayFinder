@@ -32,6 +32,20 @@ Window {
             anchors.bottom: parent.bottom
             color: "#EAEAEA"
 
+            // Drag area to move the frameless window
+            MouseArea {
+                anchors.fill: parent
+                property point clickPos: "0,0"
+                onPressed: function(mouse) {
+                    clickPos = Qt.point(mouse.x, mouse.y)
+                }
+                onPositionChanged: function(mouse) {
+                    var delta = Qt.point(mouse.x - clickPos.x, mouse.y - clickPos.y)
+                    settingsWindow.x += delta.x
+                    settingsWindow.y += delta.y
+                }
+            }
+
             // Border separating sidebar and content
             Rectangle {
                 anchors.right: parent.right
@@ -46,6 +60,7 @@ Window {
                 x: 16
                 y: 18
                 spacing: 8
+                z: 10 // Ensure it sits on top of the drag MouseArea
 
                 // Red Close Button
                 Rectangle {
@@ -106,6 +121,7 @@ Window {
                 anchors.top: parent.top
                 anchors.topMargin: 44
                 spacing: 8
+                z: 10 // Ensure it sits on top of the drag MouseArea
 
                 // Preferences Title
                 Text {
@@ -157,6 +173,23 @@ Window {
             anchors.bottom: parent.bottom
             anchors.margins: 20
             anchors.bottomMargin: 16
+
+            // Header Drag Area to move window from the top margin of content pane
+            MouseArea {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 40
+                property point clickPos: "0,0"
+                onPressed: function(mouse) {
+                    clickPos = Qt.point(mouse.x, mouse.y)
+                }
+                onPositionChanged: function(mouse) {
+                    var delta = Qt.point(mouse.x - clickPos.x, mouse.y - clickPos.y)
+                    settingsWindow.x += delta.x
+                    settingsWindow.y += delta.y
+                }
+            }
 
             // Header Title
             Text {
@@ -214,33 +247,31 @@ Window {
 
                         Item { Layout.fillWidth: true }
 
-                        // Custom Toggle Switch
-                        Item {
+                        // Custom Toggle Switch (Rectangle-based to prevent 0x0 scaling in RowLayout)
+                        Rectangle {
                             id: hideTaskbarToggle
+                            width: 36
+                            height: 20
                             Layout.preferredWidth: 36
                             Layout.preferredHeight: 20
                             Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: hideTaskbarToggle.checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: hideTaskbarToggle.checked ? "#34C759" : "#D1D1D6"
                             property bool checked: true
 
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
                             Rectangle {
-                                anchors.fill: parent
-                                radius: 10
-                                color: hideTaskbarToggle.checked ? "#34C759" : "#E9E9EA"
-                                border.width: 1
-                                border.color: hideTaskbarToggle.checked ? "#34C759" : "#D1D1D6"
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: hideTaskbarToggle.checked ? 17 : 1
+                                y: 1
 
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                Rectangle {
-                                    width: 18
-                                    height: 18
-                                    radius: 9
-                                    color: "white"
-                                    x: hideTaskbarToggle.checked ? 17 : 1
-                                    y: 1
-
-                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                                }
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                             }
 
                             MouseArea {
@@ -280,33 +311,31 @@ Window {
 
                         Item { Layout.fillWidth: true }
 
-                        // Custom Toggle Switch
-                        Item {
+                        // Custom Toggle Switch (Rectangle-based to prevent 0x0 scaling in RowLayout)
+                        Rectangle {
                             id: showTopBarToggle
+                            width: 36
+                            height: 20
                             Layout.preferredWidth: 36
                             Layout.preferredHeight: 20
                             Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: showTopBarToggle.checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: showTopBarToggle.checked ? "#34C759" : "#D1D1D6"
                             property bool checked: taskbarController.showTopBar
 
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
                             Rectangle {
-                                anchors.fill: parent
-                                radius: 10
-                                color: showTopBarToggle.checked ? "#34C759" : "#E9E9EA"
-                                border.width: 1
-                                border.color: showTopBarToggle.checked ? "#34C759" : "#D1D1D6"
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: showTopBarToggle.checked ? 17 : 1
+                                y: 1
 
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                Rectangle {
-                                    width: 18
-                                    height: 18
-                                    radius: 9
-                                    color: "white"
-                                    x: showTopBarToggle.checked ? 17 : 1
-                                    y: 1
-
-                                    Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                                }
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                             }
 
                             MouseArea {
