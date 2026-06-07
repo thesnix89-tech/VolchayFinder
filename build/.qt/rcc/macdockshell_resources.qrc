@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="src/MacDockShell/qml/TopBarWindow.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/TopBarWindow.qml</file>
+    <file alias="src/MacDockShell/qml/DockWindow.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/DockWindow.qml</file>
+    <file alias="src/MacDockShell/qml/ControlWindow.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/ControlWindow.qml</file>
+  </qresource>
+</RCC>
+

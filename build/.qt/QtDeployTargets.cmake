@@ -1,0 +1,3 @@
+set(__QT_DEPLOY_TARGET_MacDockShell_FILE C:/Users/alexa/MacDockShell/build/MacDockShell.exe)
+set(__QT_DEPLOY_TARGET_MacDockShell_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_MacDockShell_RUNTIME_DLLS C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6Quick.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6QmlMeta.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6QmlWorkerScript.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6QmlModels.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6Qml.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6OpenGL.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6Gui.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6Network.dll;C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/Qt6Core.dll)

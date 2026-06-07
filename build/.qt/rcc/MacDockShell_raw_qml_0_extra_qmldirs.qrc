@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="/qt/qml/MacDockShell/">
+    <file alias="src/MacDockShell/qml/qmldir">C:/Users/alexa/MacDockShell/build/MacDockShell/src/MacDockShell/qml/qmldir</file>
+    <file alias="src/MacDockShell/qml/components/qmldir">C:/Users/alexa/MacDockShell/build/MacDockShell/src/MacDockShell/qml/components/qmldir</file>
+  </qresource>
+</RCC>
+

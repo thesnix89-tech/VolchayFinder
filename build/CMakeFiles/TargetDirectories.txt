@@ -1,0 +1,9 @@
+C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell_qmlimportscan.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/edit_cache.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/rebuild_cache.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/list_install_components.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/install.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/install/local.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell_autogen_timestamp_deps.dir
+C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell_autogen.dir

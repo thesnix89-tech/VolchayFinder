@@ -1,0 +1,10 @@
+module MacDockShell
+typeinfo MacDockShell.qmltypes
+prefer :/qt/qml/MacDockShell/
+Main 1.0 src/MacDockShell/qml/Main.qml
+GlassPanel 1.0 src/MacDockShell/qml/components/GlassPanel.qml
+TopBar 1.0 src/MacDockShell/qml/components/TopBar.qml
+Dock 1.0 src/MacDockShell/qml/components/Dock.qml
+DockItem 1.0 src/MacDockShell/qml/components/DockItem.qml
+StatusArea 1.0 src/MacDockShell/qml/components/StatusArea.qml
+

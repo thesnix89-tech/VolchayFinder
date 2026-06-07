@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="/qt/qml/MacDockShell/">
+    <file alias="src/MacDockShell/qml/Main.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/Main.qml</file>
+    <file alias="src/MacDockShell/qml/components/GlassPanel.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/GlassPanel.qml</file>
+    <file alias="src/MacDockShell/qml/components/TopBar.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/TopBar.qml</file>
+    <file alias="src/MacDockShell/qml/components/Dock.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/Dock.qml</file>
+    <file alias="src/MacDockShell/qml/components/DockItem.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/DockItem.qml</file>
+    <file alias="src/MacDockShell/qml/components/StatusArea.qml">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/StatusArea.qml</file>
+    <file alias="src/MacDockShell/qml/components/qmldir">C:/Users/alexa/MacDockShell/src/MacDockShell/qml/components/qmldir</file>
+  </qresource>
+</RCC>
+

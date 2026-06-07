@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="/qt/qml/MacDockShell">C:/Users/alexa/MacDockShell/build/MacDockShell</file>
+
+  </qresource>
+</RCC>

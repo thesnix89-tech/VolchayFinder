@@ -1,0 +1,11 @@
+-rootPath
+C:/Users/alexa/MacDockShell
+-cmake-output
+-output-file
+C:/Users/alexa/MacDockShell/build/.qt/qml_imports/MacDockShell_build.cmake
+-importPath
+C:/Users/alexa/MacDockShell/build
+-importPath
+C:/Users/alexa/Qt/6.8.3/msvc2022_64/qml
+-qrcFiles
+C:/Users/alexa/MacDockShell/build/.qt/rcc/macdockshell_resources.qrc
