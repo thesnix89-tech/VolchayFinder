@@ -61,8 +61,17 @@ Window {
                     }
                 }
 
+                Text {
+                    text: taskbarController.menuBarAppName
+                    color: "#1B1F27"
+                    font.pixelSize: 12
+                    font.weight: Font.DemiBold
+                    opacity: 0.96
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
                 Repeater {
-                    model: ["Finder", "File", "Edit", "View", "Go", "Window", "Help"]
+                    model: ["File", "Edit", "View", "Go", "Window", "Help"]
                     delegate: Text {
                         text: modelData
                         color: "#1B1F27"

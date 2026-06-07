@@ -124,6 +124,9 @@ int main(int argc, char *argv[])
     appendLine(QString("Current dir: %1").arg(QDir::currentPath()));
     appendLine("Creating QGuiApplication...");
 
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon());
 

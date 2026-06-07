@@ -5,6 +5,9 @@
 #include <QSettings>
 #include <QProcess>
 #include <QTimer>
+#include <QFileInfo>
+
+#include <algorithm>
 
 #include <windows.h>
 #include <shellapi.h>
@@ -12,7 +15,107 @@
 namespace {
 constexpr auto kTaskbarClass = TEXT("Shell_TrayWnd");
 constexpr auto kStartButtonClass = TEXT("Button");
+
+QString executablePathFromHwnd(HWND hwnd)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid == 0) {
+        return {};
+    }
+
+    HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+    if (!process) {
+        return {};
+    }
+
+    wchar_t buffer[MAX_PATH * 4] = {};
+    DWORD size = static_cast<DWORD>(std::size(buffer));
+    QString result;
+    if (QueryFullProcessImageNameW(process, 0, buffer, &size)) {
+        result = QString::fromWCharArray(buffer, static_cast<int>(size));
+    }
+    CloseHandle(process);
+    return result;
 }
+
+QString windowClassName(HWND hwnd)
+{
+    wchar_t classNameBuffer[256] = {};
+    GetClassNameW(hwnd, classNameBuffer, 256);
+    return QString::fromWCharArray(classNameBuffer);
+}
+
+bool isOwnProcessWindow(HWND hwnd)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    return pid != 0 && pid == GetCurrentProcessId();
+}
+
+bool isDesktopForeground(HWND hwnd)
+{
+    if (!hwnd) {
+        return true;
+    }
+    if (hwnd == GetDesktopWindow() || hwnd == GetShellWindow()) {
+        return true;
+    }
+
+    const QString className = windowClassName(hwnd);
+    if (className == QStringLiteral("WorkerW") || className == QStringLiteral("Progman")) {
+        return true;
+    }
+
+    const QString exePath = executablePathFromHwnd(hwnd);
+    const QString exeName = QFileInfo(exePath).fileName().toLower();
+    if (exeName == QStringLiteral("shellexperiencehost.exe")
+        || exeName == QStringLiteral("searchhost.exe")
+        || exeName == QStringLiteral("startmenuexperiencehost.exe")
+        || exeName == QStringLiteral("textinputhost.exe")
+        || exeName == QStringLiteral("lockapp.exe")) {
+        return true;
+    }
+
+    if (exeName == QStringLiteral("explorer.exe")) {
+        return className != QStringLiteral("CabinetWClass")
+            && className != QStringLiteral("ExploreWClass");
+    }
+
+    return false;
+}
+
+QString foregroundAppName(HWND hwnd)
+{
+    const QString className = windowClassName(hwnd);
+    const QString exePath = executablePathFromHwnd(hwnd);
+    if (exePath.isEmpty()) {
+        return {};
+    }
+
+    const QString exeName = QFileInfo(exePath).fileName().toLower();
+    if (exeName == QStringLiteral("explorer.exe")) {
+        if (className == QStringLiteral("CabinetWClass") || className == QStringLiteral("ExploreWClass")) {
+            return QStringLiteral("File Explorer");
+        }
+        return {};
+    }
+    if (exeName == QStringLiteral("steam.exe")) {
+        return QStringLiteral("Steam");
+    }
+    if (exeName == QStringLiteral("chrome.exe")) {
+        return QStringLiteral("Chrome");
+    }
+
+    QString label = QFileInfo(exePath).completeBaseName();
+    if (label.isEmpty()) {
+        return {};
+    }
+    label[0] = label.at(0).toUpper();
+    return label;
+}
+
+} // namespace
 
 TaskbarController::TaskbarController(QObject* parent)
     : QObject(parent)
@@ -20,8 +123,12 @@ TaskbarController::TaskbarController(QObject* parent)
     // Poll the foreground window so the dock can auto-hide for fullscreen apps (macOS-style).
     m_fullscreenTimer = new QTimer(this);
     m_fullscreenTimer->setInterval(120);
-    connect(m_fullscreenTimer, &QTimer::timeout, this, &TaskbarController::updateFullscreenState);
+    connect(m_fullscreenTimer, &QTimer::timeout, this, [this]() {
+        updateForegroundAppName();
+        updateFullscreenState();
+    });
     m_fullscreenTimer->start();
+    updateForegroundAppName();
 }
 
 TaskbarController::~TaskbarController()
@@ -119,6 +226,35 @@ bool TaskbarController::detectForegroundOccupiesScreen() const
         && windowRect.top <= monitorRect.top
         && windowRect.right >= monitorRect.right
         && windowRect.bottom >= monitorRect.bottom;
+}
+
+void TaskbarController::updateForegroundAppName()
+{
+    HWND hwnd = GetForegroundWindow();
+    if (hwnd && isOwnProcessWindow(hwnd)) {
+        // Clicking the dock/top bar should not reset the label to Finder.
+        return;
+    }
+
+    QString name = QStringLiteral("Finder");
+
+    if (hwnd && !isDesktopForeground(hwnd)) {
+        const QString resolved = foregroundAppName(hwnd);
+        if (!resolved.isEmpty()) {
+            name = resolved;
+        }
+    }
+
+    if (m_menuBarAppName == name) {
+        return;
+    }
+    m_menuBarAppName = name;
+    emit menuBarAppNameChanged();
+}
+
+QString TaskbarController::menuBarAppName() const
+{
+    return m_menuBarAppName;
 }
 
 void TaskbarController::updateFullscreenState()

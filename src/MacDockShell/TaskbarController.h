@@ -17,6 +17,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool autoHideWindowsTaskbar READ autoHideWindowsTaskbar WRITE setAutoHideWindowsTaskbar NOTIFY autoHideWindowsTaskbarChanged)
     Q_PROPERTY(bool dockHoverBounce READ dockHoverBounce WRITE setDockHoverBounce NOTIFY dockHoverBounceChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
+    Q_PROPERTY(QString menuBarAppName READ menuBarAppName NOTIFY menuBarAppNameChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -44,6 +45,7 @@ public:
     void setDockHoverBounce(bool enabled);
     bool dockStaticIcons() const;
     void setDockStaticIcons(bool enabled);
+    QString menuBarAppName() const;
 
 signals:
     void taskbarHiddenChanged();
@@ -56,12 +58,14 @@ signals:
     void autoHideWindowsTaskbarChanged();
     void dockHoverBounceChanged();
     void dockStaticIconsChanged();
+    void menuBarAppNameChanged();
 
 private:
     bool setTaskbarVisible(bool visible);
     void updateTaskbarVisibility();
     bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
+    void updateForegroundAppName();
 
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
@@ -75,5 +79,6 @@ private:
     bool m_dockStaticIcons = false;
     bool m_dockAutoHidden = false;
     bool m_dockRevealed = false;
+    QString m_menuBarAppName = QStringLiteral("Finder");
     QTimer* m_fullscreenTimer = nullptr;
 };

@@ -12,11 +12,18 @@ Window {
     property int dragFrom: -1
     property int dragTo: -1
     readonly property bool reordering: dragFrom >= 0
-    width: Math.min(dockRow.implicitWidth + 32, Screen.width - 40)
-    height: taskbarController.dockIconSize + 86 + dockBottomGap
+    // macOS layout: a centered pill for icons plus transparent side wings so edge
+    // tooltips and hover magnify stay centered on the icon instead of being clamped.
+    readonly property int dockEndCap: 18
+    readonly property int hoverBleed: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
+    readonly property int tooltipWing: 128
+    readonly property int dockPillWidth: dockRow.implicitWidth + 2 * dockEndCap
+    width: Math.min(dockPillWidth + 2 * tooltipWing, Screen.width - 40)
+    height: taskbarController.dockIconSize + 96 + dockBottomGap
     x: Math.round((Screen.width - width) / 2)
     // Resting position; slides fully below the screen when a fullscreen app is active.
     readonly property int restY: Screen.height - height - 18 + dockBottomGap
+    readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
     y: (taskbarController.shellActive && taskbarController.dockAutoHidden) ? (Screen.height + 4) : restY
     visible: taskbarController.shellActive
     color: "transparent"
@@ -57,10 +64,10 @@ Window {
 
     Rectangle {
         id: dockBg
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
+        width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 28
         // Monterey-style frosted panel: solid (opaque) light gradient, no see-through.
@@ -115,11 +122,9 @@ Window {
     Flickable {
         id: flickable
         anchors.fill: parent
-        anchors.leftMargin: 16
-        anchors.rightMargin: 16
         contentWidth: Math.max(width, dockRow.implicitWidth)
         contentHeight: height
-        clip: true
+        clip: false
         interactive: dockRow.implicitWidth > width
 
         Row {
@@ -128,6 +133,8 @@ Window {
             y: parent.height - (taskbarController.dockIconSize + 38) - dockWindow.dockBottomGap
             height: taskbarController.dockIconSize + 38
             spacing: 14
+            leftPadding: dockWindow.hoverBleed
+            rightPadding: dockWindow.hoverBleed
 
             Repeater {
                 id: dockRepeater
@@ -151,6 +158,12 @@ Window {
                     property real grabDX: 0
                     property real pointerInRow: 0
                     property bool suppressClick: false
+                    // Fixed slot width: magnify via transform only so Row layout does not shift
+                    // under the cursor (which caused hover enter/leave jitter).
+                    property bool magnifyHover: mouseArea.containsMouse
+                            && !taskbarController.dockStaticIcons
+                            && !dockWindow.reordering
+                            && !launchBounceAnim.running
                     property real dragOffset: dragging ? (pointerInRow - grabDX - x) : 0
                     // Horizontal shift applied to the icon: the dragged icon follows the
                     // pointer; the others slide aside to open a gap at the drop target.
@@ -170,18 +183,11 @@ Window {
                         return 0
                     }
 
-                    width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
+                    width: taskbarController.dockIconSize
                     height: taskbarController.dockIconSize + 38
 
                     opacity: dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55
-                    z: dockItemRoot.dragging ? 100 : 0
-
-                    Behavior on width {
-                        NumberAnimation {
-                            duration: 140
-                            easing.type: Easing.OutCubic
-                        }
-                    }
+                    z: dockItemRoot.dragging ? 100 : (dockItemRoot.magnifyHover ? 10 : 0)
 
                     Behavior on slideX {
                         enabled: !dockItemRoot.dragging
@@ -198,16 +204,28 @@ Window {
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: (mouseArea.containsMouse && taskbarController.dockHoverBounce && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? -8 : 0
+                        anchors.verticalCenterOffset: (dockItemRoot.magnifyHover && taskbarController.dockHoverBounce) ? -8 : 0
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
 
-                        // Drag-follow translate plus the macOS-style launch bounce (kept separate
-                        // so neither fights the hover binding).
+                        // Drag-follow translate, launch bounce, and hover magnify (visual only).
                         transform: [
                             Translate { x: dockItemRoot.slideX },
-                            Translate { id: launchTranslate }
+                            Translate { id: launchTranslate },
+                            Scale {
+                                id: hoverScale
+                                origin.x: iconBubble.width / 2
+                                origin.y: iconBubble.height / 2
+                                xScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
+                                yScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
+                                Behavior on xScale {
+                                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+                                }
+                                Behavior on yScale {
+                                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+                                }
+                            }
                         ]
 
                         SequentialAnimation {
@@ -229,21 +247,8 @@ Window {
                         Item {
                             id: iconContainer
                             anchors.centerIn: parent
-                            width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.05) : Math.round(taskbarController.dockIconSize * 0.82)
-                            height: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.05) : Math.round(taskbarController.dockIconSize * 0.82)
-
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 140
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
-                            Behavior on height {
-                                NumberAnimation {
-                                    duration: 140
-                                    easing.type: Easing.OutCubic
-                                }
-                            }
+                            width: Math.round(taskbarController.dockIconSize * 0.96)
+                            height: width
 
                             Image {
                                 id: dockIconImage
@@ -251,23 +256,14 @@ Window {
                                 width: parent.width
                                 height: parent.height
                                 source: dockItemRoot.iconUrl
-                                // Decode at full icon-cache resolution for crisp scaling.
-                                sourceSize: Qt.size(256, 256)
+                                // Decode at display DPR so Qt downscales from cache, never upscales.
+                                sourceSize: Qt.size(
+                                    Math.ceil(width * dockWindow.iconDevicePixelRatio * 1.25),
+                                    Math.ceil(height * dockWindow.iconDevicePixelRatio * 1.25))
                                 fillMode: Image.PreserveAspectFit
                                 smooth: true
-                                mipmap: true
-                                antialiasing: true
+                                mipmap: false
                                 visible: status === Image.Ready
-
-                                // Subtle shadow gives each icon depth on the glass, like macOS.
-                                layer.enabled: true
-                                layer.effect: MultiEffect {
-                                    shadowEnabled: true
-                                    shadowColor: "#3C000000"
-                                    shadowBlur: 0.45
-                                    shadowVerticalOffset: 3
-                                    autoPaddingEnabled: true
-                                }
                             }
 
                             Rectangle {
@@ -283,7 +279,7 @@ Window {
                                 anchors.centerIn: parent
                                 text: dockItemRoot.iconHint.length > 0 ? dockItemRoot.iconHint : dockItemRoot.label.slice(0, 1)
                                 color: "#1C222B"
-                                font.pixelSize: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? 24 : 20
+                                font.pixelSize: dockItemRoot.magnifyHover ? 24 : 20
                                 font.weight: Font.DemiBold
                                 visible: dockIconImage.status !== Image.Ready
                             }
@@ -302,62 +298,66 @@ Window {
                         opacity: 0.35
                     }
 
-                    Rectangle {
-                        id: tooltipBg
+                    // macOS-style label: compact bubble centered above the icon (app name only).
+                    Item {
+                        id: tooltipHost
+                        anchors.horizontalCenter: iconBubble.horizontalCenter
                         anchors.bottom: iconBubble.top
-                        anchors.bottomMargin: 10
-                        width: Math.max(tooltipColumn.implicitWidth + 18, 72)
-                        height: tooltipColumn.implicitHeight + 12
-                        radius: 14
-                        color: "#FFFFFFF7"
-                        border.width: 1
-                        border.color: "#DDE3EC"
+                        anchors.bottomMargin: 8
+                        width: tooltipBg.width
+                        height: tooltipBg.height + tooltipTail.height
                         opacity: (mouseArea.containsMouse && !dockWindow.reordering) ? 1 : 0
                         visible: opacity > 0
                         z: 20
 
-                        x: {
-                            var preferredX = (dockItemRoot.width - width) / 2;
-                            var delegateAbsX = 16 + dockRow.x - flickable.contentX + dockItemRoot.x;
-                            var clampedAbsX = Math.max(8, Math.min(dockWindow.width - width - 8, delegateAbsX + preferredX));
-                            return clampedAbsX - delegateAbsX;
-                        }
-
                         Behavior on opacity {
-                            NumberAnimation {
-                                duration: 110
-                            }
+                            NumberAnimation { duration: 110 }
                         }
 
-                        Column {
-                            id: tooltipColumn
-                            anchors.centerIn: parent
-                            spacing: 1
+                        Rectangle {
+                            id: tooltipBg
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            width: Math.min(200, Math.max(52, tooltipText.implicitWidth + 18))
+                            height: tooltipText.implicitHeight + 10
+                            radius: 6
+                            color: "#F7F7F7F2"
+                            border.width: 1
+                            border.color: "#C8C8C8"
 
                             Text {
                                 id: tooltipText
-                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.centerIn: parent
                                 text: dockItemRoot.label
                                 color: "#1C222B"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.NoWrap
-                                maximumLineCount: 1
                                 elide: Text.ElideRight
+                                maximumLineCount: 1
                             }
+                        }
 
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                width: Math.min(220, implicitWidth)
-                                text: dockItemRoot.windowTitle
-                                color: "#6B7380"
-                                font.pixelSize: 9
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.NoWrap
-                                maximumLineCount: 1
-                                elide: Text.ElideRight
-                                visible: dockItemRoot.windowTitle.length > 0
+                        Canvas {
+                            id: tooltipTail
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: tooltipBg.bottom
+                            anchors.topMargin: -1
+                            width: 14
+                            height: 7
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.reset()
+                                ctx.beginPath()
+                                ctx.moveTo(width / 2, height)
+                                ctx.lineTo(0, 0)
+                                ctx.lineTo(width, 0)
+                                ctx.closePath()
+                                ctx.fillStyle = "#F7F7F7"
+                                ctx.fill()
+                                ctx.strokeStyle = "#C8C8C8"
+                                ctx.lineWidth = 1
+                                ctx.stroke()
                             }
                         }
                     }

@@ -42,6 +42,21 @@ QString fileNameKey(const QString& path)
     return QFileInfo(path).fileName().toLower();
 }
 
+bool entriesEqualForView(const DockItemEntry& a, const DockItemEntry& b)
+{
+    return a.appId == b.appId
+        && a.label == b.label
+        && a.windowTitle == b.windowTitle
+        && a.exePath == b.exePath
+        && a.iconHint == b.iconHint
+        && a.iconUrl == b.iconUrl
+        && a.running == b.running
+        && a.active == b.active
+        && a.pinned == b.pinned
+        && a.minimized == b.minimized
+        && a.pinnedOnly == b.pinnedOnly;
+}
+
 QString expandEnvPath(const QString& path)
 {
     if (path.isEmpty()) {
@@ -310,13 +325,35 @@ void DockModel::refresh()
         return;
     }
 
-    beginResetModel();
+    const QVector<DockItemEntry> previous = m_entries;
+    QStringList previousKeys;
+    previousKeys.reserve(previous.size());
+    for (const auto& entry : previous) {
+        previousKeys.append(entryOrderKey(entry));
+    }
+
     m_entries.clear();
-    m_existingIconUrls.clear();
     loadPinnedApps();
     scanWindows();
     applyCustomOrder();
-    endResetModel();
+
+    QStringList newKeys;
+    newKeys.reserve(m_entries.size());
+    for (const auto& entry : m_entries) {
+        newKeys.append(entryOrderKey(entry));
+    }
+
+    if (previousKeys == newKeys) {
+        for (int i = 0; i < m_entries.size(); ++i) {
+            if (!entriesEqualForView(previous[i], m_entries[i])) {
+                emit dataChanged(index(i), index(i));
+            }
+        }
+    } else {
+        beginResetModel();
+        endResetModel();
+    }
+
     emitActiveWindowState();
     emit logMessage(QStringLiteral("DockModel refreshed. Items: %1").arg(m_entries.size()));
 }
@@ -707,6 +744,16 @@ QString DockModel::labelFromPath(const QString& path) const
     return QFileInfo(path).completeBaseName();
 }
 
+QPixmap pixmapFromHicon(HICON hIcon)
+{
+    if (!hIcon) {
+        return {};
+    }
+    const QImage image = hiconToImage(hIcon);
+    DestroyIcon(hIcon);
+    return image.isNull() ? QPixmap() : QPixmap::fromImage(image);
+}
+
 QPixmap DockModel::extractFileIcon(const QString& exePath) const
 {
     const QString nativePath = QDir::toNativeSeparators(exePath);
@@ -716,49 +763,45 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
 
     const LPCWSTR pathW = reinterpret_cast<LPCWSTR>(nativePath.utf16());
 
-    SHFILEINFOW sfiLarge = {};
-    if (SHGetFileInfoW(pathW, 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
-        QImage image = hiconToImage(sfiLarge.hIcon);
-        DestroyIcon(sfiLarge.hIcon);
-        if (!image.isNull()) {
-            return QPixmap::fromImage(image);
+    // Prefer the shell jumbo/extra-large image lists (256/48 px). The old path
+    // used SHGFI_LARGEICON (32 px) first, which looked soft when scaled up in the dock.
+    SHFILEINFOW sfi = {};
+    if (SHGetFileInfoW(pathW, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX)) {
+        const int imageListIds[] = { SHIL_JUMBO, SHIL_EXTRALARGE };
+        for (const int listId : imageListIds) {
+            IImageList* imageList = nullptr;
+            HRESULT hr = SHGetImageList(listId, IID_IImageList, reinterpret_cast<void**>(&imageList));
+            if (FAILED(hr) || !imageList) {
+                continue;
+            }
+
+            HICON hIcon = nullptr;
+            hr = imageList->GetIcon(sfi.iIcon, ILD_TRANSPARENT, &hIcon);
+            imageList->Release();
+            if (FAILED(hr) || !hIcon) {
+                continue;
+            }
+
+            const QPixmap pixmap = pixmapFromHicon(hIcon);
+            if (!pixmap.isNull() && pixmap.width() >= 48) {
+                return pixmap;
+            }
         }
     }
 
+    // Embedded multi-size icons inside the executable.
     HICON largeIcon = nullptr;
     const UINT extracted = ExtractIconExW(pathW, 0, &largeIcon, nullptr, 1);
     if (extracted > 0 && largeIcon) {
-        QImage image = hiconToImage(largeIcon);
-        DestroyIcon(largeIcon);
-        if (!image.isNull()) {
-            return QPixmap::fromImage(image);
+        const QPixmap pixmap = pixmapFromHicon(largeIcon);
+        if (!pixmap.isNull()) {
+            return pixmap;
         }
     }
 
-    SHFILEINFOW sfi = {};
-    if (!SHGetFileInfoW(pathW, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX)) {
-        return {};
-    }
-
-    IImageList* imageList = nullptr;
-    HRESULT hr = SHGetImageList(SHIL_JUMBO, IID_IImageList, reinterpret_cast<void**>(&imageList));
-    if (FAILED(hr)) {
-        hr = SHGetImageList(SHIL_EXTRALARGE, IID_IImageList, reinterpret_cast<void**>(&imageList));
-    }
-
-    if (SUCCEEDED(hr) && imageList) {
-        HICON hIcon = nullptr;
-        hr = imageList->GetIcon(sfi.iIcon, ILD_TRANSPARENT, &hIcon);
-        if (SUCCEEDED(hr) && hIcon) {
-            QImage image = hiconToImage(hIcon);
-            DestroyIcon(hIcon);
-            imageList->Release();
-            if (!image.isNull()) {
-                return QPixmap::fromImage(image);
-            }
-        } else {
-            imageList->Release();
-        }
+    SHFILEINFOW sfiLarge = {};
+    if (SHGetFileInfoW(pathW, 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
+        return pixmapFromHicon(sfiLarge.hIcon);
     }
 
     return {};
@@ -767,10 +810,14 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
 QString DockModel::ensureIconFile(const QString& appId, const QString& exePath) const
 {
     const QByteArray hash = QCryptographicHash::hash(appId.toUtf8(), QCryptographicHash::Md5).toHex();
-    const QString filePath = QDir(m_iconCacheDir).filePath(QString::fromLatin1(hash) + ".png");
+    // v2 suffix invalidates older 32 px caches from previous extraction logic.
+    const QString filePath = QDir(m_iconCacheDir).filePath(QString::fromLatin1(hash) + QStringLiteral("_256.png"));
 
     if (QFileInfo::exists(filePath)) {
-        return QUrl::fromLocalFile(filePath).toString();
+        const QImage cached(filePath);
+        if (!cached.isNull() && cached.width() >= 96) {
+            return QUrl::fromLocalFile(filePath).toString();
+        }
     }
 
     QPixmap pixmap = extractFileIcon(exePath);
