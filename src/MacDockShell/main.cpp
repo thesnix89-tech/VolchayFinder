@@ -11,11 +11,14 @@
 #include <QQmlContext>
 #include <QWindow>
 #include <QTimer>
+#include <QLocalServer>
+#include <QLocalSocket>
 
 #include "TaskbarController.h"
 #include "DockModel.h"
 #include "AppBarController.h"
 #include "WindowEffects.h"
+#include "MacCursor.h"
 
 namespace {
 
@@ -107,6 +110,39 @@ void loadQml(QQmlApplicationEngine& engine, const QString& resourcePath)
     engine.load(url);
 }
 
+constexpr auto kSingleInstanceServer = "MacDockShell";
+constexpr auto kLaunchShowSettings = "show-settings";
+constexpr auto kLaunchAutostart = "autostart";
+
+bool tryActivateExistingInstance(const QStringList& arguments)
+{
+    QLocalSocket socket;
+    socket.connectToServer(QString::fromUtf8(kSingleInstanceServer));
+    if (!socket.waitForConnected(300)) {
+        return false;
+    }
+
+    const bool autostart = arguments.contains(QStringLiteral("--autostart"));
+    socket.write(autostart ? kLaunchAutostart : kLaunchShowSettings);
+    socket.waitForBytesWritten(300);
+    return true;
+}
+
+bool listenForSecondaryLaunches(QLocalServer& server)
+{
+    const QString serverName = QString::fromUtf8(kSingleInstanceServer);
+    if (server.listen(serverName)) {
+        return true;
+    }
+
+    if (server.serverError() != QAbstractSocket::AddressInUseError) {
+        return false;
+    }
+
+    QLocalServer::removeServer(serverName);
+    return server.listen(serverName);
+}
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -131,10 +167,21 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon());
 
+    if (tryActivateExistingInstance(app.arguments())) {
+        appendLine("Forwarded launch to an already running MacDockShell instance.");
+        return 0;
+    }
+
+    QLocalServer singleInstanceServer;
+    if (!listenForSecondaryLaunches(singleInstanceServer)) {
+        appendLine(QString("Failed to start single-instance server: %1").arg(singleInstanceServer.errorString()));
+    }
+
     TaskbarController taskbarController;
     DockModel dockModel;
     AppBarController appBarController;
     WindowEffects windowEffects;
+    MacCursor macCursor;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -151,8 +198,26 @@ int main(int argc, char *argv[])
     QObject::connect(&appBarController, &AppBarController::logMessage, [](const QString& message) {
         appendLine(QString("[AppBarController] %1").arg(message));
     });
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&taskbarController, &appBarController]() {
+    QObject::connect(&singleInstanceServer, &QLocalServer::newConnection, &taskbarController, [&singleInstanceServer, &taskbarController]() {
+        QLocalSocket* client = singleInstanceServer.nextPendingConnection();
+        if (!client) {
+            return;
+        }
+
+        QObject::connect(client, &QLocalSocket::readyRead, client, [client, &taskbarController]() {
+            const QByteArray message = client->readAll();
+            if (message == kLaunchAutostart) {
+                taskbarController.tryAutostartShell();
+            } else {
+                taskbarController.setSettingsVisible(true);
+            }
+            client->disconnectFromServer();
+        });
+    });
+
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, [&taskbarController, &appBarController, &macCursor]() {
         appendLine("aboutToQuit fired. Restoring taskbar and unregistering appbar.");
+        macCursor.restoreSystemCursors();
         appBarController.unregisterTopBar();
         taskbarController.restoreShell();
     });
@@ -169,11 +234,14 @@ int main(int argc, char *argv[])
 
     topBarEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
+    topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
+    dockEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     controlEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     controlEngine.rootContext()->setContextProperty("dockModel", &dockModel);
+    controlEngine.rootContext()->setContextProperty("macCursor", &macCursor);
 
     auto connectWarnings = [&app](QQmlApplicationEngine& engine, const QString& name) {
         QObject::connect(&engine, &QQmlApplicationEngine::warnings, &app, [name](const QList<QQmlError>& warnings) {
@@ -213,6 +281,25 @@ int main(int argc, char *argv[])
     installShellWindow(topBarEngine, false);
     installShellWindow(dockEngine, true);
     installShellWindow(controlEngine, false);
+
+    if (macCursor.installSystemCursors()) {
+        appendLine("macOS Sierra system cursors installed.");
+    } else {
+        appendLine("Failed to install macOS Sierra system cursors.");
+    }
+
+    const bool launchedWithAutostart = QCoreApplication::arguments().contains(QStringLiteral("--autostart"));
+    if (launchedWithAutostart) {
+        appendLine("Launched with --autostart.");
+        if (taskbarController.startWithWindows()) {
+            taskbarController.setSettingsVisible(false);
+            QTimer::singleShot(2000, &taskbarController, [&taskbarController]() {
+                taskbarController.tryAutostartShell();
+            });
+        } else {
+            appendLine("Autostart launch ignored because the setting is disabled.");
+        }
+    }
 
     QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, [&topBarEngine, &appBarController, &taskbarController]() {
         if (taskbarController.shellActive()) {

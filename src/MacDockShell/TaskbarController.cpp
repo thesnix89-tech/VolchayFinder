@@ -1,6 +1,7 @@
 #include "TaskbarController.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QMetaObject>
 #include <QSettings>
 #include <QProcess>
@@ -8,6 +9,7 @@
 #include <QFileInfo>
 
 #include <algorithm>
+#include <string>
 
 #include <windows.h>
 #include <shellapi.h>
@@ -113,6 +115,79 @@ QString foregroundAppName(HWND hwnd)
     }
     label[0] = label.at(0).toUpper();
     return label;
+}
+
+constexpr wchar_t kRunKeyPath[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+constexpr wchar_t kRunValueName[] = L"MacDockShell";
+
+QString expectedAutostartCommand()
+{
+    const QString exePath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+    return QStringLiteral("\"%1\" --autostart").arg(exePath);
+}
+
+bool readWindowsRunCommand(QString* commandOut)
+{
+    HKEY runKey = nullptr;
+    const LSTATUS openStatus = RegOpenKeyExW(HKEY_CURRENT_USER,
+                                             kRunKeyPath,
+                                             0,
+                                             KEY_QUERY_VALUE,
+                                             &runKey);
+    if (openStatus != ERROR_SUCCESS) {
+        return false;
+    }
+
+    wchar_t buffer[1024] = {};
+    DWORD size = static_cast<DWORD>(sizeof(buffer));
+    DWORD type = 0;
+    const LSTATUS queryStatus = RegQueryValueExW(runKey,
+                                                 kRunValueName,
+                                                 nullptr,
+                                                 &type,
+                                                 reinterpret_cast<BYTE*>(buffer),
+                                                 &size);
+    RegCloseKey(runKey);
+
+    if (queryStatus != ERROR_SUCCESS || type != REG_SZ) {
+        return false;
+    }
+
+    if (commandOut) {
+        *commandOut = QString::fromWCharArray(buffer);
+    }
+    return true;
+}
+
+bool setWindowsRunAtStartup(bool enabled)
+{
+    HKEY runKey = nullptr;
+    const REGSAM access = KEY_SET_VALUE | KEY_QUERY_VALUE;
+    const LSTATUS openStatus = RegOpenKeyExW(HKEY_CURRENT_USER,
+                                             kRunKeyPath,
+                                             0,
+                                             access,
+                                             &runKey);
+    if (openStatus != ERROR_SUCCESS) {
+        return false;
+    }
+
+    if (!enabled) {
+        RegDeleteValueW(runKey, kRunValueName);
+        RegCloseKey(runKey);
+        return true;
+    }
+
+    const std::wstring nativeCommand = expectedAutostartCommand().toStdWString();
+
+    const LSTATUS setStatus = RegSetValueExW(runKey,
+                                             kRunValueName,
+                                             0,
+                                             REG_SZ,
+                                             reinterpret_cast<const BYTE*>(nativeCommand.c_str()),
+                                             static_cast<DWORD>((nativeCommand.size() + 1) * sizeof(wchar_t)));
+    RegCloseKey(runKey);
+    return setStatus == ERROR_SUCCESS;
 }
 
 } // namespace
@@ -450,6 +525,62 @@ void TaskbarController::setDarkTheme(bool enabled)
     emit darkThemeChanged();
 }
 
+bool TaskbarController::startWithWindows() const
+{
+    return m_startWithWindows;
+}
+
+void TaskbarController::setStartWithWindows(bool enabled)
+{
+    if (m_startWithWindows == enabled) {
+        return;
+    }
+    m_startWithWindows = enabled;
+    emit startWithWindowsChanged();
+}
+
+void TaskbarController::syncWindowsStartup(bool enabled)
+{
+    if (setWindowsRunAtStartup(enabled)) {
+        emit shellActionLogged(enabled
+            ? QStringLiteral("Windows autostart enabled.")
+            : QStringLiteral("Windows autostart disabled."));
+    } else {
+        emit shellActionLogged(QStringLiteral("Failed to update Windows autostart."));
+    }
+}
+
+void TaskbarController::reconcileWindowsStartup()
+{
+    QString registeredCommand;
+    const bool registered = readWindowsRunCommand(&registeredCommand);
+    const QString expected = expectedAutostartCommand();
+
+    if (m_startWithWindows) {
+        if (!registered || registeredCommand.compare(expected, Qt::CaseInsensitive) != 0) {
+            syncWindowsStartup(true);
+        }
+        return;
+    }
+
+    if (registered) {
+        syncWindowsStartup(false);
+        emit shellActionLogged(QStringLiteral("Removed stale Windows autostart entry."));
+    }
+}
+
+void TaskbarController::tryAutostartShell()
+{
+    if (!m_startWithWindows) {
+        return;
+    }
+
+    setSettingsVisible(false);
+    setShellActive(true);
+    updateTaskbarVisibility();
+    emit shellActionLogged(QStringLiteral("Autostart: shell activated."));
+}
+
 void TaskbarController::loadSettings()
 {
     QSettings settings;
@@ -459,6 +590,8 @@ void TaskbarController::loadSettings()
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
     m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
+    m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
+    reconcileWindowsStartup();
 }
 
 void TaskbarController::saveSettings()
@@ -470,6 +603,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/dockHoverBounce"), m_dockHoverBounce);
     settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
     settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
+    settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
 }
 
 void TaskbarController::updateTaskbarVisibility()
@@ -481,7 +615,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
@@ -489,6 +623,8 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int 
     setDockHoverBounce(dockHoverBounce);
     setDockStaticIcons(dockStaticIcons);
     setDarkTheme(darkTheme);
+    setStartWithWindows(startWithWindows);
+    syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);
     setSettingsVisible(false);

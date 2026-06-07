@@ -162,7 +162,6 @@ Window {
         modal: false
         padding: 6
         implicitWidth: 220
-
         readonly property color panelBg: topBarWindow.darkTheme ? "#323234" : "#F5F5F7"
         readonly property color panelBorder: topBarWindow.darkTheme ? "#48484A" : "#C2C2C2"
         readonly property color itemText: topBarWindow.darkTheme ? "#F2F2F7" : "#1D1D1F"

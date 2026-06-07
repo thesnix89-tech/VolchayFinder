@@ -18,6 +18,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool dockHoverBounce READ dockHoverBounce WRITE setDockHoverBounce NOTIFY dockHoverBounceChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
+    Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
     Q_PROPERTY(QString menuBarAppName READ menuBarAppName NOTIFY menuBarAppNameChanged)
 
 public:
@@ -28,7 +29,8 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows);
+    Q_INVOKABLE void tryAutostartShell();
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;
@@ -48,6 +50,8 @@ public:
     void setDockStaticIcons(bool enabled);
     bool darkTheme() const;
     void setDarkTheme(bool enabled);
+    bool startWithWindows() const;
+    void setStartWithWindows(bool enabled);
     QString menuBarAppName() const;
 
 signals:
@@ -62,6 +66,7 @@ signals:
     void dockHoverBounceChanged();
     void dockStaticIconsChanged();
     void darkThemeChanged();
+    void startWithWindowsChanged();
     void menuBarAppNameChanged();
 
 private:
@@ -72,6 +77,8 @@ private:
     bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
     void updateForegroundAppName();
+    void syncWindowsStartup(bool enabled);
+    void reconcileWindowsStartup();
 
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
@@ -84,6 +91,7 @@ private:
     bool m_dockHoverBounce = true;
     bool m_dockStaticIcons = false;
     bool m_darkTheme = false;
+    bool m_startWithWindows = false;
     bool m_dockAutoHidden = false;
     bool m_dockRevealed = false;
     QString m_menuBarAppName = QStringLiteral("Finder");

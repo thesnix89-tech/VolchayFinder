@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Window {
     id: settingsWindow
     width: 680
-    height: 480
+    height: 520
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
     visible: taskbarController.settingsVisible
@@ -662,6 +662,74 @@ Window {
                             }
                         }
                     }
+
+                    // Separator 6
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 7: Start with Windows
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Запускать с Windows"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Автоматически запускать оболочку при входе в систему"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Rectangle {
+                            id: startWithWindowsToggle
+                            property bool checked: taskbarController.startWithWindows
+                            width: 36
+                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: checked ? "#34C759" : "#D1D1D6"
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: startWithWindowsToggle.checked ? 17 : 1
+                                y: 1
+
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: startWithWindowsToggle.checked = !startWithWindowsToggle.checked
+                            }
+                        }
+                    }
                 }
             }
 
@@ -721,7 +789,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked);
                     }
                 }
             }
