@@ -1,4 +1,4 @@
-C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/UEKD5UVXQ3/moc_DockModel.cpp: C:/Users/alexa/MacDockShell/src/MacDockShell/DockModel.h \
+D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/UEKD5UVXQ3/moc_DockModel.cpp: D:/AiProjectsNow/VolchayFinder/src/MacDockShell/DockModel.h \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QAbstractListModel \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QHash \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \

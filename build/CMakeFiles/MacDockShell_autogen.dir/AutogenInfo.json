@@ -1,18 +1,18 @@
 {
 	"AUTOGEN_COMMAND_LINE_LENGTH_MAX" : 32000,
-	"BUILD_DIR" : "C:/Users/alexa/MacDockShell/build/MacDockShell_autogen",
-	"CMAKE_BINARY_DIR" : "C:/Users/alexa/MacDockShell/build",
-	"CMAKE_CURRENT_BINARY_DIR" : "C:/Users/alexa/MacDockShell/build",
-	"CMAKE_CURRENT_SOURCE_DIR" : "C:/Users/alexa/MacDockShell",
+	"BUILD_DIR" : "D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen",
+	"CMAKE_BINARY_DIR" : "D:/AiProjectsNow/VolchayFinder/build",
+	"CMAKE_CURRENT_BINARY_DIR" : "D:/AiProjectsNow/VolchayFinder/build",
+	"CMAKE_CURRENT_SOURCE_DIR" : "D:/AiProjectsNow/VolchayFinder",
 	"CMAKE_EXECUTABLE" : "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
 	"CMAKE_LIST_FILES" : 
 	[
-		"C:/Users/alexa/MacDockShell/CMakeLists.txt",
-		"C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeSystem.cmake",
+		"D:/AiProjectsNow/VolchayFinder/CMakeLists.txt",
+		"D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeSystem.cmake",
 		"C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6/qt.toolchain.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeSystemSpecificInitialize.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/Windows-Initialize.cmake",
-		"C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeCXXCompiler.cmake",
+		"D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeCXXCompiler.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeGenericSystem.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeInitializeConfigs.cmake",
@@ -25,7 +25,7 @@
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Compiler/CMakeCommonCompilerMacros.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC-CXX.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC.cmake",
-		"C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeRCCompiler.cmake",
+		"D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeRCCompiler.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeRCInformation.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/CMakeCommonLanguageInclude.cmake",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Internal/CMakeCXXLinkerInformation.cmake",
@@ -781,42 +781,42 @@
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/GNUInstallDirs.cmake",
 		"C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6Core/Qt6CoreConfigureFileTemplate.in",
 		"C:/Program Files/Microsoft Visual Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/GNUInstallDirs.cmake",
-		"C:/Users/alexa/MacDockShell/build/.qt/qml_imports/MacDockShell_conf.cmake"
+		"D:/AiProjectsNow/VolchayFinder/build/.qt/qml_imports/MacDockShell_conf.cmake"
 	],
-	"CMAKE_SOURCE_DIR" : "C:/Users/alexa/MacDockShell",
+	"CMAKE_SOURCE_DIR" : "D:/AiProjectsNow/VolchayFinder",
 	"CROSS_CONFIG" : false,
-	"DEP_FILE" : "C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/deps",
+	"DEP_FILE" : "D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/deps",
 	"DEP_FILE_RULE_NAME" : "MacDockShell_autogen/timestamp",
 	"HEADERS" : 
 	[
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/AppBarController.h",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/AppBarController.h",
 			"MU",
 			"UEKD5UVXQ3/moc_AppBarController.cpp",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/DockModel.h",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/DockModel.h",
 			"MU",
 			"UEKD5UVXQ3/moc_DockModel.cpp",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/PinnedTaskbarResolver.h",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/PinnedTaskbarResolver.h",
 			"MU",
 			"UEKD5UVXQ3/moc_PinnedTaskbarResolver.cpp",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/TaskbarController.h",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/TaskbarController.h",
 			"MU",
 			"UEKD5UVXQ3/moc_TaskbarController.cpp",
 			null
 		]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
-	"INCLUDE_DIR" : "C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/include",
-	"MOC_COMPILATION_FILE" : "C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/mocs_compilation.cpp",
+	"INCLUDE_DIR" : "D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/include",
+	"MOC_COMPILATION_FILE" : "D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/mocs_compilation.cpp",
 	"MOC_DEFINITIONS" : 
 	[
 		"QT_CORE_LIB",
@@ -875,45 +875,49 @@
 	"MOC_RELAXED_MODE" : false,
 	"MOC_SKIP" : 
 	[
-		"C:/Users/alexa/MacDockShell/build/.qt/rcc/qrc_macdockshell_resources.cpp"
+		"D:/AiProjectsNow/VolchayFinder/build/.qt/rcc/qrc_macdockshell_resources.cpp"
 	],
 	"MULTI_CONFIG" : false,
 	"PARALLEL" : 6,
-	"PARSE_CACHE_FILE" : "C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell_autogen.dir/ParseCache.txt",
+	"PARSE_CACHE_FILE" : "D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/MacDockShell_autogen.dir/ParseCache.txt",
 	"QT_MOC_EXECUTABLE" : "C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/moc.exe",
 	"QT_UIC_EXECUTABLE" : "",
 	"QT_VERSION_MAJOR" : 6,
 	"QT_VERSION_MINOR" : 8,
-	"SETTINGS_FILE" : "C:/Users/alexa/MacDockShell/build/CMakeFiles/MacDockShell_autogen.dir/AutogenUsed.txt",
+	"SETTINGS_FILE" : "D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/MacDockShell_autogen.dir/AutogenUsed.txt",
 	"SOURCES" : 
 	[
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/AppBarController.cpp",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/AppBarController.cpp",
 			"MU",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/DockModel.cpp",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/DockModel.cpp",
 			"MU",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/PinnedTaskbarResolver.cpp",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/PinnedTaskbarResolver.cpp",
 			"MU",
 			null
 		],
 		[
-			"C:/Users/alexa/MacDockShell/src/MacDockShell/TaskbarController.cpp",
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/TaskbarController.cpp",
 			"MU",
 			null
 		],
-		[ "C:/Users/alexa/MacDockShell/src/MacDockShell/main.cpp", "MU", null ]
+		[
+			"D:/AiProjectsNow/VolchayFinder/src/MacDockShell/main.cpp",
+			"MU",
+			null
+		]
 	],
 	"UIC_OPTIONS" : [],
 	"UIC_SEARCH_PATHS" : [],
 	"UIC_SKIP" : 
 	[
-		"C:/Users/alexa/MacDockShell/build/.qt/rcc/qrc_macdockshell_resources.cpp"
+		"D:/AiProjectsNow/VolchayFinder/build/.qt/rcc/qrc_macdockshell_resources.cpp"
 	],
 	"UIC_UI_FILES" : [],
 	"USE_BETTER_GRAPH" : true,

@@ -1,4 +1,4 @@
-C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/UEKD5UVXQ3/moc_AppBarController.cpp: C:/Users/alexa/MacDockShell/src/MacDockShell/AppBarController.h \
+D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/UEKD5UVXQ3/moc_AppBarController.cpp: D:/AiProjectsNow/VolchayFinder/src/MacDockShell/AppBarController.h \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QRect \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/q20functional.h \

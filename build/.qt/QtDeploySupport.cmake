@@ -34,7 +34,7 @@ endif()
 set(__QT_DEPLOY_SYSTEM_NAME "Windows")
 set(__QT_DEPLOY_IS_SHARED_LIBS_BUILD "ON")
 set(__QT_DEPLOY_TOOL "C:/Users/alexa/Qt/6.8.3/msvc2022_64/bin/windeployqt.exe")
-set(__QT_DEPLOY_IMPL_DIR "C:/Users/alexa/MacDockShell/build/.qt")
+set(__QT_DEPLOY_IMPL_DIR "D:/AiProjectsNow/VolchayFinder/build/.qt")
 set(__QT_DEPLOY_VERBOSE "")
 set(__QT_CMAKE_EXPORT_NAMESPACE "Qt6")
 set(__QT_DEPLOY_GENERATOR_IS_MULTI_CONFIG "0")
@@ -58,7 +58,7 @@ set(__QT_DEPLOY_QT_DEBUG_POSTFIX "d")
 
 # Define the CMake commands to be made available during deployment.
 set(__qt_deploy_support_files
-    "C:/Users/alexa/MacDockShell/build/.qt/QtDeployTargets.cmake"
+    "D:/AiProjectsNow/VolchayFinder/build/.qt/QtDeployTargets.cmake"
     "C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6Core/Qt6CoreDeploySupport.cmake"
     "C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6Qml/Qt6QmlDeploySupport.cmake"
 )

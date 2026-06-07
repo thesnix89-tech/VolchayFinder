@@ -35,20 +35,6 @@ MacDockShell_autogen/timestamp: \
 	C:/Program\ Files/Microsoft\ Visual\ Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC.cmake \
 	C:/Program\ Files/Microsoft\ Visual\ Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/Windows.cmake \
 	C:/Program\ Files/Microsoft\ Visual\ Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-4.2/Modules/Platform/WindowsPaths.cmake \
-	C:/Users/alexa/MacDockShell/CMakeLists.txt \
-	C:/Users/alexa/MacDockShell/build/.qt/qml_imports/MacDockShell_conf.cmake \
-	C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeCXXCompiler.cmake \
-	C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeRCCompiler.cmake \
-	C:/Users/alexa/MacDockShell/build/CMakeFiles/4.2.3-msvc3/CMakeSystem.cmake \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/AppBarController.cpp \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/AppBarController.h \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/DockModel.cpp \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/DockModel.h \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/PinnedTaskbarResolver.cpp \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/PinnedTaskbarResolver.h \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/TaskbarController.cpp \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/TaskbarController.h \
-	C:/Users/alexa/MacDockShell/src/MacDockShell/main.cpp \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QAbstractListModel \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QHash \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
@@ -758,4 +744,18 @@ MacDockShell_autogen/timestamp: \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateConfigVersionImpl.cmake \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateTargets.cmake \
 	C:/Users/alexa/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateVersionlessAliasTargets.cmake \
+	D:/AiProjectsNow/VolchayFinder/CMakeLists.txt \
+	D:/AiProjectsNow/VolchayFinder/build/.qt/qml_imports/MacDockShell_conf.cmake \
+	D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeCXXCompiler.cmake \
+	D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeRCCompiler.cmake \
+	D:/AiProjectsNow/VolchayFinder/build/CMakeFiles/4.2.3-msvc3/CMakeSystem.cmake \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/AppBarController.cpp \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/AppBarController.h \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/DockModel.cpp \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/DockModel.h \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/PinnedTaskbarResolver.cpp \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/PinnedTaskbarResolver.h \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/TaskbarController.cpp \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/TaskbarController.h \
+	D:/AiProjectsNow/VolchayFinder/src/MacDockShell/main.cpp \
 	C:/Program\ Files/Microsoft\ Visual\ Studio/18/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe

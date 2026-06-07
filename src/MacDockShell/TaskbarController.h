@@ -27,4 +27,6 @@ private:
     bool setTaskbarVisible(bool visible);
 
     bool m_taskbarHidden = false;
+    unsigned long m_originalTaskbarState = 0;
+    bool m_hasOriginalTaskbarState = false;
 };

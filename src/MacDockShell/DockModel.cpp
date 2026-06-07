@@ -14,6 +14,7 @@
 #include <psapi.h>
 #include <shellapi.h>
 #include <commctrl.h>
+#include <commoncontrols.h>
 
 namespace {
 
@@ -386,18 +387,43 @@ QString DockModel::labelFromPath(const QString& path) const
 
 QPixmap DockModel::extractFileIcon(const QString& exePath) const
 {
-    SHFILEINFOW fileInfo = {};
-    if (!SHGetFileInfoW(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0, &fileInfo, sizeof(fileInfo), SHGFI_ICON | SHGFI_LARGEICON)) {
+    SHFILEINFOW sfi = {};
+    if (!SHGetFileInfoW(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX)) {
         return {};
     }
 
-    QImage image = hiconToImage(fileInfo.hIcon);
-    DestroyIcon(fileInfo.hIcon);
-    if (image.isNull()) {
-        return {};
+    IImageList* imageList = nullptr;
+    HRESULT hr = SHGetImageList(SHIL_JUMBO, IID_IImageList, reinterpret_cast<void**>(&imageList));
+    if (FAILED(hr)) {
+        hr = SHGetImageList(SHIL_EXTRALARGE, IID_IImageList, reinterpret_cast<void**>(&imageList));
     }
 
-    return QPixmap::fromImage(image);
+    if (SUCCEEDED(hr) && imageList) {
+        HICON hIcon = nullptr;
+        hr = imageList->GetIcon(sfi.iIcon, ILD_TRANSPARENT, &hIcon);
+        if (SUCCEEDED(hr) && hIcon) {
+            QImage image = hiconToImage(hIcon);
+            DestroyIcon(hIcon);
+            imageList->Release();
+            if (!image.isNull()) {
+                return QPixmap::fromImage(image);
+            }
+        } else {
+            imageList->Release();
+        }
+    }
+
+    // Fallback to standard large icon
+    SHFILEINFOW sfiLarge = {};
+    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
+        QImage image = hiconToImage(sfiLarge.hIcon);
+        DestroyIcon(sfiLarge.hIcon);
+        if (!image.isNull()) {
+            return QPixmap::fromImage(image);
+        }
+    }
+
+    return {};
 }
 
 QString DockModel::ensureIconFile(const QString& appId, const QString& exePath) const

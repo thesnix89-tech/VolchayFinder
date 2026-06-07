@@ -4,6 +4,7 @@
 #include <QMetaObject>
 
 #include <windows.h>
+#include <shellapi.h>
 
 namespace {
 constexpr auto kTaskbarClass = TEXT("Shell_TrayWnd");
@@ -72,6 +73,30 @@ bool TaskbarController::setTaskbarVisible(bool visible)
     if (startButton) {
         ShowWindow(startButton, visible ? SW_SHOW : SW_HIDE);
         EnableWindow(startButton, visible ? TRUE : FALSE);
+    }
+
+    // Modify taskbar state to adjust desktop work area
+    APPBARDATA abd = {};
+    abd.cbSize = sizeof(APPBARDATA);
+    abd.hWnd = taskbar;
+
+    if (!visible) {
+        if (!m_hasOriginalTaskbarState) {
+            m_originalTaskbarState = SHAppBarMessage(ABM_GETSTATE, &abd);
+            m_hasOriginalTaskbarState = true;
+            emit shellActionLogged(QString("Saved original taskbar state: %1").arg(m_originalTaskbarState));
+        }
+        
+        abd.lParam = ABS_AUTOHIDE;
+        SHAppBarMessage(ABM_SETSTATE, &abd);
+        emit shellActionLogged(QStringLiteral("Taskbar state set to ABS_AUTOHIDE."));
+    } else {
+        if (m_hasOriginalTaskbarState) {
+            abd.lParam = m_originalTaskbarState;
+            SHAppBarMessage(ABM_SETSTATE, &abd);
+            m_hasOriginalTaskbarState = false;
+            emit shellActionLogged(QString("Restored taskbar state: %1").arg(m_originalTaskbarState));
+        }
     }
 
     const bool newHidden = !visible;

@@ -1,4 +1,4 @@
-C:/Users/alexa/MacDockShell/build/MacDockShell_autogen/UEKD5UVXQ3/moc_PinnedTaskbarResolver.cpp: C:/Users/alexa/MacDockShell/src/MacDockShell/PinnedTaskbarResolver.h \
+D:/AiProjectsNow/VolchayFinder/build/MacDockShell_autogen/UEKD5UVXQ3/moc_PinnedTaskbarResolver.cpp: D:/AiProjectsNow/VolchayFinder/src/MacDockShell/PinnedTaskbarResolver.h \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QObject \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QString \
   C:/Users/alexa/Qt/6.8.3/msvc2022_64/include/QtCore/QStringList \

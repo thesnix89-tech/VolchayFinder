@@ -1,201 +1,42 @@
 ============================================================
-Session start: 2026-06-07T02:52:18.899
+Session start: 2026-06-07T03:41:32.760
 Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
+Current dir: D:/AiProjectsNow/VolchayFinder/build
 Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
 Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
 Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[TaskbarController] Taskbar hidden.
-Top-level Qt windows: 3
-  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=747 y=970 w=426 h=92
-  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
-Entering app event loop...
-[AppBarController] AppBar registered.
-[AppBarController] AppBar top rect updated.
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Icon file ready for C:\Program Files\Google\Chrome\Application\chrome.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/2674a4f12076958ffdcc97d1bc927056.png
-[DockModel] Pinned app loaded: target=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk args=<none>
-[DockModel] Icon file ready for C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/d8692ef2baed2a5011cde14bb68cdd2a.png
-[DockModel] Pinned app loaded: target=C:\Users\alexa\AppData\Roaming\Spotify\Spotify.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk args=<none>
-[DockModel] Icon file ready for D:\Aps\Telegram Desktop\Telegram.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/525e757841e230e3b773626225026086.png
-[DockModel] Pinned app loaded: target=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk args=<none>
-[DockModel] Icon file ready for C:\Program Files\WindowsApps\Microsoft.WindowsTerminal_1.18.10301.0_x64__8wekyb3d8bbwe\WindowsTerminal.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/382389644e59c23b33f9423215b26f65.png
-[DockModel] Icon file ready for D:\Aps\Vmware\vmware.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/ebc257afa1d2c8fdd52eedfd43e57ca1.png
-[DockModel] Icon file ready for C:\Windows\SystemApps\MicrosoftWindows.Client.CBS_cw5n1h2txyewy\TextInputHost.exe -> file:///C:/Users/alexa/MacDockShell/build/iconcache/3a0807579647fc2e96eb715f78467e62.png
-[DockModel] DockModel refreshed. Items: 6
-[TaskbarController] Taskbar shown.
-[TaskbarController] Quit requested. Restoring shell and exiting.
-aboutToQuit fired. Restoring taskbar and unregistering appbar.
-[AppBarController] AppBar unregistered.
-[TaskbarController] Taskbar shown.
-Application exited with code: 0
-Session end.
-[TaskbarController] Taskbar shown.
-============================================================
-Session start: 2026-06-07T02:56:12.435
-Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
-Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
-Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
-Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
-[DockModel] DockModel refreshed. Items: 6
-[TaskbarController] Taskbar hidden.
-Top-level Qt windows: 3
-  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=747 y=970 w=426 h=92
-  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
-Entering app event loop...
-[AppBarController] AppBar registered.
-[AppBarController] AppBar top rect updated.
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Spotify Free
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Spotify.lnk args=<none> cwd=C:\Users\alexa\AppData\Roaming\Spotify
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: ‎Megu (56)
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: C:\Users\alexa\MacDockShell\build\MacDockShell.exe
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: VMware Workstation
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Command Prompt - Hermes
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: megulov (@megulov) | TikTok - Google Chrome
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk args=<none> cwd=C:\Program Files\Google\Chrome\Application
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[TaskbarController] Taskbar shown.
-[TaskbarController] Quit requested. Restoring shell and exiting.
-aboutToQuit fired. Restoring taskbar and unregistering appbar.
-[AppBarController] AppBar unregistered.
-[TaskbarController] Taskbar shown.
-Application exited with code: 0
-Session end.
-[TaskbarController] Taskbar shown.
-============================================================
-Session start: 2026-06-07T02:57:04.713
-Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
-Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
-Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
-Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar hidden.
 Top-level Qt windows: 3
   title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=713 y=970 w=494 h=92
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
   title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
 Entering app event loop...
 [AppBarController] AppBar registered.
 [AppBarController] AppBar top rect updated.
-[DockModel] Activated window: Steam
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] DockModel refreshed. Items: 7
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: C:\Users\alexa\MacDockShell\build\MacDockShell.exe
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Minimized window: Windows Input Experience
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: VMware Workstation
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar shown.
 [TaskbarController] Quit requested. Restoring shell and exiting.
 aboutToQuit fired. Restoring taskbar and unregistering appbar.
@@ -205,37 +46,32 @@ Application exited with code: 0
 Session end.
 [TaskbarController] Taskbar shown.
 ============================================================
-Session start: 2026-06-07T02:57:45.743
+Session start: 2026-06-07T03:41:45.297
 Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
+Current dir: D:/AiProjectsNow/VolchayFinder/build
 Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
 Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
 Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
-[DockModel] DockModel refreshed. Items: 6
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar hidden.
 Top-level Qt windows: 3
   title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=747 y=970 w=426 h=92
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
   title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
 Entering app event loop...
 [AppBarController] AppBar registered.
 [AppBarController] AppBar top rect updated.
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\WebStorm 2026.1.3.lnk args=<none> cwd=D:\Aps\Jetbrains\WebStorm 2026.1.3
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/WebStorm 2026.1.3.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\WebStorm 2026.1.3.lnk args=<none> cwd=D:\Aps\Jetbrains\WebStorm 2026.1.3
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/WebStorm 2026.1.3.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] DockModel refreshed. Items: 6
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar shown.
 [TaskbarController] Quit requested. Restoring shell and exiting.
 aboutToQuit fired. Restoring taskbar and unregistering appbar.
@@ -245,45 +81,74 @@ Application exited with code: 0
 Session end.
 [TaskbarController] Taskbar shown.
 ============================================================
-Session start: 2026-06-07T03:00:30.001
+Session start: 2026-06-07T03:41:49.284
 Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
+Current dir: D:/AiProjectsNow/VolchayFinder/build
 Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
 Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
 Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 6
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar hidden.
 Top-level Qt windows: 3
   title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=747 y=970 w=426 h=92
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
   title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
 Entering app event loop...
 [AppBarController] AppBar registered.
 [AppBarController] AppBar top rect updated.
-[DockModel] Activated window: Steam
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 6
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 6
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar shown.
 [TaskbarController] Quit requested. Restoring shell and exiting.
 aboutToQuit fired. Restoring taskbar and unregistering appbar.
@@ -293,241 +158,602 @@ Application exited with code: 0
 Session end.
 [TaskbarController] Taskbar shown.
 ============================================================
-Session start: 2026-06-07T03:00:48.197
+Session start: 2026-06-07T03:44:22.081
 Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
+Current dir: D:/AiProjectsNow/VolchayFinder/build
 Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
 Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T03:50:08.465
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
 Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [TaskbarController] Taskbar hidden.
 Top-level Qt windows: 3
   title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=781 y=970 w=358 h=92
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
   title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
 Entering app event loop...
 [AppBarController] AppBar registered.
 [AppBarController] AppBar top rect updated.
-[DockModel] Activated window: Spotify Free
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T03:52:00.089
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T03:56:57.669
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T03:58:11.667
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:01:07.903
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:02:06.159
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:03:57.143
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 8
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:06:08.015
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Saved original work area: L=0 T=0 R=1920 B=1032
+[TaskbarController] Expanded work area bottom to: 1080
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Restored work area: L=0 T=0 R=1920 B=1032
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:06:49.049
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Saved original work area: L=0 T=0 R=1920 B=1032
+[TaskbarController] Expanded work area bottom to: 1080
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 8
+[TaskbarController] Restored work area: L=0 T=0 R=1920 B=1032
+[TaskbarController] Taskbar shown.
+[TaskbarController] Quit requested. Restoring shell and exiting.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+aboutToQuit fired. Restoring taskbar and unregistering appbar.
+[AppBarController] AppBar unregistered.
+[TaskbarController] Taskbar shown.
+Application exited with code: 0
+Session end.
+[TaskbarController] Taskbar shown.
+============================================================
+Session start: 2026-06-07T04:07:50.757
+Log path: ./MacDockShell.log
+Current dir: D:/AiProjectsNow/VolchayFinder/build
+Creating QGuiApplication...
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
+Qt version: 6.8.3
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
+Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
+Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Saved original work area: L=0 T=0 R=1920 B=1032
+[TaskbarController] Expanded work area bottom to: 1080
+[TaskbarController] Taskbar hidden.
+Top-level Qt windows: 3
+  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
+  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
+Entering app event loop...
+[AppBarController] AppBar registered.
+[AppBarController] AppBar top rect updated.
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Activated window: Fixing Docfinder Text Visibility
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Spotify.lnk args=<none> cwd=C:\Users\alexa\AppData\Roaming\Spotify
 [DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: ‎Megu (18)
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Minimized window: Abuz_ai Private
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: ‎Megu (18)
+[DockModel] DockModel refreshed. Items: 7
+[DockModel] Activated window: ‎Megu (1)
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Telegram Desktop.lnk args=<none> cwd=D:\Aps\Telegram Desktop
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: C:\Users\alexa\MacDockShell\build\MacDockShell.exe
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: New Tab - Google Chrome
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Google Chrome.lnk args=<none> cwd=C:\Program Files\Google\Chrome\Application
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Minimized window: splash
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Screenshot_18.jpg
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Minimized window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Command Prompt - Hermes
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Windows Input Experience
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Activated window: Screenshot_18.jpg
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 6
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Restored work area: L=0 T=0 R=1920 B=1032
 [TaskbarController] Taskbar shown.
 [TaskbarController] Quit requested. Restoring shell and exiting.
 aboutToQuit fired. Restoring taskbar and unregistering appbar.
@@ -537,145 +763,41 @@ Application exited with code: 0
 Session end.
 [TaskbarController] Taskbar shown.
 ============================================================
-Session start: 2026-06-07T03:09:35.560
+Session start: 2026-06-07T04:08:54.258
 Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
+Current dir: D:/AiProjectsNow/VolchayFinder/build
 Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
+Runtime log path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.log
+App dir: D:/AiProjectsNow/VolchayFinder/build
 Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
-Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
-Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[TaskbarController] Taskbar hidden.
-Top-level Qt windows: 3
-  title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=781 y=970 w=358 h=92
-  title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
-Entering app event loop...
-[AppBarController] AppBar registered.
-[AppBarController] AppBar top rect updated.
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: ‎Megu (8)
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: C:\Users\alexa\MacDockShell\build\MacDockShell.exe
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: ‎Megu (8)
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Activated window: Spotify Free
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] launchIndex: path=C:\Users\alexa\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Spotify.lnk args=<none> cwd=C:\Users\alexa\AppData\Roaming\Spotify
-[DockModel] Launched pinned app: C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Spotify.lnk
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[TaskbarController] Taskbar shown.
-[TaskbarController] Quit requested. Restoring shell and exiting.
-aboutToQuit fired. Restoring taskbar and unregistering appbar.
-[AppBarController] AppBar unregistered.
-[TaskbarController] Taskbar shown.
-Application exited with code: 0
-Session end.
-[TaskbarController] Taskbar shown.
-============================================================
-Session start: 2026-06-07T03:11:59.510
-Log path: ./MacDockShell.log
-Current dir: C:/Users/alexa/MacDockShell/build
-Creating QGuiApplication...
-Runtime log path: C:/Users/alexa/MacDockShell/build/MacDockShell.log
-App dir: C:/Users/alexa/MacDockShell/build
-Qt version: 6.8.3
-Application file path: C:/Users/alexa/MacDockShell/build/MacDockShell.exe
-Library paths: C:/Users/alexa/MacDockShell/build
+Application file path: D:/AiProjectsNow/VolchayFinder/build/MacDockShell.exe
+Library paths: D:/AiProjectsNow/VolchayFinder/build
 Loading QML entry: qrc:/src/MacDockShell/qml/TopBarWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/DockWindow.qml
 Loading QML entry: qrc:/src/MacDockShell/qml/ControlWindow.qml
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Saved original taskbar state: 0
+[TaskbarController] Taskbar state set to ABS_AUTOHIDE.
 [TaskbarController] Taskbar hidden.
 Top-level Qt windows: 3
   title=MacDockShellTopBar visible=true flags=264203 x=0 y=0 w=1920 h=34
-  title=MacDockShellDock visible=true flags=264203 x=781 y=970 w=358 h=92
+  title=MacDockShellDock visible=true flags=264203 x=713 y=922 w=494 h=140
   title=MacDockShellControls visible=true flags=264203 x=1760 y=914 w=140 h=38
 Entering app event loop...
 [AppBarController] AppBar registered.
 [AppBarController] AppBar top rect updated.
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
 [DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
 [DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
-[DockModel] Merged dock item by fallback: before=telegram.telegramdesktop.19a48c203bfb426d48b45d3a2461bfdb after=d:/aps/telegram desktop/telegram.exe exe=D:\Aps\Telegram Desktop\Telegram.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Telegram Desktop.lnk
-[DockModel] Merged dock item by fallback: before=chrome after=c:/program files/google/chrome/application/chrome.exe exe=C:\Program Files\Google\Chrome\Application\chrome.exe launch=C:/Users/alexa/AppData/Roaming/Microsoft/Internet Explorer/Quick Launch/User Pinned/TaskBar/Google Chrome.lnk
-[DockModel] DockModel refreshed. Items: 5
+[DockModel] DockModel refreshed. Items: 7
+[TaskbarController] Restored taskbar state: 0
 [TaskbarController] Taskbar shown.
 [TaskbarController] Quit requested. Restoring shell and exiting.
 aboutToQuit fired. Restoring taskbar and unregistering appbar.
