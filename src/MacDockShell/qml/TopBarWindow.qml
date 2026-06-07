@@ -16,18 +16,9 @@ Window {
 
     Rectangle {
         anchors.fill: parent
-        color: "#3CFFFFFF" // Translucent white (approx. 24% opacity)
+        color: "#F6F3F4F6"
         border.width: 1
-        border.color: "#66FFFFFF" // Semi-transparent border (40% opacity)
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: Math.max(0, parent.radius - 1)
-            color: "transparent"
-            border.width: 1
-            border.color: "#1AFFFFFF" // Subtle inner specular highlight (10% opacity)
-        }
+        border.color: "#E2E4E9"
 
         RowLayout {
             anchors.fill: parent
