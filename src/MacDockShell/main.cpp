@@ -16,16 +16,6 @@
 #include "DockModel.h"
 #include "AppBarController.h"
 
-#include <dwmapi.h>
-
-#ifndef DWMWA_SYSTEMBACKDROP_TYPE
-#define DWMWA_SYSTEMBACKDROP_TYPE 38
-#endif
-
-#ifndef DWMSBT_TRANSIENTWINDOW
-#define DWMSBT_TRANSIENTWINDOW 3
-#endif
-
 namespace {
 
 QFile* gLogFile = nullptr;
@@ -203,23 +193,11 @@ int main(int argc, char *argv[])
     dockModel.refresh();
     taskbarController.hideTaskbar();
 
-    QTimer::singleShot(200, [&topBarEngine, &dockEngine, &appBarController]() {
+    QTimer::singleShot(200, [&topBarEngine, &appBarController]() {
         if (!topBarEngine.rootObjects().isEmpty()) {
             QObject* root = topBarEngine.rootObjects().constFirst();
             if (auto* window = qobject_cast<QWindow*>(root)) {
-                HWND hwnd = reinterpret_cast<HWND>(window->winId());
-                int backdropType = 3; // DWMSBT_TRANSIENTWINDOW (Acrylic)
-                DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
-                
                 appBarController.registerTopBar(reinterpret_cast<void*>(window->winId()), window->height());
-            }
-        }
-        if (!dockEngine.rootObjects().isEmpty()) {
-            QObject* root = dockEngine.rootObjects().constFirst();
-            if (auto* window = qobject_cast<QWindow*>(root)) {
-                HWND hwnd = reinterpret_cast<HWND>(window->winId());
-                int backdropType = 3; // DWMSBT_TRANSIENTWINDOW (Acrylic)
-                DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
             }
         }
     });
