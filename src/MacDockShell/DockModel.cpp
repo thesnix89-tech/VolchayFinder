@@ -95,20 +95,35 @@ BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
         return TRUE;
     }
 
-    const QString exeName = QFileInfo(exePath).fileName().toLower();
+    QString resolvedExePath = exePath;
+    QString exeName = QFileInfo(exePath).fileName().toLower();
     if (exeName == "explorer.exe" || exeName == "shellexperiencehost.exe" || exeName == "searchhost.exe" || exeName == "startmenuexperiencehost.exe") {
         return TRUE;
+    }
+
+    if (exeName == "steamwebhelper.exe") {
+        QDir dir = QFileInfo(exePath).absoluteDir();
+        for (int i = 0; i < 4; ++i) {
+            if (dir.exists("steam.exe")) {
+                resolvedExePath = dir.filePath("steam.exe");
+                exeName = "steam.exe";
+                break;
+            }
+            if (!dir.cdUp()) {
+                break;
+            }
+        }
     }
 
     const QString title = windowText(hwnd);
 
     DockItemEntry entry;
-    entry.exePath = exePath;
-    entry.launchPath = exePath;
-    entry.appId = lowerPath(exePath);
-    entry.label = QFileInfo(exePath).completeBaseName();
+    entry.exePath = resolvedExePath;
+    entry.launchPath = resolvedExePath;
+    entry.appId = lowerPath(resolvedExePath);
+    entry.label = (exeName == "steam.exe") ? QStringLiteral("Steam") : QFileInfo(resolvedExePath).completeBaseName();
     entry.windowTitle = title.isEmpty() ? entry.label : title;
-    entry.iconHint = QFileInfo(exePath).completeBaseName().left(1).toUpper();
+    entry.iconHint = entry.label.left(1).toUpper();
     entry.hwndValue = reinterpret_cast<qint64>(hwnd);
     entry.running = true;
     entry.active = (GetForegroundWindow() == hwnd);
