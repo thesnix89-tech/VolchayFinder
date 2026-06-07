@@ -148,6 +148,17 @@ Window {
                         }
                     }
 
+                    Rectangle {
+                        width: 8
+                        height: 5
+                        radius: 3
+                        visible: dockItemRoot.running
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 6
+                        color: dockItemRoot.active ? "#7FAEFF" : "#9AA7BD"
+                        opacity: 0.95
+                    }
 
                     Rectangle {
                         id: tooltipBg
