@@ -26,7 +26,7 @@ Window {
         // Sidebar Pane
         Rectangle {
             id: sidebar
-            width: 160
+            width: 170
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
@@ -43,8 +43,8 @@ Window {
 
             // Window controls (Traffic lights) in top left
             Row {
-                x: 14
-                y: 16
+                x: 16
+                y: 18
                 spacing: 8
 
                 // Red Close Button
@@ -100,12 +100,12 @@ Window {
             }
 
             // Sidebar Menu
-            Column {
+            ColumnLayout {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
-                anchors.topMargin: 48
-                spacing: 4
+                anchors.topMargin: 44
+                spacing: 8
 
                 // Preferences Title
                 Text {
@@ -113,26 +113,28 @@ Window {
                     color: "#5C5C5C"
                     font.pixelSize: 11
                     font.weight: Font.Bold
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottomMargin: 10
+                    Layout.leftMargin: 16
+                    Layout.topMargin: 6
                 }
 
                 // Sidebar Item: Desktop & Dock
                 Rectangle {
-                    width: parent.width - 16
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
                     height: 30
                     radius: 6
                     color: "#007AFF" // Active item in macOS blue accent
-                    anchors.horizontalCenter: parent.horizontalCenter
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 8
+                        anchors.leftMargin: 10
                         spacing: 8
 
                         Text {
                             text: "💻"
-                            font.pixelSize: 14
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignVCenter
                         }
 
                         Text {
@@ -140,6 +142,7 @@ Window {
                             color: "white"
                             font.pixelSize: 12
                             font.weight: Font.Medium
+                            Layout.alignment: Qt.AlignVCenter
                         }
                     }
                 }
@@ -153,6 +156,7 @@ Window {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.margins: 20
+            anchors.bottomMargin: 16
 
             // Header Title
             Text {
@@ -162,6 +166,7 @@ Window {
                 font.pixelSize: 17
                 font.weight: Font.Bold
                 anchors.top: parent.top
+                anchors.topMargin: 10
                 anchors.left: parent.left
             }
 
@@ -172,15 +177,18 @@ Window {
                 anchors.topMargin: 16
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: 180
+                height: innerLayout.implicitHeight + 24
                 radius: 10
                 color: "#FFFFFF"
                 border.width: 1
                 border.color: "#E5E5E5"
 
                 ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
+                    id: innerLayout
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 12
                     spacing: 0
 
                     // Option 1: Hide Taskbar
@@ -190,6 +198,7 @@ Window {
 
                         ColumnLayout {
                             spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
                             Text {
                                 text: "Автоматически скрывать панель задач Windows"
                                 color: "#1D1D1F"
@@ -208,8 +217,9 @@ Window {
                         // Custom Toggle Switch
                         Item {
                             id: hideTaskbarToggle
-                            width: 36
-                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
                             property bool checked: true
 
                             Rectangle {
@@ -254,6 +264,7 @@ Window {
 
                         ColumnLayout {
                             spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
                             Text {
                                 text: "Показывать строку меню macOS"
                                 color: "#1D1D1F"
@@ -272,8 +283,9 @@ Window {
                         // Custom Toggle Switch
                         Item {
                             id: showTopBarToggle
-                            width: 36
-                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
                             property bool checked: taskbarController.showTopBar
 
                             Rectangle {
@@ -318,6 +330,7 @@ Window {
 
                         ColumnLayout {
                             spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
                             Text {
                                 text: "Размер иконок дока"
                                 color: "#1D1D1F"
@@ -340,6 +353,9 @@ Window {
                             to: 64
                             value: taskbarController.dockIconSize
                             stepSize: 1
+                            Layout.preferredWidth: 100
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
 
                             background: Rectangle {
                                 x: iconSizeSlider.leftPadding
@@ -378,6 +394,7 @@ Window {
                             font.pixelSize: 11
                             font.weight: Font.Medium
                             Layout.preferredWidth: 36
+                            Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignRight
                         }
                     }
@@ -394,28 +411,24 @@ Window {
                 // Red/Grey Button to Exit App
                 Button {
                     id: exitBtn
+                    text: "Выход"
+                    Layout.preferredWidth: 80
+                    Layout.preferredHeight: 30
+
                     contentItem: Text {
-                        text: "Выход"
-                        color: exitBtnMouse.containsMouse ? "#B3261E" : "#8E8E93"
-                        font.pixelSize: 12
+                        text: exitBtn.text
+                        color: exitBtn.hovered ? "#FF453A" : "#8E8E93"
+                        font.pixelSize: 13
                         font.weight: Font.Medium
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     background: Rectangle {
-                        implicitWidth: 80
-                        implicitHeight: 28
                         color: "transparent"
                     }
 
-                    MouseArea {
-                        id: exitBtnMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: taskbarController.quitApplication()
-                    }
+                    onClicked: taskbarController.quitApplication()
                 }
 
                 Item { Layout.fillWidth: true }
@@ -423,36 +436,31 @@ Window {
                 // macOS Accent Blue Apply Button
                 Button {
                     id: applyBtn
+                    text: "Применить"
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 30
+
                     contentItem: Text {
-                        text: "Применить"
+                        text: applyBtn.text
                         color: "white"
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     background: Rectangle {
-                        implicitWidth: 100
-                        implicitHeight: 28
                         radius: 6
-                        color: applyBtnMouse.containsMouse ? "#0062CC" : "#007AFF"
+                        color: applyBtn.down ? "#0051C7" : (applyBtn.hovered ? "#0062E3" : "#007AFF")
 
                         Behavior on color { ColorAnimation { duration: 100 } }
                     }
 
-                    MouseArea {
-                        id: applyBtnMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            // If hideTaskbarToggle is not checked, we can show standard taskbar
-                            if (!hideTaskbarToggle.checked) {
-                                taskbarController.showTaskbar();
-                            }
-                            taskbarController.apply(showTopBarToggle.checked, Math.round(iconSizeSlider.value));
+                    onClicked: {
+                        if (!hideTaskbarToggle.checked) {
+                            taskbarController.showTaskbar();
                         }
+                        taskbarController.apply(showTopBarToggle.checked, Math.round(iconSizeSlider.value));
                     }
                 }
             }
