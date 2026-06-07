@@ -32,14 +32,16 @@ Window {
             anchors.fill: parent
             anchors.leftMargin: 16
             anchors.rightMargin: 16
-            contentWidth: dockRow.implicitWidth
-            contentHeight: dockRow.height
+            contentWidth: Math.max(width, dockRow.implicitWidth)
+            contentHeight: height
             clip: true
-            interactive: contentWidth > width
+            interactive: dockRow.implicitWidth > width
 
             Row {
                 id: dockRow
-                y: 10
+                x: dockRow.implicitWidth < parent.width ? Math.round((parent.width - dockRow.implicitWidth) / 2) : 0
+                y: Math.round((parent.height - height) / 2)
+                height: 64
                 spacing: 14
 
                 Repeater {
@@ -75,10 +77,11 @@ Window {
                             width: parent.width
                             height: parent.width
                             radius: 18
+                            anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
-                            color: dockItemRoot.active ? "#EAF2FF" : (mouseArea.containsMouse ? "#FFFFFFF0" : "#FFFFFFCC")
-                            border.width: 1
-                            border.color: dockItemRoot.active ? "#BFD3FF" : (mouseArea.containsMouse ? "#D7DDE7" : "#E4E8EE")
+                            color: "transparent"
+                            border.width: 0
+                            border.color: "transparent"
                             y: mouseArea.containsMouse ? -8 : 0
 
                             Behavior on y {
@@ -95,7 +98,9 @@ Window {
 
                                 Image {
                                     id: dockIconImage
-                                    anchors.fill: parent
+                                    anchors.centerIn: parent
+                                    width: parent.width
+                                    height: parent.height
                                     source: dockItemRoot.iconUrl
                                     fillMode: Image.PreserveAspectFit
                                     smooth: true
@@ -104,7 +109,9 @@ Window {
                                 }
 
                                 Rectangle {
-                                    anchors.fill: parent
+                                    anchors.centerIn: parent
+                                    width: parent.width
+                                    height: parent.height
                                     radius: 8
                                     color: "#D7DDE780"
                                     visible: dockIconImage.status !== Image.Ready
@@ -137,14 +144,15 @@ Window {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: iconBubble.top
                             anchors.bottomMargin: 10
-                            width: tooltipText.implicitWidth + 18
-                            height: 34
+                            width: Math.max(tooltipColumn.implicitWidth + 18, 72)
+                            height: tooltipColumn.implicitHeight + 12
                             radius: 14
                             color: "#FFFFFFF7"
                             border.width: 1
                             border.color: "#DDE3EC"
                             opacity: mouseArea.containsMouse ? 1 : 0
                             visible: opacity > 0
+                            z: 20
 
                             Behavior on opacity {
                                 NumberAnimation {
@@ -153,6 +161,7 @@ Window {
                             }
 
                             Column {
+                                id: tooltipColumn
                                 anchors.centerIn: parent
                                 spacing: 1
 
@@ -162,13 +171,23 @@ Window {
                                     text: dockItemRoot.label
                                     color: "#1C222B"
                                     font.pixelSize: 11
+                                    font.weight: Font.Medium
+                                    horizontalAlignment: Text.AlignHCenter
+                                    wrapMode: Text.NoWrap
+                                    maximumLineCount: 1
+                                    elide: Text.ElideRight
                                 }
 
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
+                                    width: Math.min(220, implicitWidth)
                                     text: dockItemRoot.windowTitle
                                     color: "#6B7380"
                                     font.pixelSize: 9
+                                    horizontalAlignment: Text.AlignHCenter
+                                    wrapMode: Text.NoWrap
+                                    maximumLineCount: 1
+                                    elide: Text.ElideRight
                                     visible: dockItemRoot.windowTitle.length > 0
                                 }
                             }
