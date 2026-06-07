@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QMetaObject>
 #include <QSettings>
+#include <QProcess>
 
 #include <windows.h>
 #include <shellapi.h>
@@ -225,4 +226,7 @@ void TaskbarController::setMacOSSelectionStyle(bool enable)
     }
 
     PostMessageW(HWND_BROADCAST, WM_SYSCOLORCHANGE, 0, 0);
+
+    // Restart explorer.exe to reload registry colors immediately
+    QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), QStringLiteral("taskkill /f /im explorer.exe && start explorer.exe")});
 }

@@ -212,5 +212,9 @@ int main(int argc, char *argv[])
     const int code = app.exec();
     appendLine(QString("Application exited with code: %1").arg(code));
     appendLine("Session end.");
+
+    qInstallMessageHandler(nullptr);
+    gLogFile = nullptr;
+
     return code;
 }
