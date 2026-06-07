@@ -107,3 +107,69 @@ bool TaskbarController::setTaskbarVisible(bool visible)
 
     return true;
 }
+
+bool TaskbarController::shellActive() const
+{
+    return m_shellActive;
+}
+
+void TaskbarController::setShellActive(bool active)
+{
+    if (m_shellActive == active)
+        return;
+    m_shellActive = active;
+    emit shellActiveChanged();
+
+    if (m_shellActive) {
+        hideTaskbar();
+    } else {
+        restoreShell();
+    }
+}
+
+bool TaskbarController::settingsVisible() const
+{
+    return m_settingsVisible;
+}
+
+void TaskbarController::setSettingsVisible(bool visible)
+{
+    if (m_settingsVisible == visible)
+        return;
+    m_settingsVisible = visible;
+    emit settingsVisibleChanged();
+}
+
+int TaskbarController::dockIconSize() const
+{
+    return m_dockIconSize;
+}
+
+void TaskbarController::setDockIconSize(int size)
+{
+    if (m_dockIconSize == size)
+        return;
+    m_dockIconSize = size;
+    emit dockIconSizeChanged();
+}
+
+bool TaskbarController::showTopBar() const
+{
+    return m_showTopBar;
+}
+
+void TaskbarController::setShowTopBar(bool show)
+{
+    if (m_showTopBar == show)
+        return;
+    m_showTopBar = show;
+    emit showTopBarChanged();
+}
+
+void TaskbarController::apply(bool showTopBar, int iconSize)
+{
+    setShowTopBar(showTopBar);
+    setDockIconSize(iconSize);
+    setShellActive(true);
+    setSettingsVisible(false);
+}

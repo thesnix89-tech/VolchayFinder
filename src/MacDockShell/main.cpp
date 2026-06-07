@@ -191,14 +191,17 @@ int main(int argc, char *argv[])
     }
 
     dockModel.refresh();
-    taskbarController.hideTaskbar();
 
-    QTimer::singleShot(200, [&topBarEngine, &appBarController]() {
-        if (!topBarEngine.rootObjects().isEmpty()) {
-            QObject* root = topBarEngine.rootObjects().constFirst();
-            if (auto* window = qobject_cast<QWindow*>(root)) {
-                appBarController.registerTopBar(reinterpret_cast<void*>(window->winId()), window->height());
+    QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, [&topBarEngine, &appBarController, &taskbarController]() {
+        if (taskbarController.shellActive()) {
+            if (!topBarEngine.rootObjects().isEmpty()) {
+                QObject* root = topBarEngine.rootObjects().constFirst();
+                if (auto* window = qobject_cast<QWindow*>(root)) {
+                    appBarController.registerTopBar(reinterpret_cast<void*>(window->winId()), window->height());
+                }
             }
+        } else {
+            appBarController.unregisterTopBar();
         }
     });
 

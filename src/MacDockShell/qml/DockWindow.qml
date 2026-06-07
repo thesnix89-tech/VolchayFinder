@@ -6,10 +6,10 @@ import QtQuick.Layouts
 Window {
     id: dockWindow
     width: Math.min(dockRow.implicitWidth + 32, Screen.width - 40)
-    height: 140
+    height: taskbarController.dockIconSize + 86
     x: Math.round((Screen.width - width) / 2)
     y: Screen.height - height - 18
-    visible: true
+    visible: taskbarController.shellActive
     color: "transparent"
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
@@ -26,7 +26,7 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: 92
+        height: taskbarController.dockIconSize + 38
         radius: 28
         color: "#F8F3F4F6"
         border.width: 1
@@ -46,8 +46,8 @@ Window {
         Row {
             id: dockRow
             x: dockRow.implicitWidth < parent.width ? Math.round((parent.width - dockRow.implicitWidth) / 2) : 0
-            y: parent.height - 92
-            height: 92
+            y: parent.height - (taskbarController.dockIconSize + 38)
+            height: taskbarController.dockIconSize + 38
             spacing: 14
 
             Repeater {
@@ -66,8 +66,8 @@ Window {
                     required property bool minimized
                     required property bool clickable
 
-                    width: mouseArea.containsMouse ? 72 : 54
-                    height: 92
+                    width: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
+                    height: taskbarController.dockIconSize + 38
 
                     opacity: dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55
 
@@ -100,8 +100,8 @@ Window {
                         Item {
                             id: iconContainer
                             anchors.centerIn: parent
-                            width: mouseArea.containsMouse ? 56 : 42
-                            height: mouseArea.containsMouse ? 56 : 42
+                            width: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
+                            height: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
 
                             Behavior on width {
                                 NumberAnimation {

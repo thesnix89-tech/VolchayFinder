@@ -7,6 +7,10 @@ class TaskbarController : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool taskbarHidden READ taskbarHidden NOTIFY taskbarHiddenChanged)
+    Q_PROPERTY(bool shellActive READ shellActive WRITE setShellActive NOTIFY shellActiveChanged)
+    Q_PROPERTY(bool settingsVisible READ settingsVisible WRITE setSettingsVisible NOTIFY settingsVisibleChanged)
+    Q_PROPERTY(int dockIconSize READ dockIconSize WRITE setDockIconSize NOTIFY dockIconSizeChanged)
+    Q_PROPERTY(bool showTopBar READ showTopBar WRITE setShowTopBar NOTIFY showTopBarChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -16,12 +20,25 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
+    Q_INVOKABLE void apply(bool showTopBar, int iconSize);
 
     bool taskbarHidden() const;
+    bool shellActive() const;
+    void setShellActive(bool active);
+    bool settingsVisible() const;
+    void setSettingsVisible(bool visible);
+    int dockIconSize() const;
+    void setDockIconSize(int size);
+    bool showTopBar() const;
+    void setShowTopBar(bool show);
 
 signals:
     void taskbarHiddenChanged();
     void shellActionLogged(const QString& message);
+    void shellActiveChanged();
+    void settingsVisibleChanged();
+    void dockIconSizeChanged();
+    void showTopBarChanged();
 
 private:
     bool setTaskbarVisible(bool visible);
@@ -29,4 +46,8 @@ private:
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
     bool m_hasOriginalTaskbarState = false;
+    bool m_shellActive = false;
+    bool m_settingsVisible = true;
+    int m_dockIconSize = 54;
+    bool m_showTopBar = true;
 };

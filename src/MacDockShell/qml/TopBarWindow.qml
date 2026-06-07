@@ -9,7 +9,7 @@ Window {
     height: 34
     x: 0
     y: 0
-    visible: true
+    visible: taskbarController.shellActive && taskbarController.showTopBar
     color: "transparent"
     title: "MacDockShellTopBar"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
@@ -34,6 +34,13 @@ Window {
                     color: "#1A1F26"
                     font.pixelSize: 16
                     font.weight: Font.Medium
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: taskbarController.settingsVisible = !taskbarController.settingsVisible
+                    }
                 }
 
                 Repeater {
