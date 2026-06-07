@@ -230,3 +230,9 @@ void TaskbarController::setMacOSSelectionStyle(bool enable)
     // Restart explorer.exe to reload registry colors immediately
     QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), QStringLiteral("taskkill /f /im explorer.exe && start explorer.exe")});
 }
+
+void TaskbarController::restartExplorer()
+{
+    emit shellActionLogged(QStringLiteral("Manually restarting explorer.exe"));
+    QProcess::startDetached(QStringLiteral("cmd.exe"), {QStringLiteral("/c"), QStringLiteral("taskkill /f /im explorer.exe && start explorer.exe")});
+}

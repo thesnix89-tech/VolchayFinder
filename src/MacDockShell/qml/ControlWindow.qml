@@ -392,6 +392,33 @@ Window {
                             }
                         }
 
+                        // Restart Explorer Button (macOS style secondary button)
+                        Button {
+                            id: restartExplorerBtn
+                            text: "Перезапустить Проводник"
+                            Layout.preferredHeight: 24
+                            Layout.preferredWidth: 150
+                            Layout.alignment: Qt.AlignVCenter
+
+                            contentItem: Text {
+                                text: restartExplorerBtn.text
+                                color: "#1D1D1F"
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            background: Rectangle {
+                                radius: 4
+                                color: restartExplorerBtn.down ? "#E4E4E5" : (restartExplorerBtn.hovered ? "#ECECEC" : "#F5F5F7")
+                                border.width: 1
+                                border.color: "#D1D1D6"
+                            }
+
+                            onClicked: taskbarController.restartExplorer()
+                        }
+
                         // Custom Toggle Switch
                         Rectangle {
                             id: selectionStyleToggle

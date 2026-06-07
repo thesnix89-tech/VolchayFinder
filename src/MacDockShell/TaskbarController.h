@@ -23,6 +23,7 @@ public:
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
     Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, bool macOSSelectionStyle, int iconSize);
+    Q_INVOKABLE void restartExplorer();
 
     bool taskbarHidden() const;
     bool shellActive() const;
