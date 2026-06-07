@@ -6,6 +6,7 @@
 #include <QPointer>
 #include <QQuickWindow>
 #include <QSet>
+#include <QTimer>
 #include <QVariantList>
 
 #include <memory>
@@ -119,6 +120,7 @@ void applyClientRegion(HWND hwnd, HRGN region)
     if (!hwnd) {
         return;
     }
+    // SetWindowRgn takes ownership of the region handle on success.
     SetWindowRgn(hwnd, region, TRUE);
 }
 
@@ -199,9 +201,15 @@ public:
 
     std::shared_ptr<DockWindowHitData> dataForHwnd(HWND hwnd) const
     {
+        if (!hwnd) {
+            return {};
+        }
         for (auto it = dataByRoot.constBegin(); it != dataByRoot.constEnd(); ++it) {
-            if (it.value()->hwndTree.contains(hwnd)) {
-                return it.value();
+            const HWND root = it.key();
+            for (HWND walk = hwnd; walk; walk = GetParent(walk)) {
+                if (walk == root) {
+                    return it.value();
+                }
             }
         }
         return {};
@@ -278,6 +286,9 @@ static void applyRegionsToWindowTree(const std::shared_ptr<DockWindowHitData>& d
 
     for (HWND hwnd : data->hwndTree) {
         HRGN region = buildClientRegion(hwnd, data->clipRegions);
+        if (!region) {
+            region = CreateRectRgn(0, 0, 0, 0);
+        }
         applyClientRegion(hwnd, region);
     }
 }
@@ -306,6 +317,54 @@ QList<QRect> variantListToRects(const QVariantList& list)
         }
     }
     return rects;
+}
+
+QList<QRect> localRectsToScreen(QWindow* window, const QList<QRect>& localRects)
+{
+    QList<QRect> screen;
+    if (!window) {
+        return localRects;
+    }
+    screen.reserve(localRects.size());
+    for (const QRect& local : localRects) {
+        const QPoint topLeft = window->mapToGlobal(local.topLeft());
+        const QPoint bottomRight = window->mapToGlobal(local.bottomRight());
+        screen.append(QRect(topLeft, bottomRight).normalized());
+    }
+    return screen;
+}
+
+static void ensureHwndResyncHook(QWindow* window, DockClickThroughState* state)
+{
+    auto* quickWindow = qobject_cast<QQuickWindow*>(window);
+    if (!quickWindow || !state) {
+        return;
+    }
+
+    static QSet<QWindow*> hooked;
+    if (hooked.contains(window)) {
+        return;
+    }
+    hooked.insert(window);
+
+    auto* resyncTimer = new QTimer(window);
+    resyncTimer->setInterval(80);
+    resyncTimer->setSingleShot(true);
+
+    QObject::connect(resyncTimer, &QTimer::timeout, window, [state, window]() {
+        const HWND root = reinterpret_cast<HWND>(window->winId());
+        if (!root) {
+            return;
+        }
+        const auto data = state->dataByRoot.value(root);
+        if (data) {
+            applyRegionsToWindowTree(data);
+        }
+    });
+
+    QObject::connect(quickWindow, &QQuickWindow::frameSwapped, window, [resyncTimer]() {
+        resyncTimer->start();
+    });
 }
 
 WindowEffects::WindowEffects(QObject* parent)
@@ -404,6 +463,8 @@ void WindowEffects::enableDockClickThrough(QWindow* window)
         data->rootHwnd = hwnd;
         m_dockClickThroughState->dataByRoot.insert(hwnd, data);
     }
+
+    ensureHwndResyncHook(window, m_dockClickThroughState.get());
 }
 
 void WindowEffects::updateDockHitRegions(QWindow* window, const QVariantList& clipRegions,
@@ -426,8 +487,10 @@ void WindowEffects::updateDockHitRegions(QWindow* window, const QVariantList& cl
         m_dockClickThroughState->dataByRoot.insert(hwnd, data);
     }
 
-    data->clipRegions = variantListToRects(clipRegions);
-    data->hitRegions = variantListToRects(hitRegions);
+    const QList<QRect> clipLocal = variantListToRects(clipRegions);
+    const QList<QRect> hitLocal = variantListToRects(hitRegions);
+    data->clipRegions = localRectsToScreen(window, clipLocal);
+    data->hitRegions = localRectsToScreen(window, hitLocal);
     applyRegionsToWindowTree(data);
 }
 

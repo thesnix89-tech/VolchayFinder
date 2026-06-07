@@ -282,6 +282,7 @@ Window {
     }
 
     Behavior on x {
+        enabled: !dockWindow.reordering
         NumberAnimation { duration: dockShrinkAnimMs; easing.type: Easing.OutCubic }
     }
     // Resting position; slides fully below the screen when a fullscreen app is active.
@@ -295,21 +296,21 @@ Window {
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
-    function dockWindowScreenRect() {
-        var origin = dockWindow.mapToGlobal(0, 0)
-        return Qt.rect(origin.x, origin.y, dockWindow.width, dockWindow.height)
+    // Window-local coords — C++ maps to native screen pixels via QWindow::mapToGlobal.
+    function dockWindowLocalRect() {
+        return Qt.rect(0, 0, dockWindow.width, dockWindow.height)
     }
 
-    function pillScreenRect() {
-        var pillPt = dockBg.mapToGlobal(0, 0)
+    function pillLocalRect() {
+        var pillPt = dockBg.mapToItem(dockWindow.contentItem, 0, 0)
         return Qt.rect(pillPt.x, pillPt.y, dockBg.width, dockBg.height)
     }
 
     function appendIconHitRegions(list) {
         for (var i = 0; i < dockRepeater.count; ++i) {
             var item = dockRepeater.itemAt(i)
-            if (item && item.globalHitRect)
-                list.push(item.globalHitRect())
+            if (item && item.localHitRect)
+                list.push(item.localHitRect())
         }
     }
 
@@ -319,20 +320,21 @@ Window {
 
         var clipRegions = []
         var hitRegions = []
-        var fullWin = dockWindow.dockWindowScreenRect()
-        var pill = dockWindow.pillScreenRect()
-
-        hitRegions.push(pill)
-        dockWindow.appendIconHitRegions(hitRegions)
+        var fullWin = dockWindow.dockWindowLocalRect()
+        var pill = dockWindow.pillLocalRect()
 
         if (dockWindow.reordering) {
             clipRegions.push(fullWin)
-            hitRegions = [fullWin]
-        } else if (dockWindow.someVisualOverflow()) {
-            clipRegions.push(fullWin)
+            hitRegions.push(fullWin)
         } else {
-            clipRegions.push(pill)
-            dockWindow.appendIconHitRegions(clipRegions)
+            hitRegions.push(pill)
+            dockWindow.appendIconHitRegions(hitRegions)
+            if (dockWindow.someVisualOverflow()) {
+                clipRegions.push(fullWin)
+            } else {
+                clipRegions.push(pill)
+                dockWindow.appendIconHitRegions(clipRegions)
+            }
         }
 
         windowEffects.updateDockHitRegions(dockWindow, clipRegions, hitRegions)
@@ -352,6 +354,7 @@ Window {
     function armClickThrough() {
         windowEffects.enableDockClickThrough(dockWindow)
         refreshClickHitRegions()
+        childHwndResyncTimer.restart()
     }
 
     Component.onCompleted: {
@@ -383,20 +386,19 @@ Window {
         onTriggered: dockWindow.armClickThrough()
     }
 
-    onWidthChanged: clickThroughWarmupTimer.restart()
-    onHeightChanged: clickThroughWarmupTimer.restart()
-
-    onXChanged: refreshClickHitRegions()
-    onYChanged: refreshClickHitRegions()
-    onDockPackTChanged: refreshClickHitRegions()
-
+    // Qt may create the render child HWND after first layout.
     Timer {
-        id: hitRegionSyncTimer
-        interval: 16
-        running: dockWindow.reordering || dockWindow.someVisualOverflow()
-        repeat: true
+        id: childHwndResyncTimer
+        interval: 600
+        repeat: false
         onTriggered: dockWindow.refreshClickHitRegions()
     }
+
+    onWidthChanged: clickThroughWarmupTimer.restart()
+    onHeightChanged: clickThroughWarmupTimer.restart()
+    onXChanged: refreshClickHitRegions()
+    onYChanged: refreshClickHitRegions()
+    onDockPackTChanged: clickThroughWarmupTimer.restart()
 
     // macOS-style: glide the dock down/up when toggling fullscreen.
     Behavior on y {
@@ -459,7 +461,7 @@ Window {
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 22
-        onWidthChanged: dockWindow.refreshClickHitRegions()
+        onWidthChanged: clickThroughWarmupTimer.restart()
 
         // macOS Monterey 12 dock — opaque tints (no see-through).
         gradient: Gradient {
@@ -528,9 +530,14 @@ Window {
         }
     }
 
+    // Only the dock row — not the airspace/wings above/side (those must pass clicks through).
     Flickable {
         id: flickable
-        anchors.fill: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: dockWindow.dockBottomGap
+        width: dockRowHost.width
+        height: taskbarController.dockIconSize + 38
         contentWidth: Math.max(width, dockRowHost.width)
         contentHeight: height
         clip: false
@@ -541,7 +548,7 @@ Window {
             width: dockWindow.dockRowWidth
             height: taskbarController.dockIconSize + 38
             x: width < parent.width ? Math.round((parent.width - width) / 2) : 0
-            y: parent.height - height - dockWindow.dockBottomGap
+            y: 0
 
             Behavior on x {
                 NumberAnimation { duration: dockWindow.dockShrinkAnimMs; easing.type: Easing.OutCubic }
@@ -577,8 +584,8 @@ Window {
                         dockWindow.dragLeftX = dockItemRoot.x + mouseArea.mouseX - dockItemRoot.grabLocalX
                     }
 
-                    function globalHitRect() {
-                        var pt = iconBubble.mapToGlobal(0, 0)
+                    function localHitRect() {
+                        var pt = iconBubble.mapToItem(dockWindow.contentItem, 0, 0)
                         var scale = dockItemRoot.magnifyHover ? 1.18 : 1.0
                         var pad = dockItemRoot.reorderLifted ? 12 : 8
                         var w = iconBubble.width * scale + pad * 2
@@ -726,17 +733,11 @@ Window {
                                 yScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
                                 Behavior on xScale {
                                     enabled: !dockItemRoot.dragging
-                                    SpringAnimation {
-                                        spring: 4.0; damping: 0.5; epsilon: 0.2
-                                        onRunningChanged: dockWindow.refreshClickHitRegions()
-                                    }
+                                    SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
                                 }
                                 Behavior on yScale {
                                     enabled: !dockItemRoot.dragging
-                                    SpringAnimation {
-                                        spring: 4.0; damping: 0.5; epsilon: 0.2
-                                        onRunningChanged: dockWindow.refreshClickHitRegions()
-                                    }
+                                    SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
                                 }
                             }
                         ]
@@ -744,7 +745,6 @@ Window {
                         SequentialAnimation {
                             id: launchBounceAnim
                             running: false
-                            onRunningChanged: dockWindow.refreshClickHitRegions()
                             // Single launch hop in every mode.
                             loops: 1
                             NumberAnimation { target: launchTranslate; property: "y"; from: 0; to: -22; duration: 220; easing.type: Easing.OutQuad }
