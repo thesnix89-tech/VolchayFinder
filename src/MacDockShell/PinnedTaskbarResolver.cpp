@@ -127,9 +127,10 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
         while (it.hasNext()) {
             const QString filePath = it.next();
             const PinnedShortcutEntry entry = resolveShortcut(filePath);
-            if (!entry.targetPath.isEmpty() || !entry.appUserModelId.isEmpty()) {
-                results.push_back(entry);
-            }
+            // Keep every pinned shortcut from these curated folders, including special
+            // shell links like "File Explorer" whose GetPath() resolves to an empty
+            // target (they launch via the .lnk and get their icon from it).
+            results.push_back(entry);
         }
     }
 

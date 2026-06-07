@@ -100,7 +100,9 @@ BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
 
     QString resolvedExePath = exePath;
     QString exeName = QFileInfo(exePath).fileName().toLower();
-    if (exeName == "explorer.exe" || exeName == "shellexperiencehost.exe" || exeName == "searchhost.exe" || exeName == "startmenuexperiencehost.exe") {
+    if (exeName == "explorer.exe" || exeName == "shellexperiencehost.exe" || exeName == "searchhost.exe"
+        || exeName == "startmenuexperiencehost.exe" || exeName == "textinputhost.exe"
+        || exeName == "lockapp.exe") {
         return TRUE;
     }
 
@@ -488,12 +490,16 @@ void DockModel::loadPinnedApps()
     m_pinnedPaths.clear();
 
     for (const PinnedShortcutEntry& shortcut : shortcuts) {
-        if (shortcut.targetPath.isEmpty()) {
+        // Allow special shell links (e.g. File Explorer) that have an empty target
+        // path; they still launch via the .lnk. Only skip truly empty entries.
+        if (shortcut.targetPath.isEmpty() && shortcut.shortcutPath.isEmpty()) {
             continue;
         }
 
         DockItemEntry entry = makePinnedEntry(shortcut);
-        m_pinnedPaths << entry.exePath;
+        if (!entry.exePath.isEmpty()) {
+            m_pinnedPaths << entry.exePath;
+        }
         upsertEntry(entry);
         if (pinnedDirty) {
             emit logMessage(QStringLiteral("Pinned app loaded: target=%1 launch=%2 aumid=%3 args=%4")
@@ -522,7 +528,11 @@ DockItemEntry DockModel::makePinnedEntry(const PinnedShortcutEntry& shortcut) co
     entry.launchArguments = shortcut.arguments;
     entry.workingDirectory = shortcut.workingDirectory;
     entry.appUserModelId = shortcut.appUserModelId;
-    entry.appId = !shortcut.appUserModelId.isEmpty() ? shortcut.appUserModelId.toLower() : lowerPath(shortcut.targetPath);
+    // Fall back to the shortcut path for a stable id when the link has no target
+    // path or AppUserModelID (e.g. the special "File Explorer" pin).
+    entry.appId = !shortcut.appUserModelId.isEmpty()
+            ? shortcut.appUserModelId.toLower()
+            : (!shortcut.targetPath.isEmpty() ? lowerPath(shortcut.targetPath) : lowerPath(shortcut.shortcutPath));
     entry.label = QFileInfo(shortcut.targetPath).completeBaseName();
     if (entry.label.isEmpty())
         entry.label = QFileInfo(shortcut.shortcutPath).completeBaseName();
@@ -605,9 +615,12 @@ void DockModel::upsertEntry(const DockItemEntry& entry)
 {
     DockItemEntry mutableEntry = entry;
 
+    // Special shell links (e.g. File Explorer) have no exe path; pull the icon
+    // straight from the .lnk, which resolves to the proper shortcut icon.
+    const QString iconSource = mutableEntry.exePath.isEmpty() ? mutableEntry.launchPath : mutableEntry.exePath;
     QString iconUrl = m_existingIconUrls.value(mutableEntry.appId);
     if (iconUrl.isEmpty()) {
-        iconUrl = ensureIconFile(mutableEntry.appId, mutableEntry.exePath);
+        iconUrl = ensureIconFile(mutableEntry.appId, iconSource);
         if (!iconUrl.isEmpty()) {
             m_existingIconUrls.insert(mutableEntry.appId, iconUrl);
         }

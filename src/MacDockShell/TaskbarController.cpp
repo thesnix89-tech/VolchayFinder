@@ -19,7 +19,7 @@ TaskbarController::TaskbarController(QObject* parent)
 {
     // Poll the foreground window so the dock can auto-hide for fullscreen apps (macOS-style).
     m_fullscreenTimer = new QTimer(this);
-    m_fullscreenTimer->setInterval(350);
+    m_fullscreenTimer->setInterval(120);
     connect(m_fullscreenTimer, &QTimer::timeout, this, &TaskbarController::updateFullscreenState);
     m_fullscreenTimer->start();
 }
@@ -66,12 +66,12 @@ bool TaskbarController::taskbarHidden() const
     return m_taskbarHidden;
 }
 
-bool TaskbarController::fullscreenAppActive() const
+bool TaskbarController::dockAutoHidden() const
 {
-    return m_fullscreenAppActive;
+    return m_dockAutoHidden;
 }
 
-bool TaskbarController::detectForegroundFullscreen() const
+bool TaskbarController::detectForegroundOccupiesScreen() const
 {
     HWND hwnd = GetForegroundWindow();
     if (!hwnd) {
@@ -91,6 +91,17 @@ bool TaskbarController::detectForegroundFullscreen() const
         return false;
     }
 
+    if (IsIconic(hwnd)) {
+        return false;
+    }
+
+    // Maximized window: fills the screen like a macOS fullscreen space.
+    if (IsZoomed(hwnd)) {
+        return true;
+    }
+
+    // True fullscreen (game / fullscreen video / Electron fullscreen): a normal
+    // window stretched to cover the whole monitor.
     RECT windowRect = {};
     if (!GetWindowRect(hwnd, &windowRect)) {
         return false;
@@ -104,36 +115,43 @@ bool TaskbarController::detectForegroundFullscreen() const
     }
 
     const RECT& monitorRect = monitorInfo.rcMonitor;
-    const bool coversMonitor = windowRect.left <= monitorRect.left
-                            && windowRect.top <= monitorRect.top
-                            && windowRect.right >= monitorRect.right
-                            && windowRect.bottom >= monitorRect.bottom;
-    if (!coversMonitor) {
-        return false;
-    }
-
-    // Distinguish true fullscreen from a maximized window. A maximized window
-    // reports IsZoomed()==true and keeps its window chrome; a fullscreen app
-    // (game, fullscreen video, Electron/Chrome fullscreen) is a normal window
-    // stretched to cover the whole monitor, so IsZoomed()==false.
-    if (IsZoomed(hwnd)) {
-        return false;
-    }
-
-    return true;
+    return windowRect.left <= monitorRect.left
+        && windowRect.top <= monitorRect.top
+        && windowRect.right >= monitorRect.right
+        && windowRect.bottom >= monitorRect.bottom;
 }
 
 void TaskbarController::updateFullscreenState()
 {
-    const bool active = detectForegroundFullscreen();
-    if (m_fullscreenAppActive == active) {
+    const bool occupies = detectForegroundOccupiesScreen();
+
+    // macOS-style reveal: while a fullscreen/maximized app is active, the dock
+    // stays hidden but slides back up when the cursor reaches the bottom edge.
+    bool revealed = false;
+    if (occupies) {
+        POINT cursor = {};
+        if (GetCursorPos(&cursor)) {
+            HMONITOR monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO monitorInfo = {};
+            monitorInfo.cbSize = sizeof(monitorInfo);
+            if (GetMonitorInfo(monitor, &monitorInfo)) {
+                const int bottom = monitorInfo.rcMonitor.bottom;
+                // Wider band keeps the dock up while the cursor is over it; a thin
+                // edge triggers the reveal in the first place.
+                const int band = m_dockIconSize + 70;
+                revealed = m_dockRevealed ? (cursor.y >= bottom - band)
+                                          : (cursor.y >= bottom - 2);
+            }
+        }
+    }
+    m_dockRevealed = revealed;
+
+    const bool hidden = occupies && !revealed;
+    if (m_dockAutoHidden == hidden) {
         return;
     }
-    m_fullscreenAppActive = active;
-    emit fullscreenAppActiveChanged();
-    emit shellActionLogged(active
-        ? QStringLiteral("Fullscreen app detected: hiding dock.")
-        : QStringLiteral("Fullscreen app gone: showing dock."));
+    m_dockAutoHidden = hidden;
+    emit dockAutoHiddenChanged();
 }
 
 bool TaskbarController::setTaskbarVisible(bool visible)

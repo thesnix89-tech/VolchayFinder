@@ -31,7 +31,7 @@ qt_add_resources(MacDockShell macdockshell_resources
 )
 
 set_target_properties(MacDockShell PROPERTIES
-    WIN32_EXECUTABLE FALSE
+    WIN32_EXECUTABLE TRUE
 )
 
 target_link_libraries(MacDockShell

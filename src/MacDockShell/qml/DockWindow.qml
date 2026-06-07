@@ -17,7 +17,7 @@ Window {
     x: Math.round((Screen.width - width) / 2)
     // Resting position; slides fully below the screen when a fullscreen app is active.
     readonly property int restY: Screen.height - height - 18 + dockBottomGap
-    y: (taskbarController.shellActive && taskbarController.fullscreenAppActive) ? (Screen.height + 4) : restY
+    y: (taskbarController.shellActive && taskbarController.dockAutoHidden) ? (Screen.height + 4) : restY
     visible: taskbarController.shellActive
     color: "transparent"
     title: "MacDockShellDock"
@@ -366,24 +366,62 @@ Window {
                     Menu {
                         id: appContextMenu
                         popupType: Popup.Window
-                        padding: 6
-                        implicitWidth: 240
+                        // Suspend the periodic model refresh while open, otherwise the model
+                        // reset recreates this delegate and the menu closes on its own.
+                        onOpened: dockModel.setReorderActive(true)
+                        onClosed: dockModel.setReorderActive(false)
+                        // Extra bottom padding leaves room for the downward arrow tail.
+                        topPadding: 6
+                        leftPadding: 6
+                        rightPadding: 6
+                        bottomPadding: 16
+                        implicitWidth: 200
                         // Centered horizontally over the icon and floating just above it (macOS-style).
                         x: Math.round(dockItemRoot.width / 2 - width / 2)
-                        y: -height - 12
+                        y: -height - 4
 
-                        background: Rectangle {
-                            implicitWidth: 240
-                            color: "#F5F5F5"
-                            radius: 9
-                            border.width: 1
-                            border.color: "#C2C2C2"
+                        // Rounded body plus a downward arrow drawn as one path (no seam).
+                        background: Canvas {
+                            implicitWidth: 200
+                            property real arrowH: 10
+                            property real arrowW: 20
+                            property real bodyRadius: 9
+                            onWidthChanged: requestPaint()
+                            onHeightChanged: requestPaint()
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.reset()
+                                var w = width
+                                var h = height
+                                var bodyH = h - arrowH
+                                var r = bodyRadius
+                                var cx = w / 2
+                                ctx.beginPath()
+                                ctx.moveTo(r, 0)
+                                ctx.lineTo(w - r, 0)
+                                ctx.arcTo(w, 0, w, r, r)
+                                ctx.lineTo(w, bodyH - r)
+                                ctx.arcTo(w, bodyH, w - r, bodyH, r)
+                                ctx.lineTo(cx + arrowW / 2, bodyH)
+                                ctx.lineTo(cx, bodyH + arrowH)
+                                ctx.lineTo(cx - arrowW / 2, bodyH)
+                                ctx.lineTo(r, bodyH)
+                                ctx.arcTo(0, bodyH, 0, bodyH - r, r)
+                                ctx.lineTo(0, r)
+                                ctx.arcTo(0, 0, r, 0, r)
+                                ctx.closePath()
+                                ctx.fillStyle = "#F5F5F5"
+                                ctx.fill()
+                                ctx.strokeStyle = "#C2C2C2"
+                                ctx.lineWidth = 1
+                                ctx.stroke()
+                            }
                         }
 
                         delegate: MenuItem {
                             id: menuEntry
-                            implicitWidth: 228
-                            implicitHeight: 30
+                            implicitWidth: 188
+                            implicitHeight: 26
                             padding: 0
                             arrow: Item {}
                             indicator: Item {}
@@ -421,10 +459,10 @@ Window {
                             title: "Параметры"
                             popupType: Popup.Window
                             padding: 6
-                            implicitWidth: 220
+                            implicitWidth: 190
 
                             background: Rectangle {
-                                implicitWidth: 220
+                                implicitWidth: 190
                                 color: "#F5F5F5"
                                 radius: 9
                                 border.width: 1
@@ -433,8 +471,8 @@ Window {
 
                             delegate: MenuItem {
                                 id: subEntry
-                                implicitWidth: 208
-                                implicitHeight: 30
+                                implicitWidth: 178
+                                implicitHeight: 26
                                 padding: 0
                                 arrow: Item {}
                                 indicator: Item {}

@@ -9,7 +9,7 @@ class TaskbarController : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool taskbarHidden READ taskbarHidden NOTIFY taskbarHiddenChanged)
-    Q_PROPERTY(bool fullscreenAppActive READ fullscreenAppActive NOTIFY fullscreenAppActiveChanged)
+    Q_PROPERTY(bool dockAutoHidden READ dockAutoHidden NOTIFY dockAutoHiddenChanged)
     Q_PROPERTY(bool shellActive READ shellActive WRITE setShellActive NOTIFY shellActiveChanged)
     Q_PROPERTY(bool settingsVisible READ settingsVisible WRITE setSettingsVisible NOTIFY settingsVisibleChanged)
     Q_PROPERTY(int dockIconSize READ dockIconSize WRITE setDockIconSize NOTIFY dockIconSizeChanged)
@@ -29,7 +29,7 @@ public:
     Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons);
 
     bool taskbarHidden() const;
-    bool fullscreenAppActive() const;
+    bool dockAutoHidden() const;
     bool shellActive() const;
     void setShellActive(bool active);
     bool settingsVisible() const;
@@ -47,7 +47,7 @@ public:
 
 signals:
     void taskbarHiddenChanged();
-    void fullscreenAppActiveChanged();
+    void dockAutoHiddenChanged();
     void shellActionLogged(const QString& message);
     void shellActiveChanged();
     void settingsVisibleChanged();
@@ -60,7 +60,7 @@ signals:
 private:
     bool setTaskbarVisible(bool visible);
     void updateTaskbarVisibility();
-    bool detectForegroundFullscreen() const;
+    bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
 
     bool m_taskbarHidden = false;
@@ -73,6 +73,7 @@ private:
     bool m_autoHideWindowsTaskbar = true;
     bool m_dockHoverBounce = true;
     bool m_dockStaticIcons = false;
-    bool m_fullscreenAppActive = false;
+    bool m_dockAutoHidden = false;
+    bool m_dockRevealed = false;
     QTimer* m_fullscreenTimer = nullptr;
 };
