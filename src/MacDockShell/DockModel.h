@@ -64,6 +64,7 @@ public:
     Q_INVOKABLE void closeIndex(int index);
     Q_INVOKABLE void revealIndex(int index);
     Q_INVOKABLE void moveItem(int from, int to);
+    Q_INVOKABLE void pinPathAt(const QString& path, int index = -1);
     Q_INVOKABLE void setReorderActive(bool active);
     Q_INVOKABLE void setExplorerIconStyle(const QString& style);
 

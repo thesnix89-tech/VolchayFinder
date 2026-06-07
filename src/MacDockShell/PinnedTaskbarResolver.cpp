@@ -173,6 +173,129 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
     return results;
 }
 
+QString PinnedTaskbarResolver::uniqueShortcutPath(const QString& destDir, const QString& baseName) const
+{
+    QString sanitized = baseName.trimmed();
+    if (sanitized.isEmpty()) {
+        sanitized = QStringLiteral("Pinned App");
+    }
+
+    QString candidate = QDir(destDir).filePath(sanitized + QStringLiteral(".lnk"));
+    int suffix = 2;
+    while (QFileInfo::exists(candidate)) {
+        candidate = QDir(destDir).filePath(QStringLiteral("%1 (%2).lnk").arg(sanitized).arg(suffix++));
+    }
+    return candidate;
+}
+
+QString PinnedTaskbarResolver::copyShortcutToTaskbar(const QString& shortcutPath, const QString& destDir) const
+{
+    const QString nativeShortcut = QDir::toNativeSeparators(QFileInfo(shortcutPath).absoluteFilePath());
+    const QString taskbarDir = QDir::toNativeSeparators(QDir(destDir).absolutePath());
+    if (nativeShortcut.startsWith(taskbarDir, Qt::CaseInsensitive)) {
+        return nativeShortcut;
+    }
+
+    const QString destPath = uniqueShortcutPath(destDir, QFileInfo(shortcutPath).completeBaseName());
+    if (!CopyFileW(reinterpret_cast<LPCWSTR>(nativeShortcut.utf16()),
+                   reinterpret_cast<LPCWSTR>(QDir::toNativeSeparators(destPath).utf16()),
+                   FALSE)) {
+        emit logMessage(QStringLiteral("Failed to copy shortcut to taskbar folder: %1").arg(shortcutPath));
+        return {};
+    }
+    return destPath;
+}
+
+QString PinnedTaskbarResolver::createShortcutForExecutable(const QString& exePath, const QString& destDir) const
+{
+    const QString nativeExe = QDir::toNativeSeparators(QFileInfo(exePath).absoluteFilePath());
+    const QString destPath = uniqueShortcutPath(destDir, QFileInfo(exePath).completeBaseName());
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    const bool mustUninit = SUCCEEDED(hr);
+    const bool comReady = SUCCEEDED(hr) || hr == RPC_E_CHANGED_MODE;
+    if (!comReady) {
+        return {};
+    }
+
+    IShellLinkW* shellLink = nullptr;
+    hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER, IID_IShellLinkW, reinterpret_cast<void**>(&shellLink));
+    if (FAILED(hr) || !shellLink) {
+        if (mustUninit) {
+            CoUninitialize();
+        }
+        return {};
+    }
+
+    shellLink->SetPath(reinterpret_cast<LPCWSTR>(nativeExe.utf16()));
+    shellLink->SetIconLocation(reinterpret_cast<LPCWSTR>(nativeExe.utf16()), 0);
+    const QString workDir = QFileInfo(nativeExe).absolutePath();
+    shellLink->SetWorkingDirectory(reinterpret_cast<LPCWSTR>(QDir::toNativeSeparators(workDir).utf16()));
+
+    IPersistFile* persistFile = nullptr;
+    hr = shellLink->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&persistFile));
+    if (FAILED(hr) || !persistFile) {
+        shellLink->Release();
+        if (mustUninit) {
+            CoUninitialize();
+        }
+        return {};
+    }
+
+    const std::wstring nativeDest = QDir::toNativeSeparators(destPath).toStdWString();
+    hr = persistFile->Save(nativeDest.c_str(), TRUE);
+    persistFile->Release();
+    shellLink->Release();
+    if (mustUninit) {
+        CoUninitialize();
+    }
+
+    if (FAILED(hr)) {
+        emit logMessage(QStringLiteral("Failed to create shortcut for executable: %1").arg(exePath));
+        return {};
+    }
+
+    return destPath;
+}
+
+QString PinnedTaskbarResolver::createPinFromPath(const QString& sourcePath) const
+{
+    const QFileInfo info(sourcePath);
+    if (!info.exists()) {
+        emit logMessage(QStringLiteral("Pin rejected, path does not exist: %1").arg(sourcePath));
+        return {};
+    }
+
+    const QString nativePath = QDir::toNativeSeparators(info.absoluteFilePath());
+    const QString extension = info.suffix().toLower();
+    const QString destDir = pinnedTaskbarDir();
+    QDir().mkpath(destDir);
+
+    const QList<PinnedShortcutEntry> existing = resolvePinnedShortcuts();
+    for (const PinnedShortcutEntry& entry : existing) {
+        if (entry.shortcutPath.compare(nativePath, Qt::CaseInsensitive) == 0) {
+            return entry.shortcutPath;
+        }
+        if (!entry.targetPath.isEmpty()
+            && entry.targetPath.compare(nativePath, Qt::CaseInsensitive) == 0) {
+            return entry.shortcutPath;
+        }
+    }
+
+    if (extension == QLatin1String("lnk")) {
+        return copyShortcutToTaskbar(nativePath, destDir);
+    }
+
+    if (extension == QLatin1String("exe")
+        || extension == QLatin1String("bat")
+        || extension == QLatin1String("cmd")) {
+        return createShortcutForExecutable(nativePath, destDir);
+    }
+
+    emit logMessage(QStringLiteral("Pin rejected, unsupported file type: %1").arg(sourcePath));
+    return {};
+}
+
 QStringList PinnedTaskbarResolver::resolvePinnedExecutablePaths() const
 {
     QStringList results;

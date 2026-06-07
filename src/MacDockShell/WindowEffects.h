@@ -4,6 +4,7 @@
 #include <QRect>
 #include <QHash>
 #include <QVariant>
+#include <QWindow>
 
 #include <memory>
 
@@ -27,8 +28,24 @@ public:
     Q_INVOKABLE void updateDockHitRegions(QWindow* window, const QVariantList& clipRegions,
                                           const QVariantList& hitRegions);
     Q_INVOKABLE void clearDockHitRegions(QWindow* window);
+    Q_INVOKABLE void setDockDropHover(QWindow* window, bool active);
+    Q_INVOKABLE void updateDockDropLayout(QWindow* window, qreal pillLocalLeft, int stride, int iconSize, int itemCount);
+    Q_INVOKABLE int dockDropIndexForGlobalPoint(QWindow* window, int globalX, int globalY) const;
+
+signals:
+    void dockDropHoverChanged(QWindow* window, bool active);
 
 private:
+    struct DockDropLayout
+    {
+        qreal pillLocalLeft = 0;
+        int stride = 0;
+        int iconSize = 0;
+        int itemCount = 0;
+    };
+
+    QHash<QWindow*, DockDropLayout> m_dropLayouts;
+    QHash<QWindow*, bool> m_dropHoverActive;
     std::unique_ptr<QAbstractNativeEventFilter> m_topBarHoverFilter;
     std::unique_ptr<DockClickThroughState> m_dockClickThroughState;
     std::unique_ptr<QAbstractNativeEventFilter> m_dockHitTestFilter;

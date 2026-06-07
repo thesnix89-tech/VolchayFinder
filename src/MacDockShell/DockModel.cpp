@@ -452,6 +452,52 @@ void DockModel::ensureExplorerLeadingInOrder()
     saveOrder();
 }
 
+void DockModel::pinPathAt(const QString& path, int index)
+{
+    if (path.isEmpty() || !m_pinnedResolver) {
+        return;
+    }
+
+    const QString shortcutPath = m_pinnedResolver->createPinFromPath(path);
+    if (shortcutPath.isEmpty()) {
+        return;
+    }
+
+    const QString shortcutKey = lowerPath(shortcutPath);
+    const QString sourceKey = lowerPath(path);
+
+    m_reorderActive = true;
+    refresh();
+
+    int foundIndex = -1;
+    for (int i = 0; i < m_entries.size(); ++i) {
+        const DockItemEntry& entry = m_entries.at(i);
+        if (!entry.pinned) {
+            continue;
+        }
+        if (lowerPath(entry.launchPath) == shortcutKey
+            || lowerPath(entry.launchPath) == sourceKey
+            || (!entry.exePath.isEmpty() && lowerPath(entry.exePath) == sourceKey)) {
+            foundIndex = i;
+            break;
+        }
+    }
+
+    m_reorderActive = false;
+
+    if (foundIndex < 0) {
+        emit logMessage(QStringLiteral("Pinned shortcut created but dock entry missing: %1").arg(shortcutPath));
+        return;
+    }
+
+    int targetIndex = index < 0 ? (m_entries.size() - 1) : qBound(0, index, m_entries.size() - 1);
+    if (foundIndex != targetIndex) {
+        moveItem(foundIndex, targetIndex);
+    }
+
+    emit logMessage(QStringLiteral("Pinned to dock: %1 at slot %2").arg(shortcutPath).arg(targetIndex));
+}
+
 void DockModel::moveItem(int from, int to)
 {
     if (from < 0 || from >= m_entries.size() || to < 0 || to >= m_entries.size() || from == to) {

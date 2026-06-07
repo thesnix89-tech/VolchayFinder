@@ -258,6 +258,17 @@ public:
         const int y = GET_Y_LPARAM(msg->lParam);
         const QPoint screenPoint(x, y);
 
+        if (data->window) {
+            const QRect windowRect = data->window->geometry();
+            if (windowRect.contains(screenPoint)) {
+                const int dropBandHeight = qMax(72, windowRect.height() / 3);
+                const int dropBandTop = windowRect.bottom() - dropBandHeight;
+                if (screenPoint.y() >= dropBandTop) {
+                    return false;
+                }
+            }
+        }
+
         // Pass-through only outside pill/icons. Inside → don't intercept (Qt handles dock).
         if (!m_state->containsScreenPoint(data->hitRegions, screenPoint)) {
             *result = HTTRANSPARENT;
@@ -509,4 +520,68 @@ void WindowEffects::clearDockHitRegions(QWindow* window)
     if (data) {
         clearRegionsFromWindowTree(data);
     }
+}
+
+void WindowEffects::setDockDropHover(QWindow* window, bool active)
+{
+    if (!window) {
+        return;
+    }
+
+    const bool previous = m_dropHoverActive.value(window, false);
+    if (previous == active) {
+        return;
+    }
+
+    if (active) {
+        m_dropHoverActive.insert(window, true);
+    } else {
+        m_dropHoverActive.remove(window);
+    }
+
+    emit dockDropHoverChanged(window, active);
+}
+
+void WindowEffects::updateDockDropLayout(QWindow* window, qreal pillLocalLeft, int stride, int iconSize, int itemCount)
+{
+    if (!window) {
+        return;
+    }
+
+    DockDropLayout layout;
+    layout.pillLocalLeft = pillLocalLeft;
+    layout.stride = stride;
+    layout.iconSize = iconSize;
+    layout.itemCount = qMax(0, itemCount);
+    m_dropLayouts.insert(window, layout);
+}
+
+int WindowEffects::dockDropIndexForGlobalPoint(QWindow* window, int globalX, int globalY) const
+{
+    if (!window) {
+        return -1;
+    }
+
+    const DockDropLayout layout = m_dropLayouts.value(window);
+    if (layout.stride <= 0 || layout.iconSize <= 0) {
+        return -1;
+    }
+
+    const QPoint local = window->mapFromGlobal(QPoint(globalX, globalY));
+    if (local.x() < 0 || local.x() > window->width()) {
+        return -1;
+    }
+
+    const qreal centerX = local.x() - layout.pillLocalLeft - layout.iconSize / 2.0;
+    const int insertionCount = layout.itemCount + 1;
+    int candidate = 0;
+    for (int slot = 1; slot < insertionCount; ++slot) {
+        const qreal boundary = ((slot - 1) * layout.stride + layout.iconSize / 2.0
+                                + slot * layout.stride + layout.iconSize / 2.0) / 2.0;
+        if (centerX >= boundary) {
+            candidate = slot;
+        }
+    }
+
+    return qBound(0, candidate, qMax(0, layout.itemCount));
 }

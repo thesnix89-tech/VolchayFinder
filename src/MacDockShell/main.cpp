@@ -16,12 +16,15 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 
+#include <objbase.h>
+
 #include "TaskbarController.h"
 #include "DockModel.h"
 #include "AppBarController.h"
 #include "WindowEffects.h"
 #include "HoverTracker.h"
 #include "MacCursor.h"
+#include "DockDropTarget.h"
 
 namespace {
 
@@ -204,6 +207,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon());
+    OleInitialize(nullptr);
     loadBundledFonts();
 
     if (tryActivateExistingInstance(app.arguments())) {
@@ -222,6 +226,7 @@ int main(int argc, char *argv[])
     WindowEffects windowEffects;
     HoverTracker hoverTracker;
     MacCursor macCursor;
+    DockDropTarget dockDropTarget(&dockModel, &windowEffects);
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -283,7 +288,11 @@ int main(int argc, char *argv[])
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
+    dockEngine.rootContext()->setContextProperty("dockDropTarget", &dockDropTarget);
     dockEngine.rootContext()->setContextProperty("macCursor", &macCursor);
+    QObject::connect(&dockDropTarget, &DockDropTarget::logMessage, [](const QString& message) {
+        appendLine(QString("[DockDropTarget] %1").arg(message));
+    });
     controlEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     controlEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     controlEngine.rootContext()->setContextProperty("macCursor", &macCursor);
@@ -308,6 +317,16 @@ int main(int argc, char *argv[])
     if (topBarEngine.rootObjects().isEmpty() || dockEngine.rootObjects().isEmpty() || controlEngine.rootObjects().isEmpty()) {
         appendLine("One or more shell windows failed to load. Exiting with code -2.");
         return -2;
+    }
+
+    if (!dockEngine.rootObjects().isEmpty()) {
+        if (auto* dockWindow = qobject_cast<QWindow*>(dockEngine.rootObjects().constFirst())) {
+            if (dockDropTarget.registerDockWindow(dockWindow)) {
+                appendLine("Dock OLE drop target registered.");
+            } else {
+                appendLine("Failed to register dock OLE drop target.");
+            }
+        }
     }
 
     dockModel.refresh();

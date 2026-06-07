@@ -25,6 +25,8 @@ qt_add_executable(MacDockShell
     src/MacDockShell/HoverTracker.h
     src/MacDockShell/MacCursor.cpp
     src/MacDockShell/MacCursor.h
+    src/MacDockShell/DockDropTarget.cpp
+    src/MacDockShell/DockDropTarget.h
 )
 
 qt_add_resources(MacDockShell macdockshell_resources

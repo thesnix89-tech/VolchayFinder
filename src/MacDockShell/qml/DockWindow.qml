@@ -25,6 +25,7 @@ Window {
     property int layoutMorphFrom: -1
     property real layoutMorph: 1
     readonly property bool reordering: dragFrom >= 0 || reorderSettling
+    property bool externalDropActive: false
     readonly property int dockSpacing: 14
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     readonly property int dockShrinkAnimMs: 220
@@ -323,10 +324,12 @@ Window {
         var fullWin = dockWindow.dockWindowLocalRect()
         var pill = dockWindow.pillLocalRect()
 
-        if (dockWindow.reordering) {
+        if (dockWindow.reordering || dockWindow.externalDropActive) {
             clipRegions.push(fullWin)
             hitRegions.push(fullWin)
         } else {
+            var dropBand = Qt.rect(0, pill.y - 6, dockWindow.width, pill.height + 24)
+            hitRegions.push(dropBand)
             hitRegions.push(pill)
             dockWindow.appendIconHitRegions(hitRegions)
             if (dockWindow.someVisualOverflow()) {
@@ -350,16 +353,78 @@ Window {
     }
 
     onReorderingChanged: refreshClickHitRegions()
+    onExternalDropActiveChanged: refreshClickHitRegions()
+
+    function publishDropGeometry() {
+        if (!dockWindow.visible)
+            return
+        var pillPt = dockBg.mapToItem(dockWindow.contentItem, 0, 0)
+        windowEffects.updateDockDropLayout(
+                    dockWindow,
+                    pillPt.x + hoverBleed,
+                    dockStride,
+                    taskbarController.dockIconSize,
+                    dockRepeater.count)
+    }
+
+    Connections {
+        target: windowEffects
+        function onDockDropHoverChanged(window, active) {
+            if (window === dockWindow) {
+                dockWindow.externalDropActive = active
+            }
+        }
+    }
 
     function armClickThrough() {
         windowEffects.enableDockClickThrough(dockWindow)
         refreshClickHitRegions()
+        dockDropTarget.registerDockWindow(dockWindow)
         childHwndResyncTimer.restart()
+    }
+
+    DropArea {
+        id: dockDropArea
+        anchors.fill: parent
+        z: 20000
+        keys: ["text/uri-list"]
+
+        onEntered: (drag) => {
+            dockWindow.externalDropActive = true
+            drag.accept(Qt.CopyAction)
+        }
+        onPositionChanged: (drag) => {
+            if (drag.contains(drag.x, drag.y))
+                drag.accept(Qt.CopyAction)
+        }
+        onExited: dockWindow.externalDropActive = false
+        onDropped: (drop) => {
+            dockWindow.externalDropActive = false
+            if (!drop.hasUrls || drop.urls.length === 0)
+                return
+            const local = dockDropArea.mapToItem(dockWindow.contentItem, drop.x, drop.y)
+            const global = dockWindow.mapToGlobal(local.x, local.y)
+            const idx = windowEffects.dockDropIndexForGlobalPoint(dockWindow, global.x, global.y)
+            dockModel.pinPathAt(drop.urls[0].toLocalFile(), idx)
+        }
     }
 
     Component.onCompleted: {
         windowEffects.applyDockGlass(dockWindow)
         Qt.callLater(dockWindow.armClickThrough)
+        publishDropGeometry()
+    }
+
+    Connections {
+        target: dockModel
+        function onModelReset() { dockWindow.publishDropGeometry() }
+        function onRowsInserted() { dockWindow.publishDropGeometry() }
+        function onRowsRemoved() { dockWindow.publishDropGeometry() }
+    }
+
+    Connections {
+        target: taskbarController
+        function onDockIconSizeChanged() { dockWindow.publishDropGeometry() }
     }
 
     onVisibleChanged: {
