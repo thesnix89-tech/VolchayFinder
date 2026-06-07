@@ -61,6 +61,22 @@ Window {
         return slotLeftForIndex(slot) + taskbarController.dockIconSize / 2
     }
 
+    // Midpoint between two neighboring slots — cursor past it picks the right slot.
+    function insertionBoundaryBefore(slot) {
+        if (slot <= 0)
+            return -Infinity
+        return (gapCenterForSlot(slot - 1) + gapCenterForSlot(slot)) / 2
+    }
+
+    function candidateSlotForCenter(center, count) {
+        var candidate = 0
+        for (var t = 1; t < count; t++) {
+            if (center >= insertionBoundaryBefore(t))
+                candidate = t
+        }
+        return Math.min(count - 1, Math.max(0, candidate))
+    }
+
     function gapLeftForDragTo(to) {
         return slotLeftForIndex(to)
     }
@@ -96,7 +112,7 @@ Window {
             syncDockPackState()
     }
 
-    // Pick the nearest full-width gap; midpoint hysteresis only between adjacent slots.
+    // Boundaries between slots (pointer, not magnetized x) — avoids left-slot bias.
     function updateDragTarget(leftX, gripY, count, fromIndex) {
         if (fromIndex < 0)
             return
@@ -106,17 +122,8 @@ Window {
             return
 
         var iconSize = taskbarController.dockIconSize
-        var visualX = visualDragLeftX()
-        var dragCenter = visualX + iconSize / 2
-        var candidate = fromIndex
-        var bestDist = Number.MAX_VALUE
-        for (var t = 0; t < count; t++) {
-            var dist = Math.abs(dragCenter - gapCenterForSlot(t))
-            if (dist < bestDist) {
-                bestDist = dist
-                candidate = t
-            }
-        }
+        var dragCenter = leftX + iconSize / 2
+        var candidate = candidateSlotForCenter(dragCenter, count)
 
         if (dragTo < 0) {
             dragTo = fromIndex
@@ -127,12 +134,10 @@ Window {
             return
 
         if (Math.abs(candidate - dragTo) === 1) {
-            var lo = Math.min(candidate, dragTo)
-            var hi = Math.max(candidate, dragTo)
-            var boundary = (gapCenterForSlot(lo) + gapCenterForSlot(hi)) / 2
+            var boundary = insertionBoundaryBefore(Math.max(candidate, dragTo))
             if (candidate > dragTo && dragCenter < boundary)
                 return
-            if (candidate < dragTo && dragCenter > boundary)
+            if (candidate < dragTo && dragCenter >= boundary)
                 return
         }
 
@@ -290,7 +295,108 @@ Window {
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
-    Component.onCompleted: windowEffects.applyDockGlass(dockWindow)
+    function dockWindowScreenRect() {
+        var origin = dockWindow.mapToGlobal(0, 0)
+        return Qt.rect(origin.x, origin.y, dockWindow.width, dockWindow.height)
+    }
+
+    function pillScreenRect() {
+        var pillPt = dockBg.mapToGlobal(0, 0)
+        return Qt.rect(pillPt.x, pillPt.y, dockBg.width, dockBg.height)
+    }
+
+    function appendIconHitRegions(list) {
+        for (var i = 0; i < dockRepeater.count; ++i) {
+            var item = dockRepeater.itemAt(i)
+            if (item && item.globalHitRect)
+                list.push(item.globalHitRect())
+        }
+    }
+
+    function refreshClickHitRegions() {
+        if (!dockWindow.visible)
+            return
+
+        var clipRegions = []
+        var hitRegions = []
+        var fullWin = dockWindow.dockWindowScreenRect()
+        var pill = dockWindow.pillScreenRect()
+
+        hitRegions.push(pill)
+        dockWindow.appendIconHitRegions(hitRegions)
+
+        if (dockWindow.reordering) {
+            clipRegions.push(fullWin)
+            hitRegions = [fullWin]
+        } else if (dockWindow.someVisualOverflow()) {
+            clipRegions.push(fullWin)
+        } else {
+            clipRegions.push(pill)
+            dockWindow.appendIconHitRegions(clipRegions)
+        }
+
+        windowEffects.updateDockHitRegions(dockWindow, clipRegions, hitRegions)
+    }
+
+    function someVisualOverflow() {
+        for (var i = 0; i < dockRepeater.count; ++i) {
+            var item = dockRepeater.itemAt(i)
+            if (item && item.hasVisualOverflow)
+                return true
+        }
+        return false
+    }
+
+    onReorderingChanged: refreshClickHitRegions()
+
+    function armClickThrough() {
+        windowEffects.enableDockClickThrough(dockWindow)
+        refreshClickHitRegions()
+    }
+
+    Component.onCompleted: {
+        windowEffects.applyDockGlass(dockWindow)
+        Qt.callLater(dockWindow.armClickThrough)
+    }
+
+    onVisibleChanged: {
+        if (visible)
+            Qt.callLater(dockWindow.armClickThrough)
+        else
+            windowEffects.clearDockHitRegions(dockWindow)
+    }
+
+    Connections {
+        target: taskbarController
+        function onShellActiveChanged() {
+            if (taskbarController.shellActive)
+                Qt.callLater(dockWindow.armClickThrough)
+            else
+                windowEffects.clearDockHitRegions(dockWindow)
+        }
+    }
+
+    Timer {
+        id: clickThroughWarmupTimer
+        interval: 250
+        repeat: false
+        onTriggered: dockWindow.armClickThrough()
+    }
+
+    onWidthChanged: clickThroughWarmupTimer.restart()
+    onHeightChanged: clickThroughWarmupTimer.restart()
+
+    onXChanged: refreshClickHitRegions()
+    onYChanged: refreshClickHitRegions()
+    onDockPackTChanged: refreshClickHitRegions()
+
+    Timer {
+        id: hitRegionSyncTimer
+        interval: 16
+        running: dockWindow.reordering || dockWindow.someVisualOverflow()
+        repeat: true
+        onTriggered: dockWindow.refreshClickHitRegions()
+    }
 
     // macOS-style: glide the dock down/up when toggling fullscreen.
     Behavior on y {
@@ -353,6 +459,7 @@ Window {
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 22
+        onWidthChanged: dockWindow.refreshClickHitRegions()
 
         // macOS Monterey 12 dock — opaque tints (no see-through).
         gradient: Gradient {
@@ -470,6 +577,17 @@ Window {
                         dockWindow.dragLeftX = dockItemRoot.x + mouseArea.mouseX - dockItemRoot.grabLocalX
                     }
 
+                    function globalHitRect() {
+                        var pt = iconBubble.mapToGlobal(0, 0)
+                        var scale = dockItemRoot.magnifyHover ? 1.18 : 1.0
+                        var pad = dockItemRoot.reorderLifted ? 12 : 8
+                        var w = iconBubble.width * scale + pad * 2
+                        var h = iconBubble.height * scale + pad * 2
+                        var cx = pt.x + iconBubble.width / 2
+                        var cy = pt.y + iconBubble.height / 2
+                        return Qt.rect(cx - w / 2, cy - h / 2, w, h)
+                    }
+
                     function beginDragReorder() {
                         dockItemRoot.dragging = true
                         dockWindow.neighborsPacked = true
@@ -488,6 +606,7 @@ Window {
                             && !taskbarController.dockStaticIcons
                             && !dockWindow.reordering
                             && !launchBounceAnim.running
+                    onMagnifyHoverChanged: dockWindow.refreshClickHitRegions()
                     readonly property bool reorderLifted: dockItemRoot.dragging
                             || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
                     readonly property real fullRestX: dockWindow.slotLeftForIndex(dockItemRoot.index)
@@ -607,11 +726,17 @@ Window {
                                 yScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
                                 Behavior on xScale {
                                     enabled: !dockItemRoot.dragging
-                                    SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
+                                    SpringAnimation {
+                                        spring: 4.0; damping: 0.5; epsilon: 0.2
+                                        onRunningChanged: dockWindow.refreshClickHitRegions()
+                                    }
                                 }
                                 Behavior on yScale {
                                     enabled: !dockItemRoot.dragging
-                                    SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
+                                    SpringAnimation {
+                                        spring: 4.0; damping: 0.5; epsilon: 0.2
+                                        onRunningChanged: dockWindow.refreshClickHitRegions()
+                                    }
                                 }
                             }
                         ]
@@ -619,6 +744,7 @@ Window {
                         SequentialAnimation {
                             id: launchBounceAnim
                             running: false
+                            onRunningChanged: dockWindow.refreshClickHitRegions()
                             // Single launch hop in every mode.
                             loops: 1
                             NumberAnimation { target: launchTranslate; property: "y"; from: 0; to: -22; duration: 220; easing.type: Easing.OutQuad }
@@ -927,6 +1053,11 @@ Window {
                             }
                         }
                     }
+
+                    readonly property bool launchBouncing: launchBounceAnim.running
+                    readonly property bool hasVisualOverflow: dockItemRoot.magnifyHover
+                            || dockItemRoot.reorderLifted
+                            || dockItemRoot.launchBouncing
 
                     MouseArea {
                         id: mouseArea

@@ -2,9 +2,16 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QGuiApplication>
+#include <QPoint>
+#include <QPointer>
 #include <QQuickWindow>
+#include <QSet>
+#include <QVariantList>
+
+#include <memory>
 
 #include <windows.h>
+#include <windowsx.h>
 #include <dwmapi.h>
 
 namespace {
@@ -61,6 +68,68 @@ void clearSystemBackdrop(HWND hwnd)
     DwmExtendFrameIntoClientArea(hwnd, &margins);
 }
 
+BOOL CALLBACK collectChildWindows(HWND hwnd, LPARAM lParam)
+{
+    auto* hwnds = reinterpret_cast<QSet<HWND>*>(lParam);
+    hwnds->insert(hwnd);
+    return TRUE;
+}
+
+QSet<HWND> collectWindowTree(HWND root)
+{
+    QSet<HWND> hwnds;
+    if (!root) {
+        return hwnds;
+    }
+    hwnds.insert(root);
+    EnumChildWindows(root, collectChildWindows, reinterpret_cast<LPARAM>(&hwnds));
+    return hwnds;
+}
+
+HRGN buildClientRegion(HWND hwnd, const QList<QRect>& screenRegions)
+{
+    HRGN combined = nullptr;
+    for (const QRect& screenRect : screenRegions) {
+        POINT topLeft = { screenRect.left(), screenRect.top() };
+        POINT bottomRight = { screenRect.right() + 1, screenRect.bottom() + 1 };
+        ScreenToClient(hwnd, &topLeft);
+        ScreenToClient(hwnd, &bottomRight);
+
+        HRGN piece = CreateRectRgn(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y);
+        if (!piece) {
+            continue;
+        }
+
+        if (!combined) {
+            combined = piece;
+        } else {
+            const int merge = CombineRgn(combined, combined, piece, RGN_OR);
+            DeleteObject(piece);
+            if (merge == ERROR) {
+                DeleteObject(combined);
+                return nullptr;
+            }
+        }
+    }
+    return combined;
+}
+
+void applyClientRegion(HWND hwnd, HRGN region)
+{
+    if (!hwnd) {
+        return;
+    }
+    SetWindowRgn(hwnd, region, TRUE);
+}
+
+void clearClientRegion(HWND hwnd)
+{
+    if (!hwnd) {
+        return;
+    }
+    SetWindowRgn(hwnd, nullptr, TRUE);
+}
+
 class TopBarHoverFilter final : public QAbstractNativeEventFilter
 {
 public:
@@ -114,13 +183,144 @@ private:
 
 } // namespace
 
+struct DockWindowHitData
+{
+    QPointer<QWindow> window;
+    HWND rootHwnd = nullptr;
+    QList<QRect> clipRegions;
+    QList<QRect> hitRegions;
+    QSet<HWND> hwndTree;
+};
+
+class DockClickThroughState
+{
+public:
+    QHash<HWND, std::shared_ptr<DockWindowHitData>> dataByRoot;
+
+    std::shared_ptr<DockWindowHitData> dataForHwnd(HWND hwnd) const
+    {
+        for (auto it = dataByRoot.constBegin(); it != dataByRoot.constEnd(); ++it) {
+            if (it.value()->hwndTree.contains(hwnd)) {
+                return it.value();
+            }
+        }
+        return {};
+    }
+
+    bool containsScreenPoint(const QList<QRect>& regions, const QPoint& screenPoint) const
+    {
+        for (const QRect& region : regions) {
+            if (region.contains(screenPoint)) {
+                return true;
+            }
+        }
+        return false;
+    }
+};
+
+class DockHitTestFilter final : public QAbstractNativeEventFilter
+{
+public:
+    explicit DockHitTestFilter(DockClickThroughState* state)
+        : m_state(state)
+    {
+    }
+
+    bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override
+    {
+        if (!m_state || !result) {
+            return false;
+        }
+
+        if (eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") {
+            return false;
+        }
+
+        const auto* msg = static_cast<const MSG*>(message);
+        if (!msg || msg->message != WM_NCHITTEST) {
+            return false;
+        }
+
+        const auto data = m_state->dataForHwnd(reinterpret_cast<HWND>(msg->hwnd));
+        if (!data) {
+            return false;
+        }
+
+        const int x = GET_X_LPARAM(msg->lParam);
+        const int y = GET_Y_LPARAM(msg->lParam);
+        const QPoint screenPoint(x, y);
+
+        // Pass-through only outside pill/icons. Inside → don't intercept (Qt handles dock).
+        if (!m_state->containsScreenPoint(data->hitRegions, screenPoint)) {
+            *result = HTTRANSPARENT;
+            return true;
+        }
+        return false;
+    }
+
+private:
+    DockClickThroughState* m_state = nullptr;
+};
+
+static void applyRegionsToWindowTree(const std::shared_ptr<DockWindowHitData>& data)
+{
+    if (!data || !data->rootHwnd) {
+        return;
+    }
+
+    const QSet<HWND> nextTree = collectWindowTree(data->rootHwnd);
+    for (HWND hwnd : data->hwndTree) {
+        if (!nextTree.contains(hwnd)) {
+            clearClientRegion(hwnd);
+        }
+    }
+    data->hwndTree = nextTree;
+
+    for (HWND hwnd : data->hwndTree) {
+        HRGN region = buildClientRegion(hwnd, data->clipRegions);
+        applyClientRegion(hwnd, region);
+    }
+}
+
+static void clearRegionsFromWindowTree(const std::shared_ptr<DockWindowHitData>& data)
+{
+    if (!data) {
+        return;
+    }
+
+    for (HWND hwnd : std::as_const(data->hwndTree)) {
+        clearClientRegion(hwnd);
+    }
+    data->hwndTree.clear();
+}
+
+QList<QRect> variantListToRects(const QVariantList& list)
+{
+    QList<QRect> rects;
+    rects.reserve(list.size());
+    for (const QVariant& entry : list) {
+        if (entry.canConvert<QRectF>()) {
+            rects.append(entry.toRectF().toRect());
+        } else if (entry.canConvert<QRect>()) {
+            rects.append(entry.toRect());
+        }
+    }
+    return rects;
+}
+
 WindowEffects::WindowEffects(QObject* parent)
     : QObject(parent)
+    , m_dockClickThroughState(std::make_unique<DockClickThroughState>())
+    , m_dockHitTestFilter(std::make_unique<DockHitTestFilter>(m_dockClickThroughState.get()))
 {
+    QGuiApplication::instance()->installNativeEventFilter(m_dockHitTestFilter.get());
 }
 
 WindowEffects::~WindowEffects()
 {
+    if (m_dockHitTestFilter) {
+        QGuiApplication::instance()->removeNativeEventFilter(m_dockHitTestFilter.get());
+    }
     if (m_topBarHoverFilter) {
         QGuiApplication::instance()->removeNativeEventFilter(m_topBarHoverFilter.get());
     }
@@ -141,8 +341,6 @@ void WindowEffects::applyDockGlass(QWindow* window)
         return;
     }
 
-    // System acrylic on the whole dock HWND painted a grey band across the screen.
-    // Keep the window fully transparent; only the QML pill draws the dock surface.
     clearSystemBackdrop(hwnd);
 }
 
@@ -187,4 +385,65 @@ void WindowEffects::enableHoverTracking(QWindow* window)
 
     m_topBarHoverFilter = std::make_unique<TopBarHoverFilter>(hwnd);
     QGuiApplication::instance()->installNativeEventFilter(m_topBarHoverFilter.get());
+}
+
+void WindowEffects::enableDockClickThrough(QWindow* window)
+{
+    if (!window || !m_dockClickThroughState) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    if (!hwnd) {
+        return;
+    }
+
+    if (!m_dockClickThroughState->dataByRoot.contains(hwnd)) {
+        auto data = std::make_shared<DockWindowHitData>();
+        data->window = window;
+        data->rootHwnd = hwnd;
+        m_dockClickThroughState->dataByRoot.insert(hwnd, data);
+    }
+}
+
+void WindowEffects::updateDockHitRegions(QWindow* window, const QVariantList& clipRegions,
+                                         const QVariantList& hitRegions)
+{
+    if (!window || !m_dockClickThroughState) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    if (!hwnd) {
+        return;
+    }
+
+    auto data = m_dockClickThroughState->dataByRoot.value(hwnd);
+    if (!data) {
+        data = std::make_shared<DockWindowHitData>();
+        data->window = window;
+        data->rootHwnd = hwnd;
+        m_dockClickThroughState->dataByRoot.insert(hwnd, data);
+    }
+
+    data->clipRegions = variantListToRects(clipRegions);
+    data->hitRegions = variantListToRects(hitRegions);
+    applyRegionsToWindowTree(data);
+}
+
+void WindowEffects::clearDockHitRegions(QWindow* window)
+{
+    if (!window || !m_dockClickThroughState) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    if (!hwnd) {
+        return;
+    }
+
+    const auto data = m_dockClickThroughState->dataByRoot.take(hwnd);
+    if (data) {
+        clearRegionsFromWindowTree(data);
+    }
 }
