@@ -21,6 +21,23 @@ Window {
         onTriggered: dockModel.refresh()
     }
 
+    // Context Menu for Dock Background
+    Menu {
+        id: dockContextMenu
+        
+        MenuItem {
+            text: "Системные настройки..."
+            onTriggered: taskbarController.settingsVisible = true
+        }
+        
+        MenuSeparator {}
+        
+        MenuItem {
+            text: "Выход из оболочки"
+            onTriggered: taskbarController.quitApplication()
+        }
+    }
+
     Rectangle {
         id: dockBg
         anchors.left: parent.left
@@ -31,6 +48,14 @@ Window {
         color: "#F8F3F4F6"
         border.width: 1
         border.color: "#E2E4E9"
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            onClicked: function(mouse) {
+                dockContextMenu.popup()
+            }
+        }
     }
 
     Flickable {

@@ -30,6 +30,7 @@ Window {
                 spacing: 12
 
                 Text {
+                    id: appleLogo
                     text: ""
                     color: "#1A1F26"
                     font.pixelSize: 16
@@ -39,7 +40,23 @@ Window {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: taskbarController.settingsVisible = !taskbarController.settingsVisible
+                        onClicked: appleMenu.popup(appleLogo, 0, appleLogo.height + 6)
+                    }
+
+                    Menu {
+                        id: appleMenu
+                        
+                        MenuItem {
+                            text: "Системные настройки..."
+                            onTriggered: taskbarController.settingsVisible = true
+                        }
+                        
+                        MenuSeparator {}
+                        
+                        MenuItem {
+                            text: "Выход"
+                            onTriggered: taskbarController.quitApplication()
+                        }
                     }
                 }
 
