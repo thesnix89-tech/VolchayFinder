@@ -151,16 +151,12 @@ RowLayout {
                     ctx.arc(8, 13, r, start, end)
                     ctx.stroke()
                 }
-                arc(2.2, Math.PI * 1.15, Math.PI * 1.85)
-                arc(4.6, Math.PI * 1.2, Math.PI * 1.8)
-                arc(7.0, Math.PI * 1.28, Math.PI * 1.72)
+                arc(2.4, Math.PI * 1.18, Math.PI * 1.82)
+                arc(4.8, Math.PI * 1.2, Math.PI * 1.8)
+                arc(7.2, Math.PI * 1.25, Math.PI * 1.75)
                 ctx.beginPath()
-                ctx.arc(8, 13, 1.1, 0, Math.PI * 2)
+                ctx.arc(8, 13, 1.15, 0, Math.PI * 2)
                 ctx.fill()
-                ctx.font = "bold 8px sans-serif"
-                ctx.textAlign = "center"
-                ctx.textBaseline = "middle"
-                ctx.fillText("!", 8, 7.5)
             }
         }
     }
@@ -189,36 +185,70 @@ RowLayout {
         }
     }
 
-    // Control Center
+    // Control Center — two stacked mini toggles (off top, on bottom).
     StatusHit {
         id: controlCenterHit
-        hitW: 30
-        hitH: 22
+        hitW: 28
+        hitH: 24
         active: controlCenterPanel.visible
 
-        Row {
-            spacing: 3
-            Repeater {
-                model: 2
-                Item {
-                    width: 5
-                    height: 14
-                    Rectangle {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: 3
-                        height: 10
-                        radius: 1.5
-                        color: root.iconColor
-                    }
-                    Rectangle {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: index === 0 ? 1 : 5
-                        width: 5
-                        height: 5
-                        radius: 2.5
-                        color: root.iconColor
+        Canvas {
+            anchors.centerIn: parent
+            width: 20
+            height: 23
+            antialiasing: true
+            property color glyph: root.iconColor
+            property color knobOnFill: root.darkTheme ? "#2C2C2E" : "#FFFFFF"
+            onGlyphChanged: requestPaint()
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+
+                var tw = 18
+                var th = 9
+                var gap = 3
+                var pad = 1
+                var knobInset = 1.6
+
+                function roundPill(x, y, w, h) {
+                    var r = h / 2
+                    ctx.beginPath()
+                    ctx.moveTo(x + r, y)
+                    ctx.lineTo(x + w - r, y)
+                    ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2)
+                    ctx.lineTo(x + r, y + h)
+                    ctx.arc(x + r, y + r, r, Math.PI / 2, -Math.PI / 2)
+                    ctx.closePath()
+                }
+
+                function drawToggle(x, y, w, h, on) {
+                    var knobR = (h - knobInset * 2) / 2
+                    var cy = y + h / 2
+                    var knobLeftX = x + knobInset + knobR
+                    var knobRightX = x + w - knobInset - knobR
+                    if (!on) {
+                        roundPill(x, y, w, h)
+                        ctx.strokeStyle = glyph
+                        ctx.lineWidth = 1
+                        ctx.stroke()
+                        ctx.beginPath()
+                        ctx.arc(knobLeftX, cy, knobR - 0.05, 0, Math.PI * 2)
+                        ctx.fillStyle = glyph
+                        ctx.fill()
+                    } else {
+                        roundPill(x, y, w, h)
+                        ctx.fillStyle = glyph
+                        ctx.fill()
+                        ctx.beginPath()
+                        ctx.arc(knobRightX, cy, knobR - 0.05, 0, Math.PI * 2)
+                        ctx.fillStyle = knobOnFill
+                        ctx.fill()
                     }
                 }
+
+                var ox = pad + (width - tw - pad * 2) / 2
+                drawToggle(ox, pad, tw, th, false)
+                drawToggle(ox, pad + th + gap, tw, th, true)
             }
         }
 

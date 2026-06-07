@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import "components"
 
 Window {
     id: settingsWindow
@@ -305,39 +306,11 @@ Window {
                             }
                         }
 
-                        // Custom Toggle Switch (Rectangle-based with property declared at top)
-                        Rectangle {
+                        MacToggle {
                             id: hideTaskbarToggle
-                            property bool checked: taskbarController.autoHideWindowsTaskbar
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.autoHideWindowsTaskbar
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: hideTaskbarToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: hideTaskbarToggle.checked = !hideTaskbarToggle.checked
-                            }
+                            onClicked: hideTaskbarToggle.checked = !hideTaskbarToggle.checked
                         }
                     }
 
@@ -374,39 +347,11 @@ Window {
                             }
                         }
 
-                        // Custom Toggle Switch (Rectangle-based with property declared at top)
-                        Rectangle {
+                        MacToggle {
                             id: showTopBarToggle
-                            property bool checked: taskbarController.showTopBar
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.showTopBar
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: showTopBarToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: showTopBarToggle.checked = !showTopBarToggle.checked
-                            }
+                            onClicked: showTopBarToggle.checked = !showTopBarToggle.checked
                         }
                     }
 
@@ -531,44 +476,12 @@ Window {
                             }
                         }
 
-                        // Custom Toggle Switch (Rectangle-based with property declared at top)
-                        Rectangle {
+                        MacToggle {
                             id: hoverBounceToggle
-                            property bool checked: taskbarController.dockHoverBounce
-                            // Static icons override hover bounce, so this control is locked while static mode is on
-                            property bool locked: staticIconsToggle.checked
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.dockHoverBounce
+                            enabled: !staticIconsToggle.checked
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            opacity: locked ? 0.4 : 1.0
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Behavior on opacity { NumberAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: hoverBounceToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                enabled: !hoverBounceToggle.locked
-                                cursorShape: hoverBounceToggle.locked ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-                                onClicked: hoverBounceToggle.checked = !hoverBounceToggle.checked
-                            }
+                            onClicked: hoverBounceToggle.checked = !hoverBounceToggle.checked
                         }
                     }
 
@@ -605,38 +518,11 @@ Window {
                             }
                         }
 
-                        Rectangle {
+                        MacToggle {
                             id: darkThemeToggle
-                            property bool checked: taskbarController.darkTheme
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.darkTheme
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: darkThemeToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: darkThemeToggle.checked = !darkThemeToggle.checked
-                            }
+                            onClicked: darkThemeToggle.checked = !darkThemeToggle.checked
                         }
                     }
 
@@ -673,39 +559,11 @@ Window {
                             }
                         }
 
-                        // Custom Toggle Switch (Rectangle-based with property declared at top)
-                        Rectangle {
+                        MacToggle {
                             id: staticIconsToggle
-                            property bool checked: taskbarController.dockStaticIcons
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.dockStaticIcons
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: staticIconsToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: staticIconsToggle.checked = !staticIconsToggle.checked
-                            }
+                            onClicked: staticIconsToggle.checked = !staticIconsToggle.checked
                         }
                     }
 
@@ -742,38 +600,11 @@ Window {
                             }
                         }
 
-                        Rectangle {
+                        MacToggle {
                             id: startWithWindowsToggle
-                            property bool checked: taskbarController.startWithWindows
-                            width: 36
-                            height: 20
-                            Layout.preferredWidth: 36
-                            Layout.preferredHeight: 20
+                            checked: taskbarController.startWithWindows
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 10
-                            color: checked ? "#34C759" : "#E9E9EA"
-                            border.width: 1
-                            border.color: checked ? "#34C759" : "#D1D1D6"
-
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                radius: 9
-                                color: "white"
-                                x: startWithWindowsToggle.checked ? 17 : 1
-                                y: 1
-
-                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: startWithWindowsToggle.checked = !startWithWindowsToggle.checked
-                            }
+                            onClicked: startWithWindowsToggle.checked = !startWithWindowsToggle.checked
                         }
                     }
                 }

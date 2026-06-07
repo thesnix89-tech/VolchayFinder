@@ -6,3 +6,4 @@ Dock 1.0 Dock.qml
 DockItem 1.0 DockItem.qml
 StatusArea 1.0 StatusArea.qml
 ControlCenterPanel 1.0 ControlCenterPanel.qml
+MacToggle 1.0 MacToggle.qml
