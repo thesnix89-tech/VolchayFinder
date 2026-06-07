@@ -2,6 +2,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QDirIterator>
 
 #include <windows.h>
 #include <shobjidl.h>
@@ -109,17 +110,26 @@ PinnedShortcutEntry PinnedTaskbarResolver::resolveShortcut(const QString& shortc
 QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
 {
     QList<PinnedShortcutEntry> results;
-    const QString dirPath = pinnedTaskbarDir();
-    QDir dir(dirPath);
-    if (!dir.exists()) {
-        return results;
-    }
+    const QString appData = qEnvironmentVariable("APPDATA");
+    const QString basePinnedPath = QDir(appData).filePath("Microsoft/Internet Explorer/Quick Launch/User Pinned");
 
-    const QFileInfoList shortcuts = dir.entryInfoList(QStringList() << "*.lnk", QDir::Files | QDir::NoDotAndDotDot);
-    for (const QFileInfo& shortcut : shortcuts) {
-        const PinnedShortcutEntry entry = resolveShortcut(shortcut.absoluteFilePath());
-        if (!entry.targetPath.isEmpty() || !entry.appUserModelId.isEmpty()) {
-            results.push_back(entry);
+    QStringList targetDirs;
+    targetDirs << QDir(basePinnedPath).filePath("TaskBar");
+    targetDirs << QDir(basePinnedPath).filePath("ImplicitAppShortcuts");
+
+    for (const QString& dirPath : targetDirs) {
+        if (!QDir(dirPath).exists()) {
+            continue;
+        }
+
+        const QDirIterator::IteratorFlags flags = QDirIterator::Subdirectories;
+        QDirIterator it(dirPath, QStringList() << "*.lnk", QDir::Files, flags);
+        while (it.hasNext()) {
+            const QString filePath = it.next();
+            const PinnedShortcutEntry entry = resolveShortcut(filePath);
+            if (!entry.targetPath.isEmpty() || !entry.appUserModelId.isEmpty()) {
+                results.push_back(entry);
+            }
         }
     }
 
