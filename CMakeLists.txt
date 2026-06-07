@@ -39,6 +39,10 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
+        src/MacDockShell/fonts/SF-Pro-Text-Regular.otf
+        src/MacDockShell/fonts/SF-Pro-Text-Medium.otf
+        src/MacDockShell/fonts/SF-Pro-Text-Semibold.otf
+        src/MacDockShell/fonts/SF-Pro-Text-Bold.otf
         src/MacDockShell/icons/finder_macos.png
         src/MacDockShell/cursors/100/arrow.cur
         src/MacDockShell/cursors/100/pointing_hand.cur

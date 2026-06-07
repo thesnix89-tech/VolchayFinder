@@ -117,6 +117,81 @@ QString foregroundAppName(HWND hwnd)
     return label;
 }
 
+QString normalizeMenuLabel(const QString& raw)
+{
+    QString label = raw;
+    const int tabIndex = label.indexOf(QLatin1Char('\t'));
+    if (tabIndex >= 0) {
+        label = label.left(tabIndex);
+    }
+    label.remove(QLatin1Char('&'));
+    return label.trimmed();
+}
+
+QStringList defaultMenuBarItems()
+{
+    const LANGID language = GetUserDefaultUILanguage();
+    if (PRIMARYLANGID(language) == LANG_RUSSIAN) {
+        return {
+            QStringLiteral("Файл"),
+            QStringLiteral("Правка"),
+            QStringLiteral("Вид"),
+            QStringLiteral("Переход"),
+            QStringLiteral("Окно"),
+            QStringLiteral("Справка"),
+        };
+    }
+
+    return {
+        QStringLiteral("File"),
+        QStringLiteral("Edit"),
+        QStringLiteral("View"),
+        QStringLiteral("Go"),
+        QStringLiteral("Window"),
+        QStringLiteral("Help"),
+    };
+}
+
+QStringList readMenuBarItems(HWND hwnd)
+{
+    if (!hwnd) {
+        return {};
+    }
+
+    const HWND root = GetAncestor(hwnd, GA_ROOT);
+    HMENU menu = GetMenu(root);
+    if (!menu) {
+        menu = GetMenu(hwnd);
+    }
+    if (!menu) {
+        return {};
+    }
+
+    const int count = GetMenuItemCount(menu);
+    if (count <= 0) {
+        return {};
+    }
+
+    QStringList items;
+    items.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        const int length = GetMenuStringW(menu, static_cast<UINT>(i), nullptr, 0, MF_BYPOSITION);
+        if (length <= 0) {
+            continue;
+        }
+
+        std::wstring buffer(static_cast<size_t>(length) + 1, L'\0');
+        GetMenuStringW(menu, static_cast<UINT>(i), buffer.data(), length + 1, MF_BYPOSITION);
+
+        const QString label = normalizeMenuLabel(QString::fromWCharArray(buffer.c_str()));
+        if (!label.isEmpty()) {
+            items.push_back(label);
+        }
+    }
+
+    return items;
+}
+
 constexpr wchar_t kRunKeyPath[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 constexpr wchar_t kRunValueName[] = L"MacDockShell";
 
@@ -199,12 +274,13 @@ TaskbarController::TaskbarController(QObject* parent)
     m_fullscreenTimer = new QTimer(this);
     m_fullscreenTimer->setInterval(120);
     connect(m_fullscreenTimer, &QTimer::timeout, this, [this]() {
-        updateForegroundAppName();
+        updateForegroundMenuBar();
         updateFullscreenState();
     });
     m_fullscreenTimer->start();
+    m_menuBarItems = defaultMenuBarItems();
     loadSettings();
-    updateForegroundAppName();
+    updateForegroundMenuBar();
 }
 
 TaskbarController::~TaskbarController()
@@ -304,7 +380,7 @@ bool TaskbarController::detectForegroundOccupiesScreen() const
         && windowRect.bottom >= monitorRect.bottom;
 }
 
-void TaskbarController::updateForegroundAppName()
+void TaskbarController::updateForegroundMenuBar()
 {
     HWND hwnd = GetForegroundWindow();
     if (hwnd && isOwnProcessWindow(hwnd)) {
@@ -313,24 +389,38 @@ void TaskbarController::updateForegroundAppName()
     }
 
     QString name = QStringLiteral("Finder");
+    QStringList items = defaultMenuBarItems();
 
     if (hwnd && !isDesktopForeground(hwnd)) {
         const QString resolved = foregroundAppName(hwnd);
         if (!resolved.isEmpty()) {
             name = resolved;
         }
+
+        const QStringList windowItems = readMenuBarItems(hwnd);
+        if (!windowItems.isEmpty()) {
+            items = windowItems;
+        }
     }
 
-    if (m_menuBarAppName == name) {
-        return;
+    if (m_menuBarAppName != name) {
+        m_menuBarAppName = name;
+        emit menuBarAppNameChanged();
     }
-    m_menuBarAppName = name;
-    emit menuBarAppNameChanged();
+    if (m_menuBarItems != items) {
+        m_menuBarItems = items;
+        emit menuBarItemsChanged();
+    }
 }
 
 QString TaskbarController::menuBarAppName() const
 {
     return m_menuBarAppName;
+}
+
+QStringList TaskbarController::menuBarItems() const
+{
+    return m_menuBarItems;
 }
 
 void TaskbarController::updateFullscreenState()

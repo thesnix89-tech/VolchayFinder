@@ -1,5 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QFont>
+#include <QFontDatabase>
 #include <QIcon>
 #include <QFile>
 #include <QTextStream>
@@ -129,6 +131,41 @@ bool tryActivateExistingInstance(const QStringList& arguments)
     return true;
 }
 
+bool loadBundledFonts()
+{
+    const QStringList fontPaths = {
+        QStringLiteral(":/src/MacDockShell/fonts/SF-Pro-Text-Regular.otf"),
+        QStringLiteral(":/src/MacDockShell/fonts/SF-Pro-Text-Medium.otf"),
+        QStringLiteral(":/src/MacDockShell/fonts/SF-Pro-Text-Semibold.otf"),
+        QStringLiteral(":/src/MacDockShell/fonts/SF-Pro-Text-Bold.otf"),
+    };
+
+    QString family;
+    for (const QString& path : fontPaths) {
+        const int fontId = QFontDatabase::addApplicationFont(path);
+        if (fontId < 0) {
+            appendLine(QString("Failed to load font: %1").arg(path));
+            continue;
+        }
+
+        const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+        if (!families.isEmpty() && family.isEmpty()) {
+            family = families.first();
+        }
+    }
+
+    if (family.isEmpty()) {
+        appendLine("SF Pro Text not loaded; using system default font.");
+        return false;
+    }
+
+    QFont appFont(family);
+    appFont.setPixelSize(13);
+    QGuiApplication::setFont(appFont);
+    appendLine(QString("Default font set to: %1").arg(family));
+    return true;
+}
+
 bool listenForSecondaryLaunches(QLocalServer& server)
 {
     const QString serverName = QString::fromUtf8(kSingleInstanceServer);
@@ -167,6 +204,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon());
+    loadBundledFonts();
 
     if (tryActivateExistingInstance(app.arguments())) {
         appendLine("Forwarded launch to an already running MacDockShell instance.");

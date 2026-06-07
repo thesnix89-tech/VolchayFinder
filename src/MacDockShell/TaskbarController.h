@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 class QTimer;
 
@@ -20,6 +21,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
     Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
     Q_PROPERTY(QString menuBarAppName READ menuBarAppName NOTIFY menuBarAppNameChanged)
+    Q_PROPERTY(QStringList menuBarItems READ menuBarItems NOTIFY menuBarItemsChanged)
     Q_PROPERTY(QString explorerIconStyle READ explorerIconStyle WRITE setExplorerIconStyle NOTIFY explorerIconStyleChanged)
 
 public:
@@ -54,6 +56,7 @@ public:
     bool startWithWindows() const;
     void setStartWithWindows(bool enabled);
     QString menuBarAppName() const;
+    QStringList menuBarItems() const;
     QString explorerIconStyle() const;
     void setExplorerIconStyle(const QString& style);
 
@@ -71,6 +74,7 @@ signals:
     void darkThemeChanged();
     void startWithWindowsChanged();
     void menuBarAppNameChanged();
+    void menuBarItemsChanged();
     void explorerIconStyleChanged();
 
 private:
@@ -80,7 +84,7 @@ private:
     void updateTaskbarVisibility();
     bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
-    void updateForegroundAppName();
+    void updateForegroundMenuBar();
     void syncWindowsStartup(bool enabled);
     void reconcileWindowsStartup();
 
@@ -99,6 +103,7 @@ private:
     bool m_dockAutoHidden = false;
     bool m_dockRevealed = false;
     QString m_menuBarAppName = QStringLiteral("Finder");
+    QStringList m_menuBarItems;
     QString m_explorerIconStyle = QStringLiteral("default");
     QTimer* m_fullscreenTimer = nullptr;
 };

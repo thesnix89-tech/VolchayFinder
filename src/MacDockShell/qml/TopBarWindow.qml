@@ -43,36 +43,32 @@ Window {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 14
+            anchors.leftMargin: 17
             anchors.rightMargin: 14
             spacing: 18
 
             RowLayout {
-                spacing: 12
+                spacing: 9
 
                 Item {
-                    width: 15
-                    height: 15
+                    id: appleIconSlot
+                    Layout.rightMargin: 7
+                    readonly property int raster: Math.max(1, Math.round(18 * Screen.devicePixelRatio))
+                    width: 18
+                    height: 18
                     Layout.alignment: Qt.AlignVCenter
 
                     Image {
-                        anchors.fill: parent
-                        source: "qrc:/src/MacDockShell/qml/apple_logo.svg"
-                        fillMode: Image.PreserveAspectFit
-                        opacity: topBarWindow.darkTheme ? 0 : 1
-                        Behavior on opacity {
-                            NumberAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                        }
-                    }
-                    Image {
                         id: appleLogo
                         anchors.fill: parent
-                        source: "qrc:/src/MacDockShell/qml/apple_logo_white.svg"
+                        source: topBarWindow.darkTheme
+                                ? "qrc:/src/MacDockShell/qml/apple_logo_white.svg"
+                                : "qrc:/src/MacDockShell/qml/apple_logo.svg"
+                        sourceSize: Qt.size(appleIconSlot.raster, appleIconSlot.raster)
                         fillMode: Image.PreserveAspectFit
-                        opacity: topBarWindow.darkTheme ? 1 : 0
-                        Behavior on opacity {
-                            NumberAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                        }
+                        mipmap: false
+                        smooth: false
+                        antialiasing: true
                     }
 
                     MouseArea {
@@ -87,10 +83,10 @@ Window {
                     id: menuAppNameText
                     text: taskbarController.menuBarAppName
                     color: topBarWindow.menuAccentTextColor
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
-                    opacity: 0.96
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.rightMargin: 3
 
                     Behavior on color {
                         ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
@@ -108,7 +104,7 @@ Window {
                         NumberAnimation {
                             target: menuAppNameText
                             property: "opacity"
-                            to: 0.96
+                            to: 1.0
                             duration: 220
                             easing.type: Easing.OutCubic
                         }
@@ -121,12 +117,12 @@ Window {
                 }
 
                 Repeater {
-                    model: ["File", "Edit", "View", "Go", "Window", "Help"]
+                    model: taskbarController.menuBarItems
                     delegate: Text {
                         text: modelData
                         color: topBarWindow.menuTextColor
-                        font.pixelSize: 12
-                        opacity: 0.92
+                        font.pixelSize: 13
+                        Layout.alignment: Qt.AlignVCenter
                         Behavior on color {
                             ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
                         }
