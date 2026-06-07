@@ -3,6 +3,7 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QImage>
 #include <QPixmap>
@@ -384,7 +385,11 @@ void DockModel::refresh()
     }
 
     emitActiveWindowState();
-    emit logMessage(QStringLiteral("DockModel refreshed. Items: %1").arg(m_entries.size()));
+    if (previousKeys == newKeys) {
+        emit logMessage(QStringLiteral("DockModel refreshed via dataChanged. Items: %1").arg(m_entries.size()));
+    } else {
+        emit logMessage(QStringLiteral("DockModel refreshed via resetModel. Items: %1").arg(m_entries.size()));
+    }
 }
 
 void DockModel::scheduleRunningStateRefresh()
@@ -496,6 +501,72 @@ void DockModel::pinPathAt(const QString& path, int index)
     }
 
     emit logMessage(QStringLiteral("Pinned to dock: %1 at slot %2").arg(shortcutPath).arg(targetIndex));
+}
+
+void DockModel::unpinIndex(int index)
+{
+    if (index < 0 || index >= m_entries.size()) {
+        return;
+    }
+
+    auto& entry = m_entries[index];
+    if (!entry.pinned) {
+        return;
+    }
+
+    // Prevent unpinning Explorer / Finder — it is a special synthetic pin.
+    if (isExplorerEntry(entry)) {
+        emit logMessage(QStringLiteral("unpinIndex: blocked — cannot unpin Explorer/Finder (AUMID=%1)").arg(entry.appUserModelId));
+        return;
+    }
+
+    if (!m_pinnedResolver) {
+        return;
+    }
+
+    const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolvePinnedShortcuts();
+    int removedCount = 0;
+    for (const PinnedShortcutEntry& shortcut : shortcuts) {
+        bool matches = false;
+        if (!entry.exePath.isEmpty() && !shortcut.targetPath.isEmpty()
+            && lowerPath(entry.exePath) == lowerPath(shortcut.targetPath)) {
+            matches = true;
+        }
+        if (!entry.launchPath.isEmpty() && !shortcut.shortcutPath.isEmpty()
+            && lowerPath(entry.launchPath) == lowerPath(shortcut.shortcutPath)) {
+            matches = true;
+        }
+        if (!entry.appUserModelId.isEmpty() && !shortcut.appUserModelId.isEmpty()
+            && entry.appUserModelId.compare(shortcut.appUserModelId, Qt::CaseInsensitive) == 0) {
+            matches = true;
+        }
+
+        if (matches) {
+            if (QFile::exists(shortcut.shortcutPath)) {
+                const QString nativePath = QDir::toNativeSeparators(shortcut.shortcutPath);
+                DWORD attrs = GetFileAttributesW(reinterpret_cast<LPCWSTR>(nativePath.utf16()));
+                if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_READONLY)) {
+                    SetFileAttributesW(reinterpret_cast<LPCWSTR>(nativePath.utf16()), attrs & ~FILE_ATTRIBUTE_READONLY);
+                }
+                if (QFile::remove(shortcut.shortcutPath)) {
+                    removedCount++;
+                    emit logMessage(QStringLiteral("unpinIndex: removed shortcut %1").arg(shortcut.shortcutPath));
+                } else {
+                    emit logMessage(QStringLiteral("unpinIndex: FAILED to remove %1").arg(shortcut.shortcutPath));
+                }
+            }
+        }
+    }
+
+    if (removedCount == 0) {
+        emit logMessage(QStringLiteral("unpinIndex: no matching shortcut found for %1").arg(entry.exePath));
+    }
+
+    m_customOrder.removeOne(entryOrderKey(entry));
+    saveOrder();
+    m_reorderActive = false;
+    refresh();
+    emit logMessage(QStringLiteral("Unpinned at index %1. Dock items after refresh: %2").arg(index).arg(m_entries.size()));
 }
 
 void DockModel::moveItem(int from, int to)
