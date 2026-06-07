@@ -91,7 +91,7 @@ Window {
                     required property bool minimized
                     required property bool clickable
 
-                    width: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
+                    width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
                     height: taskbarController.dockIconSize + 38
 
                     opacity: dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55
@@ -110,10 +110,22 @@ Window {
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: mouseArea.containsMouse ? -8 : 0
+                        anchors.verticalCenterOffset: (mouseArea.containsMouse && taskbarController.dockHoverBounce && !taskbarController.dockStaticIcons) ? -8 : 0
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
+
+                        // macOS-style launch bounce (separate transform so it does not fight the hover binding)
+                        transform: Translate { id: launchTranslate }
+
+                        SequentialAnimation {
+                            id: launchBounceAnim
+                            running: false
+                            // Single launch hop in every mode.
+                            loops: 1
+                            NumberAnimation { target: launchTranslate; property: "y"; from: 0; to: -22; duration: 220; easing.type: Easing.OutQuad }
+                            NumberAnimation { target: launchTranslate; property: "y"; to: 0; duration: 280; easing.type: Easing.OutBounce }
+                        }
 
                         Behavior on anchors.verticalCenterOffset {
                             NumberAnimation {
@@ -125,8 +137,8 @@ Window {
                         Item {
                             id: iconContainer
                             anchors.centerIn: parent
-                            width: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
-                            height: mouseArea.containsMouse ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
+                            width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
+                            height: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
 
                             Behavior on width {
                                 NumberAnimation {
@@ -166,7 +178,7 @@ Window {
                                 anchors.centerIn: parent
                                 text: dockItemRoot.iconHint.length > 0 ? dockItemRoot.iconHint : dockItemRoot.label.slice(0, 1)
                                 color: "#1C222B"
-                                font.pixelSize: mouseArea.containsMouse ? 24 : 20
+                                font.pixelSize: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? 24 : 20
                                 font.weight: Font.DemiBold
                                 visible: dockIconImage.status !== Image.Ready
                             }
@@ -245,6 +257,136 @@ Window {
                         }
                     }
 
+                    // macOS-style context menu for a running dock app
+                    Menu {
+                        id: appContextMenu
+                        popupType: Popup.Window
+                        padding: 6
+                        implicitWidth: 240
+
+                        background: Rectangle {
+                            implicitWidth: 240
+                            color: "#F5F5F5"
+                            radius: 9
+                            border.width: 1
+                            border.color: "#C2C2C2"
+                        }
+
+                        delegate: MenuItem {
+                            id: menuEntry
+                            implicitWidth: 228
+                            implicitHeight: 30
+                            padding: 0
+                            arrow: Item {}
+                            indicator: Item {}
+
+                            contentItem: Item {
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 16
+                                    text: menuEntry.text
+                                    font.pixelSize: 13
+                                    color: menuEntry.highlighted ? "white" : "#1D1D1F"
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 12
+                                    text: "\u203A"
+                                    font.pixelSize: 16
+                                    color: menuEntry.highlighted ? "white" : "#1D1D1F"
+                                    visible: menuEntry.subMenu !== null
+                                }
+                            }
+
+                            background: Rectangle {
+                                anchors.fill: parent
+                                anchors.leftMargin: 6
+                                anchors.rightMargin: 6
+                                radius: 5
+                                color: menuEntry.highlighted ? "#3478F6" : "transparent"
+                            }
+                        }
+
+                        Menu {
+                            title: "Параметры"
+                            popupType: Popup.Window
+                            padding: 6
+                            implicitWidth: 220
+
+                            background: Rectangle {
+                                implicitWidth: 220
+                                color: "#F5F5F5"
+                                radius: 9
+                                border.width: 1
+                                border.color: "#C2C2C2"
+                            }
+
+                            delegate: MenuItem {
+                                id: subEntry
+                                implicitWidth: 208
+                                implicitHeight: 30
+                                padding: 0
+                                arrow: Item {}
+                                indicator: Item {}
+                                contentItem: Text {
+                                    verticalAlignment: Text.AlignVCenter
+                                    leftPadding: 16
+                                    text: subEntry.text
+                                    font.pixelSize: 13
+                                    color: subEntry.highlighted ? "white" : "#1D1D1F"
+                                }
+                                background: Rectangle {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 6
+                                    anchors.rightMargin: 6
+                                    radius: 5
+                                    color: subEntry.highlighted ? "#3478F6" : "transparent"
+                                }
+                            }
+
+                            Action {
+                                text: "Показать в Проводнике"
+                                onTriggered: {
+                                    var i = dockItemRoot.index
+                                    Qt.callLater(function() { dockModel.revealIndex(i) })
+                                }
+                            }
+                        }
+
+                        MenuSeparator {
+                            topPadding: 4
+                            bottomPadding: 4
+                            contentItem: Rectangle {
+                                implicitHeight: 1
+                                color: "#D6D6D6"
+                            }
+                        }
+
+                        Action {
+                            text: "Показать все окна"
+                            onTriggered: {
+                                var i = dockItemRoot.index
+                                Qt.callLater(function() { dockModel.activateIndex(i) })
+                            }
+                        }
+                        Action {
+                            text: "Скрыть"
+                            onTriggered: {
+                                var i = dockItemRoot.index
+                                Qt.callLater(function() { dockModel.minimizeIndex(i) })
+                            }
+                        }
+                        Action {
+                            text: "Завершить"
+                            onTriggered: {
+                                var i = dockItemRoot.index
+                                Qt.callLater(function() { dockModel.closeIndex(i) })
+                            }
+                        }
+                    }
+
                     MouseArea {
                         id: mouseArea
                         anchors.fill: parent
@@ -254,10 +396,18 @@ Window {
                         onClicked: function(mouse) {
                             if (!dockItemRoot.clickable)
                                 return
+                            var idx = dockItemRoot.index
                             if (mouse.button === Qt.RightButton) {
-                                dockModel.minimizeIndex(dockItemRoot.index)
+                                // Running apps get the macOS-style menu; pinned-only icons do nothing.
+                                if (dockItemRoot.running)
+                                    appContextMenu.popup()
                             } else {
-                                dockModel.toggleIndex(dockItemRoot.index)
+                                // Defer model actions out of this signal handler: launching/activating
+                                // pumps a nested message loop, and the refresh timer would otherwise
+                                // reset the model and destroy this delegate mid-handler (FATAL crash).
+                                if (!dockItemRoot.running)
+                                    launchBounceAnim.restart()
+                                Qt.callLater(function() { dockModel.toggleIndex(idx) })
                             }
                         }
                     }

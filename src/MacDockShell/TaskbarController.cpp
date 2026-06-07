@@ -179,6 +179,32 @@ void TaskbarController::setAutoHideWindowsTaskbar(bool autoHide)
     updateTaskbarVisibility();
 }
 
+bool TaskbarController::dockHoverBounce() const
+{
+    return m_dockHoverBounce;
+}
+
+void TaskbarController::setDockHoverBounce(bool enabled)
+{
+    if (m_dockHoverBounce == enabled)
+        return;
+    m_dockHoverBounce = enabled;
+    emit dockHoverBounceChanged();
+}
+
+bool TaskbarController::dockStaticIcons() const
+{
+    return m_dockStaticIcons;
+}
+
+void TaskbarController::setDockStaticIcons(bool enabled)
+{
+    if (m_dockStaticIcons == enabled)
+        return;
+    m_dockStaticIcons = enabled;
+    emit dockStaticIconsChanged();
+}
+
 void TaskbarController::updateTaskbarVisibility()
 {
     if (m_shellActive && m_autoHideWindowsTaskbar) {
@@ -188,11 +214,13 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
     setDockIconSize(iconSize);
+    setDockHoverBounce(dockHoverBounce);
+    setDockStaticIcons(dockStaticIcons);
     setShellActive(true);
     setSettingsVisible(false);
 }

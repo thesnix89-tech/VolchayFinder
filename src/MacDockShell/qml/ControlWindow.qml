@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Window {
     id: settingsWindow
     width: 680
-    height: 380
+    height: 480
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
     visible: taskbarController.settingsVisible
@@ -444,6 +444,148 @@ Window {
                             horizontalAlignment: Text.AlignRight
                         }
                     }
+
+                    // Separator 3
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 4: Dock Hover Bounce
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            opacity: staticIconsToggle.checked ? 0.4 : 1.0
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                            Text {
+                                text: "Подпрыгивание иконок при наведении"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Иконки приподнимаются, когда вы наводите на них курсор"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        // Custom Toggle Switch (Rectangle-based with property declared at top)
+                        Rectangle {
+                            id: hoverBounceToggle
+                            property bool checked: taskbarController.dockHoverBounce
+                            // Static icons override hover bounce, so this control is locked while static mode is on
+                            property bool locked: staticIconsToggle.checked
+                            width: 36
+                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            opacity: locked ? 0.4 : 1.0
+                            color: checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: checked ? "#34C759" : "#D1D1D6"
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: hoverBounceToggle.checked ? 17 : 1
+                                y: 1
+
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: !hoverBounceToggle.locked
+                                cursorShape: hoverBounceToggle.locked ? Qt.ForbiddenCursor : Qt.PointingHandCursor
+                                onClicked: hoverBounceToggle.checked = !hoverBounceToggle.checked
+                            }
+                        }
+                    }
+
+                    // Separator 4
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 5: Static Dock Icons
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Статичные иконки дока"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Иконки не двигаются и не увеличиваются при наведении"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        // Custom Toggle Switch (Rectangle-based with property declared at top)
+                        Rectangle {
+                            id: staticIconsToggle
+                            property bool checked: taskbarController.dockStaticIcons
+                            width: 36
+                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: checked ? "#34C759" : "#D1D1D6"
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: staticIconsToggle.checked ? 17 : 1
+                                y: 1
+
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: staticIconsToggle.checked = !staticIconsToggle.checked
+                            }
+                        }
+                    }
                 }
             }
 
@@ -503,7 +645,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value));
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked);
                     }
                 }
             }

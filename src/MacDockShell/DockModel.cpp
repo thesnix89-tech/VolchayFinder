@@ -227,6 +227,10 @@ QHash<int, QByteArray> DockModel::roleNames() const
 
 void DockModel::refresh()
 {
+    if (m_actionInProgress) {
+        return;
+    }
+
     beginResetModel();
     m_entries.clear();
     m_existingIconUrls.clear();
@@ -249,8 +253,10 @@ void DockModel::activateIndex(int index)
         return;
     }
 
+    m_actionInProgress = true;
     ShowWindow(hwnd, SW_RESTORE);
     SetForegroundWindow(hwnd);
+    m_actionInProgress = false;
     emit logMessage(QStringLiteral("Activated window: %1").arg(m_entries[index].windowTitle));
     refresh();
 }
@@ -267,7 +273,9 @@ void DockModel::minimizeIndex(int index)
         return;
     }
 
+    m_actionInProgress = true;
     ShowWindow(hwnd, SW_MINIMIZE);
+    m_actionInProgress = false;
     emit logMessage(QStringLiteral("Minimized window: %1").arg(m_entries[index].windowTitle));
     refresh();
 }
@@ -315,12 +323,14 @@ void DockModel::launchIndex(int index)
                          nativeArguments.isEmpty() ? QStringLiteral("<none>") : nativeArguments,
                          nativeWorkingDirectory.isEmpty() ? QStringLiteral("<none>") : nativeWorkingDirectory));
 
+    m_actionInProgress = true;
     HINSTANCE result = ShellExecuteW(nullptr,
                                      L"open",
                                      reinterpret_cast<LPCWSTR>(nativePath.utf16()),
                                      nativeArguments.isEmpty() ? nullptr : reinterpret_cast<LPCWSTR>(nativeArguments.utf16()),
                                      nativeWorkingDirectory.isEmpty() ? nullptr : reinterpret_cast<LPCWSTR>(nativeWorkingDirectory.utf16()),
                                      SW_SHOWNORMAL);
+    m_actionInProgress = false;
     const quintptr resultCode = reinterpret_cast<quintptr>(result);
     if (resultCode <= 32) {
         emit logMessage(QStringLiteral("launchIndex: failed for %1 code=%2").arg(launchPath).arg(resultCode));
@@ -328,6 +338,49 @@ void DockModel::launchIndex(int index)
     }
 
     emit logMessage(QStringLiteral("Launched pinned app: %1").arg(launchPath));
+}
+
+void DockModel::closeIndex(int index)
+{
+    if (index < 0 || index >= m_entries.size()) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(m_entries[index].hwndValue);
+    if (!hwnd || !IsWindow(hwnd)) {
+        emit logMessage(QStringLiteral("closeIndex: invalid hwnd for index %1").arg(index));
+        return;
+    }
+
+    // PostMessage is asynchronous, so this does not pump a nested message loop.
+    PostMessageW(hwnd, WM_CLOSE, 0, 0);
+    emit logMessage(QStringLiteral("Requested close for window: %1").arg(m_entries[index].windowTitle));
+}
+
+void DockModel::revealIndex(int index)
+{
+    if (index < 0 || index >= m_entries.size()) {
+        return;
+    }
+
+    const QString exePath = m_entries[index].exePath;
+    if (exePath.isEmpty()) {
+        emit logMessage(QStringLiteral("revealIndex: empty exe path for index %1").arg(index));
+        return;
+    }
+
+    const QString nativePath = QDir::toNativeSeparators(exePath);
+    const QString parameters = QStringLiteral("/select,\"%1\"").arg(nativePath);
+
+    m_actionInProgress = true;
+    ShellExecuteW(nullptr,
+                  nullptr,
+                  L"explorer.exe",
+                  reinterpret_cast<LPCWSTR>(parameters.utf16()),
+                  nullptr,
+                  SW_SHOWNORMAL);
+    m_actionInProgress = false;
+    emit logMessage(QStringLiteral("Reveal in Explorer: %1").arg(nativePath));
 }
 
 void DockModel::loadPinnedApps()

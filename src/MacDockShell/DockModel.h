@@ -61,6 +61,8 @@ public:
     Q_INVOKABLE void minimizeIndex(int index);
     Q_INVOKABLE void toggleIndex(int index);
     Q_INVOKABLE void launchIndex(int index);
+    Q_INVOKABLE void closeIndex(int index);
+    Q_INVOKABLE void revealIndex(int index);
 
 signals:
     void logMessage(const QString& message);
@@ -86,4 +88,8 @@ private:
     QString m_lastActiveAppLabel;
     bool m_lastActiveState = false;
     QStringList m_lastPinnedShortcutSnapshot;
+    // Set while launching/activating/minimizing. Those Win32 calls pump a nested
+    // message loop; this guard stops the refresh timer from resetting the model
+    // (and destroying delegates) reentrantly during that loop.
+    bool m_actionInProgress = false;
 };
