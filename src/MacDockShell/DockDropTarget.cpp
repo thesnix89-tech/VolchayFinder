@@ -87,7 +87,8 @@ struct DropTargetImpl final : public IDropTarget
     HRESULT STDMETHODCALLTYPE DragEnter(IDataObject* dataObject, DWORD keyState, POINTL point, DWORD* effect) override
     {
         Q_UNUSED(keyState)
-        if (!effect || !acceptsDataObject(dataObject)) {
+        m_dragAccepted = acceptsDataObject(dataObject);
+        if (!effect || !m_dragAccepted) {
             if (effect) {
                 *effect = DROPEFFECT_NONE;
             }
@@ -96,6 +97,9 @@ struct DropTargetImpl final : public IDropTarget
         }
 
         setHover(true);
+        if (m_windowEffects && m_window) {
+            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
+        }
         *effect = DROPEFFECT_COPY;
         return S_OK;
     }
@@ -107,13 +111,15 @@ struct DropTargetImpl final : public IDropTarget
             return E_POINTER;
         }
 
-        if (!m_window || !m_dockModel) {
+        if (!m_window || !m_dockModel || !m_dragAccepted) {
             *effect = DROPEFFECT_NONE;
-            setHover(false);
             return S_OK;
         }
 
         setHover(true);
+        if (m_windowEffects && m_window) {
+            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
+        }
         *effect = DROPEFFECT_COPY;
         return S_OK;
     }
@@ -138,8 +144,13 @@ struct DropTargetImpl final : public IDropTarget
             return S_OK;
         }
 
+        if (!m_dragAccepted && !acceptsDataObject(dataObject)) {
+            return S_OK;
+        }
+
         const QString path = pathFromDataObject(dataObject);
         if (path.isEmpty()) {
+            m_dragAccepted = false;
             return S_OK;
         }
 
@@ -151,14 +162,10 @@ struct DropTargetImpl final : public IDropTarget
             return S_OK;
         }
 
-        const int dropIndex = m_windowEffects->dockDropIndexForGlobalPoint(m_window, point.x, point.y);
-        QMetaObject::invokeMethod(m_dockModel,
-                                  "pinPathAt",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(QString, path),
-                                  Q_ARG(int, dropIndex));
+        m_windowEffects->notifyDockExternalDrop(m_window, path, 0);
 
         *effect = DROPEFFECT_COPY;
+        m_dragAccepted = false;
         return S_OK;
     }
 
@@ -188,6 +195,7 @@ private:
     QPointer<QWindow> m_window;
     DockModel* m_dockModel = nullptr;
     WindowEffects* m_windowEffects = nullptr;
+    bool m_dragAccepted = false;
     ULONG m_refCount = 1;
 };
 

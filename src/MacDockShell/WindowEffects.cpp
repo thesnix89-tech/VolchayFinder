@@ -192,6 +192,8 @@ struct DockWindowHitData
     QList<QRect> clipRegions;
     QList<QRect> hitRegions;
     QSet<HWND> hwndTree;
+    bool dropHoverActive = false;
+    bool dropCaptureActive = false;
 };
 
 class DockClickThroughState
@@ -257,6 +259,14 @@ public:
         const int x = GET_X_LPARAM(msg->lParam);
         const int y = GET_Y_LPARAM(msg->lParam);
         const QPoint screenPoint(x, y);
+
+        if ((data->dropHoverActive || data->dropCaptureActive) && data->window) {
+            const QRect windowRect = data->window->geometry();
+            if (windowRect.contains(screenPoint)) {
+                *result = HTCLIENT;
+                return true;
+            }
+        }
 
         if (data->window) {
             const QRect windowRect = data->window->geometry();
@@ -522,7 +532,7 @@ void WindowEffects::clearDockHitRegions(QWindow* window)
     }
 }
 
-void WindowEffects::setDockDropHover(QWindow* window, bool active)
+void WindowEffects::applyDockDropHover(QWindow* window, bool active)
 {
     if (!window) {
         return;
@@ -539,7 +549,95 @@ void WindowEffects::setDockDropHover(QWindow* window, bool active)
         m_dropHoverActive.remove(window);
     }
 
+    if (m_dockClickThroughState) {
+        const HWND hwnd = reinterpret_cast<HWND>(window->winId());
+        if (hwnd) {
+            const auto data = m_dockClickThroughState->dataByRoot.value(hwnd);
+            if (data) {
+                data->dropHoverActive = active;
+            }
+        }
+    }
+
     emit dockDropHoverChanged(window, active);
+}
+
+void WindowEffects::setDockDropHover(QWindow* window, bool active)
+{
+    if (!window) {
+        return;
+    }
+
+    QPointer<QTimer>& leaveTimer = m_dropHoverLeaveTimers[window];
+    if (!leaveTimer) {
+        leaveTimer = new QTimer(window);
+        leaveTimer->setSingleShot(true);
+        leaveTimer->setInterval(200);
+        QObject::connect(leaveTimer, &QTimer::timeout, this, [this, window]() {
+            applyDockDropHover(window, false);
+        });
+    }
+
+    if (active) {
+        leaveTimer->stop();
+        applyDockDropHover(window, true);
+        return;
+    }
+
+    leaveTimer->start();
+}
+
+void WindowEffects::setDockDropCapture(QWindow* window, bool active)
+{
+    if (!window) {
+        return;
+    }
+
+    if (active) {
+        m_dropCaptureActive.insert(window, true);
+    } else {
+        m_dropCaptureActive.remove(window);
+    }
+
+    if (m_dockClickThroughState) {
+        const HWND hwnd = reinterpret_cast<HWND>(window->winId());
+        if (hwnd) {
+            const auto data = m_dockClickThroughState->dataByRoot.value(hwnd);
+            if (data) {
+                data->dropCaptureActive = active;
+            }
+        }
+    }
+}
+
+void WindowEffects::setDockDropPointer(QWindow* window, int globalX, int globalY)
+{
+    if (!window) {
+        return;
+    }
+
+    const bool tracked = m_dropHoverActive.value(window, false)
+            || m_dropCaptureActive.value(window, false);
+    if (!tracked) {
+        return;
+    }
+
+    emit dockDropPointerChanged(window, globalX, globalY);
+}
+
+void WindowEffects::notifyDockExternalDrop(QWindow* window, const QString& path, int index)
+{
+    if (!window || path.isEmpty()) {
+        return;
+    }
+
+    if (QPointer<QTimer> leaveTimer = m_dropHoverLeaveTimers.value(window)) {
+        leaveTimer->stop();
+    }
+    applyDockDropHover(window, false);
+    setDockDropCapture(window, false);
+
+    emit dockExternalDrop(window, path, index);
 }
 
 void WindowEffects::updateDockDropLayout(QWindow* window, qreal pillLocalLeft, int stride, int iconSize, int itemCount)

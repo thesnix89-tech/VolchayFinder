@@ -26,6 +26,16 @@ Window {
     property real layoutMorph: 1
     readonly property bool reordering: dragFrom >= 0 || reorderSettling
     property bool externalDropActive: false
+    property bool externalPinPreview: false
+    property int externalPinTo: 0
+    property bool externalPinDropping: false
+    property int prevLayoutExternalPinTo: -1
+    // Left-edge anchor — pill grows to the right so icons don't jump left on expand.
+    property real externalDragAnchorLeftX: -1
+    property bool hasDropPointer: false
+    property real lastDropGlobalX: 0
+    property real lastDropGlobalY: 0
+    readonly property bool externalPinLayout: externalPinPreview && externalDragAnchorLeftX >= 0
     readonly property int dockSpacing: 14
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     readonly property int dockShrinkAnimMs: 220
@@ -48,6 +58,17 @@ Window {
         if (compact >= to)
             return compact + 1
         return compact
+    }
+
+    // External pin: insert a new slot at `to` — icons at/after `to` shift right.
+    function previewSlotForInsert(i, to) {
+        if (i >= to)
+            return i + 1
+        return i
+    }
+
+    function candidateInsertSlotForCenter(center, itemCount) {
+        return candidateSlotForCenter(center, itemCount + 1)
     }
 
     function packedSlotForIndex(i, from) {
@@ -245,14 +266,19 @@ Window {
     readonly property int dockEndCap: 18
     readonly property int hoverBleed: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
     readonly property int tooltipWing: 128
-    readonly property real dockRowFullWidth: dockRepeater.count * dockStride + 2 * hoverBleed
-    readonly property real dockRowCompactWidth: Math.max(0, dockRepeater.count - 1) * dockStride + 2 * hoverBleed
+    readonly property int layoutDockCount: dockRepeater.count + (externalPinPreview ? 1 : 0)
+    readonly property real dockRowFullWidth: layoutDockCount * dockStride + 2 * hoverBleed
+    readonly property real dockRowCompactWidth: externalPinPreview
+            ? dockRepeater.count * dockStride + 2 * hoverBleed
+            : Math.max(0, dockRepeater.count - 1) * dockStride + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
     width: Math.min(dockPillWidth + 2 * tooltipWing, Screen.width - 40)
     height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
-    x: Math.round((Screen.width - width) / 2)
+    x: externalPinLayout
+            ? Math.round(externalDragAnchorLeftX)
+            : Math.round((Screen.width - width) / 2)
 
     NumberAnimation {
         id: dockPackAnim
@@ -272,6 +298,109 @@ Window {
         syncDockPackState()
     }
 
+    onExternalPinToChanged: {
+        if (!externalPinPreview || externalPinDropping)
+            return
+        if (prevLayoutExternalPinTo >= 0 && externalPinTo !== prevLayoutExternalPinTo) {
+            layoutMorphFrom = prevLayoutExternalPinTo
+            layoutMorph = 0
+            layoutMorphAnim.start()
+        }
+        prevLayoutExternalPinTo = externalPinTo
+    }
+
+    function updateExternalPinTargetFromGlobal(globalX, globalY) {
+        var rowLocal = dockRowHost.mapFromGlobal(globalX, globalY)
+        var dragCenter = rowLocal.x
+        var candidate = candidateInsertSlotForCenter(dragCenter, dockRepeater.count)
+
+        if (prevLayoutExternalPinTo >= 0 && candidate !== externalPinTo) {
+            if (Math.abs(candidate - externalPinTo) === 1) {
+                var boundary = insertionBoundaryBefore(Math.max(candidate, externalPinTo))
+                if (candidate > externalPinTo && dragCenter < boundary)
+                    return
+                if (candidate < externalPinTo && dragCenter >= boundary)
+                    return
+            }
+        }
+
+        if (externalPinTo !== candidate)
+            externalPinTo = candidate
+    }
+
+    function beginExternalPinPreview() {
+        if (externalPinPreview || reordering)
+            return
+        externalDragAnchorLeftX = dockWindow.x
+        windowEffects.setDockDropCapture(dockWindow, true)
+        externalPinPreview = true
+        externalPinTo = dockRepeater.count
+        prevLayoutExternalPinTo = externalPinTo
+        layoutMorphFrom = -1
+        layoutMorph = 1
+        neighborsPacked = true
+        dockModel.setReorderActive(true)
+        if (hasDropPointer)
+            updateExternalPinTargetFromGlobal(lastDropGlobalX, lastDropGlobalY)
+        prevLayoutExternalPinTo = externalPinTo
+        dockPackT = 1
+        animateDockPack(0)
+        publishDropGeometry()
+        refreshClickHitRegions()
+    }
+
+    function cancelExternalPinPreview() {
+        if (!externalPinPreview)
+            return
+        externalPinPreview = false
+        neighborsPacked = false
+        externalDragAnchorLeftX = -1
+        hasDropPointer = false
+        windowEffects.setDockDropCapture(dockWindow, false)
+        prevLayoutExternalPinTo = -1
+        layoutMorphFrom = -1
+        layoutMorph = 1
+        dockPackT = 0
+        dockModel.setReorderActive(false)
+        publishDropGeometry()
+        refreshClickHitRegions()
+    }
+
+    function finishExternalPinDrop(path, index) {
+        externalPinDropping = true
+        externalDropActive = false
+        externalPinTo = index
+        dockModel.pinPathAt(path, index)
+        Qt.callLater(function() {
+            externalPinPreview = false
+            neighborsPacked = false
+            externalDragAnchorLeftX = -1
+            hasDropPointer = false
+            windowEffects.setDockDropCapture(dockWindow, false)
+            prevLayoutExternalPinTo = -1
+            layoutMorphFrom = -1
+            layoutMorph = 1
+            dockPackT = 0
+            externalPinDropping = false
+            dockModel.setReorderActive(false)
+            publishDropGeometry()
+            refreshClickHitRegions()
+            var item = dockRepeater.itemAt(index)
+            if (item && item.playLaunchBounce)
+                item.playLaunchBounce()
+        })
+    }
+
+    Timer {
+        id: externalDragLeaveTimer
+        interval: 180
+        repeat: false
+        onTriggered: {
+            if (!dockWindow.externalDropActive && !dockWindow.externalPinDropping)
+                dockWindow.cancelExternalPinPreview()
+        }
+    }
+
     NumberAnimation {
         id: layoutMorphAnim
         target: dockWindow
@@ -283,7 +412,7 @@ Window {
     }
 
     Behavior on x {
-        enabled: !dockWindow.reordering
+        enabled: !dockWindow.reordering && !dockWindow.externalPinPreview
         NumberAnimation { duration: dockShrinkAnimMs; easing.type: Easing.OutCubic }
     }
     // Resting position; slides fully below the screen when a fullscreen app is active.
@@ -324,7 +453,7 @@ Window {
         var fullWin = dockWindow.dockWindowLocalRect()
         var pill = dockWindow.pillLocalRect()
 
-        if (dockWindow.reordering || dockWindow.externalDropActive) {
+        if (dockWindow.reordering || dockWindow.externalDropActive || dockWindow.externalPinPreview) {
             clipRegions.push(fullWin)
             hitRegions.push(fullWin)
         } else {
@@ -353,7 +482,14 @@ Window {
     }
 
     onReorderingChanged: refreshClickHitRegions()
-    onExternalDropActiveChanged: refreshClickHitRegions()
+    onExternalDropActiveChanged: {
+        if (externalDropActive) {
+            externalDragLeaveTimer.stop()
+            beginExternalPinPreview()
+        } else if (!externalPinDropping) {
+            externalDragLeaveTimer.restart()
+        }
+    }
 
     function publishDropGeometry() {
         if (!dockWindow.visible)
@@ -370,9 +506,21 @@ Window {
     Connections {
         target: windowEffects
         function onDockDropHoverChanged(window, active) {
-            if (window === dockWindow) {
+            if (window === dockWindow)
                 dockWindow.externalDropActive = active
-            }
+        }
+        function onDockDropPointerChanged(window, globalX, globalY) {
+            if (window !== dockWindow)
+                return
+            dockWindow.lastDropGlobalX = globalX
+            dockWindow.lastDropGlobalY = globalY
+            dockWindow.hasDropPointer = true
+            if (dockWindow.externalPinPreview || dockWindow.externalDropActive)
+                dockWindow.updateExternalPinTargetFromGlobal(globalX, globalY)
+        }
+        function onDockExternalDrop(window, path, index) {
+            if (window === dockWindow)
+                dockWindow.finishExternalPinDrop(path, dockWindow.externalPinTo)
         }
     }
 
@@ -394,18 +542,21 @@ Window {
             drag.accept(Qt.CopyAction)
         }
         onPositionChanged: (drag) => {
-            if (drag.contains(drag.x, drag.y))
-                drag.accept(Qt.CopyAction)
+            if (!drag.contains(drag.x, drag.y))
+                return
+            drag.accept(Qt.CopyAction)
+            const global = dockDropArea.mapToGlobal(drag.x, drag.y)
+            dockWindow.updateExternalPinTargetFromGlobal(global.x, global.y)
         }
         onExited: dockWindow.externalDropActive = false
         onDropped: (drop) => {
-            dockWindow.externalDropActive = false
-            if (!drop.hasUrls || drop.urls.length === 0)
+            if (!drop.hasUrls || drop.urls.length === 0) {
+                dockWindow.externalDropActive = false
                 return
-            const local = dockDropArea.mapToItem(dockWindow.contentItem, drop.x, drop.y)
-            const global = dockWindow.mapToGlobal(local.x, local.y)
-            const idx = windowEffects.dockDropIndexForGlobalPoint(dockWindow, global.x, global.y)
-            dockModel.pinPathAt(drop.urls[0].toLocalFile(), idx)
+            }
+            dockWindow.finishExternalPinDrop(
+                        drop.urls[0].toLocalFile(),
+                        dockWindow.externalPinTo)
         }
     }
 
@@ -459,11 +610,22 @@ Window {
         onTriggered: dockWindow.refreshClickHitRegions()
     }
 
-    onWidthChanged: clickThroughWarmupTimer.restart()
-    onHeightChanged: clickThroughWarmupTimer.restart()
+    onWidthChanged: {
+        if (!externalPinPreview)
+            clickThroughWarmupTimer.restart()
+    }
+    onHeightChanged: {
+        if (!externalPinPreview)
+            clickThroughWarmupTimer.restart()
+    }
     onXChanged: refreshClickHitRegions()
     onYChanged: refreshClickHitRegions()
-    onDockPackTChanged: clickThroughWarmupTimer.restart()
+    onDockPackTChanged: {
+        if (externalPinPreview)
+            publishDropGeometry()
+        if (!externalPinPreview)
+            clickThroughWarmupTimer.restart()
+    }
 
     // macOS-style: glide the dock down/up when toggling fullscreen.
     Behavior on y {
@@ -520,13 +682,18 @@ Window {
 
     Rectangle {
         id: dockBg
-        anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
+        anchors.horizontalCenter: dockWindow.externalPinLayout ? undefined : parent.horizontalCenter
+        anchors.left: dockWindow.externalPinLayout ? parent.left : undefined
+        anchors.leftMargin: dockWindow.externalPinLayout ? dockWindow.tooltipWing : 0
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 22
-        onWidthChanged: clickThroughWarmupTimer.restart()
+        onWidthChanged: {
+            if (!dockWindow.externalPinPreview)
+                clickThroughWarmupTimer.restart()
+        }
 
         // macOS Monterey 12 dock — opaque tints (no see-through).
         gradient: Gradient {
@@ -660,6 +827,10 @@ Window {
                         return Qt.rect(cx - w / 2, cy - h / 2, w, h)
                     }
 
+                    function playLaunchBounce() {
+                        launchBounceAnim.restart()
+                    }
+
                     function beginDragReorder() {
                         dockItemRoot.dragging = true
                         dockWindow.neighborsPacked = true
@@ -677,6 +848,7 @@ Window {
                     property bool magnifyHover: mouseArea.containsMouse
                             && !taskbarController.dockStaticIcons
                             && !dockWindow.reordering
+                            && !dockWindow.externalPinPreview
                             && !launchBounceAnim.running
                     onMagnifyHoverChanged: dockWindow.refreshClickHitRegions()
                     readonly property bool reorderLifted: dockItemRoot.dragging
@@ -709,6 +881,26 @@ Window {
                                 : dockWindow.slotLeftForIndex(oldSlot)
                         return oldX + dockWindow.layoutMorph * (dockItemRoot.previewRestX - oldX)
                     }
+                    readonly property real insertPreviewX: {
+                        if (!dockWindow.externalPinPreview)
+                            return dockItemRoot.fullRestX
+                        var slot = dockWindow.previewSlotForInsert(
+                            dockItemRoot.index, dockWindow.externalPinTo)
+                        return dockWindow.slotLeftForIndex(slot)
+                    }
+                    readonly property real morphedInsertPreviewX: {
+                        if (dockWindow.layoutMorph >= 1
+                                || dockWindow.layoutMorphFrom < 0
+                                || !dockWindow.externalPinPreview)
+                            return dockItemRoot.insertPreviewX
+                        var oldSlot = dockWindow.previewSlotForInsert(
+                            dockItemRoot.index, dockWindow.layoutMorphFrom)
+                        var newSlot = dockWindow.previewSlotForInsert(
+                            dockItemRoot.index, dockWindow.externalPinTo)
+                        var oldX = dockWindow.slotLeftForIndex(oldSlot)
+                        var newX = dockWindow.slotLeftForIndex(newSlot)
+                        return oldX + dockWindow.layoutMorph * (newX - oldX)
+                    }
                     // Wide layout endpoint: full row on first lift, preview row after hovering.
                     readonly property real expandedRestX: {
                         if (!dockWindow.neighborsPacked || dockWindow.dragFrom < 0)
@@ -719,6 +911,10 @@ Window {
                     }
                     // Single driver with dockPackT — icons and pill width stay in sync.
                     readonly property real restingX: {
+                        if (dockWindow.externalPinPreview && dockWindow.dragFrom < 0)
+                            return dockItemRoot.fullRestX
+                                   + (1 - dockWindow.dockPackT)
+                                     * (dockItemRoot.morphedInsertPreviewX - dockItemRoot.fullRestX)
                         if (!dockWindow.neighborsPacked || dockWindow.dragFrom < 0)
                             return dockItemRoot.fullRestX
                         return dockItemRoot.compactRestX
@@ -755,10 +951,11 @@ Window {
                     }
 
                     Behavior on x {
-                        enabled: !dockWindow.neighborsPacked
-                                && !dockItemRoot.dragging
-                                && !(dockWindow.reorderSettling
-                                     && dockItemRoot.index === dockWindow.dragFrom)
+                        enabled: ((!dockWindow.neighborsPacked
+                                   && !dockItemRoot.dragging
+                                   && !(dockWindow.reorderSettling
+                                        && dockItemRoot.index === dockWindow.dragFrom))
+                                  || (dockWindow.externalPinPreview && !dockItemRoot.dragging))
                         NumberAnimation {
                             duration: dockWindow.dockShrinkAnimMs
                             easing.type: Easing.OutCubic
@@ -1221,6 +1418,46 @@ Window {
                                 Qt.callLater(function() { dockModel.toggleIndex(idx) })
                             }
                         }
+                    }
+                }
+            }
+
+            Item {
+                id: externalPinGhost
+                visible: dockWindow.externalPinPreview
+                x: dockWindow.slotLeftForIndex(dockWindow.externalPinTo)
+                width: taskbarController.dockIconSize
+                height: taskbarController.dockIconSize + 38
+                z: 50
+                opacity: dockWindow.externalPinPreview ? 0.9 * (1 - dockWindow.dockPackT) : 0
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: dockWindow.dockShrinkAnimMs
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                }
+
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: taskbarController.dockIconSize
+                    height: taskbarController.dockIconSize
+                    radius: 18
+                    color: dockWindow.darkTheme ? "#FFFFFF14" : "#0000000C"
+                    border.width: 2
+                    border.color: dockWindow.darkTheme ? "#FFFFFF44" : "#00000022"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "+"
+                        font.pixelSize: 22
+                        font.weight: Font.Medium
+                        color: dockWindow.darkTheme ? "#FFFFFF88" : "#00000055"
                     }
                 }
             }

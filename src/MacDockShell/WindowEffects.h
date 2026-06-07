@@ -1,8 +1,11 @@
 #pragma once
 
 #include <QObject>
+#include <QString>
 #include <QRect>
 #include <QHash>
+#include <QPointer>
+#include <QTimer>
 #include <QVariant>
 #include <QWindow>
 
@@ -29,11 +32,16 @@ public:
                                           const QVariantList& hitRegions);
     Q_INVOKABLE void clearDockHitRegions(QWindow* window);
     Q_INVOKABLE void setDockDropHover(QWindow* window, bool active);
+    Q_INVOKABLE void setDockDropCapture(QWindow* window, bool active);
+    Q_INVOKABLE void setDockDropPointer(QWindow* window, int globalX, int globalY);
+    Q_INVOKABLE void notifyDockExternalDrop(QWindow* window, const QString& path, int index);
     Q_INVOKABLE void updateDockDropLayout(QWindow* window, qreal pillLocalLeft, int stride, int iconSize, int itemCount);
     Q_INVOKABLE int dockDropIndexForGlobalPoint(QWindow* window, int globalX, int globalY) const;
 
 signals:
     void dockDropHoverChanged(QWindow* window, bool active);
+    void dockDropPointerChanged(QWindow* window, int globalX, int globalY);
+    void dockExternalDrop(QWindow* window, const QString& path, int index);
 
 private:
     struct DockDropLayout
@@ -44,8 +52,12 @@ private:
         int itemCount = 0;
     };
 
+    void applyDockDropHover(QWindow* window, bool active);
+
     QHash<QWindow*, DockDropLayout> m_dropLayouts;
     QHash<QWindow*, bool> m_dropHoverActive;
+    QHash<QWindow*, bool> m_dropCaptureActive;
+    QHash<QWindow*, QPointer<QTimer>> m_dropHoverLeaveTimers;
     std::unique_ptr<QAbstractNativeEventFilter> m_topBarHoverFilter;
     std::unique_ptr<DockClickThroughState> m_dockClickThroughState;
     std::unique_ptr<QAbstractNativeEventFilter> m_dockHitTestFilter;
