@@ -29,12 +29,13 @@ Window {
             RowLayout {
                 spacing: 12
 
-                Text {
+                Image {
                     id: appleLogo
-                    text: ""
-                    color: "#1A1F26"
-                    font.pixelSize: 16
-                    font.weight: Font.Medium
+                    source: "qrc:/src/MacDockShell/qml/apple_logo.svg"
+                    width: 15
+                    height: 15
+                    fillMode: Image.PreserveAspectFit
+                    Layout.alignment: Qt.AlignVCenter
 
                     MouseArea {
                         anchors.fill: parent

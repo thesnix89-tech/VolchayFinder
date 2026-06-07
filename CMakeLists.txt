@@ -27,6 +27,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/TopBarWindow.qml
         src/MacDockShell/qml/DockWindow.qml
         src/MacDockShell/qml/ControlWindow.qml
+        src/MacDockShell/qml/apple_logo.svg
 )
 
 set_target_properties(MacDockShell PROPERTIES
