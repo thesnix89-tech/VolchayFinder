@@ -366,6 +366,73 @@ Window {
                         color: "#F0F0F0"
                     }
 
+                    // Option 2.5: macOS Selection Style
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Стиль выделения macOS на рабочем столе"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Делает цвет рамки выделения мыши белым (требуется перезапуск ПК или Проводника)"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        // Custom Toggle Switch
+                        Rectangle {
+                            id: selectionStyleToggle
+                            property bool checked: taskbarController.macOSSelectionStyle
+                            width: 36
+                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: checked ? "#34C759" : "#D1D1D6"
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: selectionStyleToggle.checked ? 17 : 1
+                                y: 1
+
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: selectionStyleToggle.checked = !selectionStyleToggle.checked
+                            }
+                        }
+                    }
+
+                    // Separator 2.5
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
                     // Option 3: Icon Size Slider
                     RowLayout {
                         Layout.fillWidth: true
@@ -503,7 +570,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value));
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, selectionStyleToggle.checked, Math.round(iconSizeSlider.value));
                     }
                 }
             }
