@@ -431,6 +431,22 @@ void DockModel::applyCustomOrder()
         }
     }
 
+    // Remove dead keys — apps that are no longer in m_entries (e.g. after unpin).
+    // This prevents empty slots from lingering in the dock width calculation.
+    QStringList aliveKeys;
+    aliveKeys.reserve(m_entries.size());
+    for (const auto& entry : m_entries) {
+        aliveKeys.append(entryOrderKey(entry));
+    }
+    aliveKeys.removeDuplicates();
+    for (auto it = m_customOrder.begin(); it != m_customOrder.end(); ) {
+        if (!aliveKeys.contains(*it)) {
+            it = m_customOrder.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     // Stable sort by the saved order so icons keep their position across refreshes.
     std::stable_sort(m_entries.begin(), m_entries.end(),
                      [this](const DockItemEntry& a, const DockItemEntry& b) {

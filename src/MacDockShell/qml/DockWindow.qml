@@ -272,17 +272,11 @@ Window {
     readonly property real dockRowFullWidth: layoutDockCount * dockStride + 2 * hoverBleed
     readonly property real dockRowCompactWidth: externalPinPreview
             ? dockRepeater.count * dockStride + 2 * hoverBleed
-            : Math.max(0, dockRepeater.count - 1) * dockStride + 2 * hoverBleed
+            : (reordering ? Math.max(0, dockRepeater.count - 1) : dockRepeater.count) * dockStride + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
-    width: 0
-    Binding {
-        target: dockWindow
-        property: "width"
-        value: Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
-        restoreMode: Binding.RestoreBinding
-    }
+    width: Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
     height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
     x: externalPinLayout
             ? Math.round(externalDragAnchorLeftX)
@@ -434,6 +428,14 @@ Window {
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
+    Behavior on width {
+        enabled: !reordering && !externalPinPreview
+        NumberAnimation {
+            duration: dockShrinkAnimMs
+            easing.type: Easing.OutCubic
+        }
+    }
+
     // Window-local coords — C++ maps to native screen pixels via QWindow::mapToGlobal.
     function dockWindowLocalRect() {
         return Qt.rect(0, 0, dockWindow.width, dockWindow.height)
@@ -578,6 +580,10 @@ Window {
         target: dockModel
         function onModelReset() {
             dockWindow.publishDropGeometry()
+            // Force width recalculation after model reset (e.g. after unpin)
+            Qt.callLater(function() {
+                dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
+            })
         }
         function onRowsInserted() {
             dockWindow.publishDropGeometry()
@@ -797,12 +803,22 @@ Window {
             y: 0
 
             Behavior on x {
+                enabled: dockWindow.reordering || dockWindow.externalPinPreview
                 NumberAnimation { duration: dockWindow.dockShrinkAnimMs; easing.type: Easing.OutCubic }
             }
 
             Repeater {
                 id: dockRepeater
                 model: dockModel
+
+                onCountChanged: {
+                    // Force geometry update when repeater count changes (e.g. after unpin)
+                    dockWindow.publishDropGeometry()
+                    // Force width recalculation after model changes
+                    Qt.callLater(function() {
+                        dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
+                    })
+                }
 
                 delegate: Item {
                     id: dockItemRoot
