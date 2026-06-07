@@ -15,6 +15,7 @@
 #include "TaskbarController.h"
 #include "DockModel.h"
 #include "AppBarController.h"
+#include "WindowEffects.h"
 
 namespace {
 
@@ -133,6 +134,7 @@ int main(int argc, char *argv[])
     TaskbarController taskbarController;
     DockModel dockModel;
     AppBarController appBarController;
+    WindowEffects windowEffects;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -169,6 +171,7 @@ int main(int argc, char *argv[])
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
+    dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
     controlEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     controlEngine.rootContext()->setContextProperty("dockModel", &dockModel);
 
@@ -195,6 +198,21 @@ int main(int argc, char *argv[])
     }
 
     dockModel.refresh();
+
+    auto installShellWindow = [&windowEffects](QQmlApplicationEngine& engine, bool applyGlass) {
+        if (engine.rootObjects().isEmpty()) {
+            return;
+        }
+        if (auto* shellWindow = qobject_cast<QWindow*>(engine.rootObjects().constFirst())) {
+            if (applyGlass) {
+                windowEffects.applyDockGlass(shellWindow);
+            }
+        }
+    };
+
+    installShellWindow(topBarEngine, false);
+    installShellWindow(dockEngine, true);
+    installShellWindow(controlEngine, false);
 
     QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, [&topBarEngine, &appBarController, &taskbarController]() {
         if (taskbarController.shellActive()) {

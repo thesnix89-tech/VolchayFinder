@@ -91,6 +91,7 @@ Window {
                         id: redArea
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (taskbarController.shellActive) {
                                 taskbarController.settingsVisible = false;
@@ -287,6 +288,8 @@ Window {
 
                             MouseArea {
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: hideTaskbarToggle.checked = !hideTaskbarToggle.checked
                             }
                         }
@@ -354,6 +357,8 @@ Window {
 
                             MouseArea {
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: showTopBarToggle.checked = !showTopBarToggle.checked
                             }
                         }
@@ -513,6 +518,7 @@ Window {
 
                             MouseArea {
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 enabled: !hoverBounceToggle.locked
                                 cursorShape: hoverBounceToggle.locked ? Qt.ForbiddenCursor : Qt.PointingHandCursor
                                 onClicked: hoverBounceToggle.checked = !hoverBounceToggle.checked
@@ -527,7 +533,75 @@ Window {
                         color: "#F0F0F0"
                     }
 
-                    // Option 5: Static Dock Icons
+                    // Option 5: Dark Theme
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Тёмная тема"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Тёмный док и верхняя панель в стиле macOS Monterey"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        Rectangle {
+                            id: darkThemeToggle
+                            property bool checked: taskbarController.darkTheme
+                            width: 36
+                            height: 20
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 20
+                            Layout.alignment: Qt.AlignVCenter
+                            radius: 10
+                            color: checked ? "#34C759" : "#E9E9EA"
+                            border.width: 1
+                            border.color: checked ? "#34C759" : "#D1D1D6"
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                color: "white"
+                                x: darkThemeToggle.checked ? 17 : 1
+                                y: 1
+
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: darkThemeToggle.checked = !darkThemeToggle.checked
+                            }
+                        }
+                    }
+
+                    // Separator 5
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 6: Static Dock Icons
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 45
@@ -582,6 +656,8 @@ Window {
 
                             MouseArea {
                                 anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
                                 onClicked: staticIconsToggle.checked = !staticIconsToggle.checked
                             }
                         }
@@ -645,7 +721,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked);
                     }
                 }
             }

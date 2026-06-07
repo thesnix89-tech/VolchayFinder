@@ -24,11 +24,15 @@ Window {
     // Resting position; slides fully below the screen when a fullscreen app is active.
     readonly property int restY: Screen.height - height - 18 + dockBottomGap
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
+    readonly property bool darkTheme: taskbarController.darkTheme
+    readonly property int themeAnimMs: 320
     y: (taskbarController.shellActive && taskbarController.dockAutoHidden) ? (Screen.height + 4) : restY
     visible: taskbarController.shellActive
     color: "transparent"
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+
+    Component.onCompleted: windowEffects.applyDockGlass(dockWindow)
 
     // macOS-style: glide the dock down/up when toggling fullscreen.
     Behavior on y {
@@ -62,6 +66,27 @@ Window {
         }
     }
 
+    // Soft shadow under the dock pill.
+    Rectangle {
+        id: dockShadow
+        anchors.horizontalCenter: dockBg.horizontalCenter
+        anchors.verticalCenter: dockBg.verticalCenter
+        anchors.verticalCenterOffset: 4
+        width: dockBg.width
+        height: dockBg.height
+        radius: dockBg.radius
+        color: "#00000000"
+        z: -1
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: "#3A000000"
+            shadowBlur: 0.65
+            shadowVerticalOffset: 5
+            autoPaddingEnabled: true
+        }
+    }
+
     Rectangle {
         id: dockBg
         anchors.horizontalCenter: parent.horizontalCenter
@@ -69,36 +94,51 @@ Window {
         anchors.bottomMargin: dockWindow.dockBottomGap
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
-        radius: 28
-        // Monterey-style frosted panel: solid (opaque) light gradient, no see-through.
+        radius: 22
+        // macOS Monterey 12 dock — opaque tints (no see-through).
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#FFF6F7F9" }
-            GradientStop { position: 1.0; color: "#FFE9EBEF" }
+            GradientStop {
+                position: 0.0
+                color: dockWindow.darkTheme ? "#323234" : "#D6DAE2"
+                Behavior on color {
+                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
+            }
+            GradientStop {
+                position: 0.48
+                color: dockWindow.darkTheme ? "#2C2C2E" : "#CCD1D9"
+                Behavior on color {
+                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
+            }
+            GradientStop {
+                position: 1.0
+                color: dockWindow.darkTheme ? "#252527" : "#C4CAD3"
+                Behavior on color {
+                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
+            }
         }
         border.width: 1
-        border.color: "#FFFFFFFF"
-
-        // Soft drop shadow to lift the dock off the wallpaper like macOS.
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: "#55000000"
-            shadowBlur: 0.7
-            shadowVerticalOffset: 6
-            autoPaddingEnabled: true
+        border.color: dockWindow.darkTheme ? "#48484A" : "#E8ECF2"
+        Behavior on border.color {
+            ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
         }
 
-        // Bright rim highlight along the top edge (glass sheen).
+        // Subtle top sheen — Monterey rim.
         Rectangle {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.topMargin: 1
-            anchors.leftMargin: 16
-            anchors.rightMargin: 16
+            anchors.leftMargin: 18
+            anchors.rightMargin: 18
             height: 1
             radius: 1
-            color: "#AAFFFFFF"
+            color: dockWindow.darkTheme ? "#5A5A5E" : "#F4F6F9"
+            Behavior on color {
+                ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+            }
         }
 
         // Thin inner hairline for crisp definition.
@@ -107,7 +147,10 @@ Window {
             radius: parent.radius
             color: "transparent"
             border.width: 1
-            border.color: "#14000000"
+            border.color: dockWindow.darkTheme ? "#1E1E20" : "#B8BEC8"
+            Behavior on border.color {
+                ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+            }
         }
 
         MouseArea {
@@ -294,8 +337,14 @@ Window {
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: parent.bottom
                         anchors.bottomMargin: 6
-                        color: "#000000"
-                        opacity: 0.35
+                        color: dockWindow.darkTheme ? "#FFFFFF" : "#000000"
+                        opacity: dockWindow.darkTheme ? 0.42 : 0.35
+                        Behavior on color {
+                            ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                        }
+                        Behavior on opacity {
+                            NumberAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                        }
                     }
 
                     // macOS-style label: compact bubble centered above the icon (app name only).
@@ -321,15 +370,15 @@ Window {
                             width: Math.min(200, Math.max(52, tooltipText.implicitWidth + 18))
                             height: tooltipText.implicitHeight + 10
                             radius: 6
-                            color: "#F7F7F7F2"
+                            color: dockWindow.darkTheme ? "#2A2A2CF0" : "#F7F7F7F2"
                             border.width: 1
-                            border.color: "#C8C8C8"
+                            border.color: dockWindow.darkTheme ? "#4A4A4E" : "#C8C8C8"
 
                             Text {
                                 id: tooltipText
                                 anchors.centerIn: parent
                                 text: dockItemRoot.label
-                                color: "#1C222B"
+                                color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
@@ -353,9 +402,9 @@ Window {
                                 ctx.lineTo(0, 0)
                                 ctx.lineTo(width, 0)
                                 ctx.closePath()
-                                ctx.fillStyle = "#F7F7F7"
+                                ctx.fillStyle = dockWindow.darkTheme ? "#2A2A2C" : "#F7F7F7"
                                 ctx.fill()
-                                ctx.strokeStyle = "#C8C8C8"
+                                ctx.strokeStyle = dockWindow.darkTheme ? "#4A4A4E" : "#C8C8C8"
                                 ctx.lineWidth = 1
                                 ctx.stroke()
                             }

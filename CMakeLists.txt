@@ -19,6 +19,8 @@ qt_add_executable(MacDockShell
     src/MacDockShell/AppBarController.h
     src/MacDockShell/PinnedTaskbarResolver.cpp
     src/MacDockShell/PinnedTaskbarResolver.h
+    src/MacDockShell/WindowEffects.cpp
+    src/MacDockShell/WindowEffects.h
 )
 
 qt_add_resources(MacDockShell macdockshell_resources
@@ -28,6 +30,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/DockWindow.qml
         src/MacDockShell/qml/ControlWindow.qml
         src/MacDockShell/qml/apple_logo.svg
+        src/MacDockShell/qml/apple_logo_white.svg
 )
 
 set_target_properties(MacDockShell PROPERTIES
@@ -39,6 +42,7 @@ target_link_libraries(MacDockShell
     PRIVATE psapi
     PRIVATE shell32
     PRIVATE ole32
+    PRIVATE dwmapi
 )
 
 include(GNUInstallDirs)

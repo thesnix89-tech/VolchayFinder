@@ -128,6 +128,7 @@ TaskbarController::TaskbarController(QObject* parent)
         updateFullscreenState();
     });
     m_fullscreenTimer->start();
+    loadSettings();
     updateForegroundAppName();
 }
 
@@ -435,6 +436,42 @@ void TaskbarController::setDockStaticIcons(bool enabled)
     emit dockStaticIconsChanged();
 }
 
+bool TaskbarController::darkTheme() const
+{
+    return m_darkTheme;
+}
+
+void TaskbarController::setDarkTheme(bool enabled)
+{
+    if (m_darkTheme == enabled) {
+        return;
+    }
+    m_darkTheme = enabled;
+    emit darkThemeChanged();
+}
+
+void TaskbarController::loadSettings()
+{
+    QSettings settings;
+    m_autoHideWindowsTaskbar = settings.value(QStringLiteral("shell/autoHideTaskbar"), true).toBool();
+    m_showTopBar = settings.value(QStringLiteral("shell/showTopBar"), true).toBool();
+    m_dockIconSize = settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt();
+    m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
+    m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
+    m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
+}
+
+void TaskbarController::saveSettings()
+{
+    QSettings settings;
+    settings.setValue(QStringLiteral("shell/autoHideTaskbar"), m_autoHideWindowsTaskbar);
+    settings.setValue(QStringLiteral("shell/showTopBar"), m_showTopBar);
+    settings.setValue(QStringLiteral("shell/dockIconSize"), m_dockIconSize);
+    settings.setValue(QStringLiteral("shell/dockHoverBounce"), m_dockHoverBounce);
+    settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
+    settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
+}
+
 void TaskbarController::updateTaskbarVisibility()
 {
     if (m_shellActive && m_autoHideWindowsTaskbar) {
@@ -444,13 +481,15 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setShowTopBar(showTopBar);
     setDockIconSize(iconSize);
     setDockHoverBounce(dockHoverBounce);
     setDockStaticIcons(dockStaticIcons);
+    setDarkTheme(darkTheme);
+    saveSettings();
     setShellActive(true);
     setSettingsVisible(false);
 }
