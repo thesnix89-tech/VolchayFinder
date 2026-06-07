@@ -4,6 +4,7 @@
 #include <QMetaObject>
 #include <QSettings>
 #include <QProcess>
+#include <QTimer>
 
 #include <windows.h>
 #include <shellapi.h>
@@ -16,6 +17,11 @@ constexpr auto kStartButtonClass = TEXT("Button");
 TaskbarController::TaskbarController(QObject* parent)
     : QObject(parent)
 {
+    // Poll the foreground window so the dock can auto-hide for fullscreen apps (macOS-style).
+    m_fullscreenTimer = new QTimer(this);
+    m_fullscreenTimer->setInterval(350);
+    connect(m_fullscreenTimer, &QTimer::timeout, this, &TaskbarController::updateFullscreenState);
+    m_fullscreenTimer->start();
 }
 
 TaskbarController::~TaskbarController()
@@ -58,6 +64,76 @@ void TaskbarController::quitApplication()
 bool TaskbarController::taskbarHidden() const
 {
     return m_taskbarHidden;
+}
+
+bool TaskbarController::fullscreenAppActive() const
+{
+    return m_fullscreenAppActive;
+}
+
+bool TaskbarController::detectForegroundFullscreen() const
+{
+    HWND hwnd = GetForegroundWindow();
+    if (!hwnd) {
+        return false;
+    }
+    if (hwnd == GetDesktopWindow() || hwnd == GetShellWindow()) {
+        return false;
+    }
+
+    // Ignore the desktop/shell windows.
+    wchar_t classNameBuffer[256] = {};
+    GetClassNameW(hwnd, classNameBuffer, 256);
+    const QString className = QString::fromWCharArray(classNameBuffer);
+    if (className == QStringLiteral("WorkerW")
+        || className == QStringLiteral("Progman")
+        || className == QStringLiteral("Shell_TrayWnd")) {
+        return false;
+    }
+
+    RECT windowRect = {};
+    if (!GetWindowRect(hwnd, &windowRect)) {
+        return false;
+    }
+
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO monitorInfo = {};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    if (!GetMonitorInfo(monitor, &monitorInfo)) {
+        return false;
+    }
+
+    const RECT& monitorRect = monitorInfo.rcMonitor;
+    const bool coversMonitor = windowRect.left <= monitorRect.left
+                            && windowRect.top <= monitorRect.top
+                            && windowRect.right >= monitorRect.right
+                            && windowRect.bottom >= monitorRect.bottom;
+    if (!coversMonitor) {
+        return false;
+    }
+
+    // Distinguish true fullscreen from a maximized window. A maximized window
+    // reports IsZoomed()==true and keeps its window chrome; a fullscreen app
+    // (game, fullscreen video, Electron/Chrome fullscreen) is a normal window
+    // stretched to cover the whole monitor, so IsZoomed()==false.
+    if (IsZoomed(hwnd)) {
+        return false;
+    }
+
+    return true;
+}
+
+void TaskbarController::updateFullscreenState()
+{
+    const bool active = detectForegroundFullscreen();
+    if (m_fullscreenAppActive == active) {
+        return;
+    }
+    m_fullscreenAppActive = active;
+    emit fullscreenAppActiveChanged();
+    emit shellActionLogged(active
+        ? QStringLiteral("Fullscreen app detected: hiding dock.")
+        : QStringLiteral("Fullscreen app gone: showing dock."));
 }
 
 bool TaskbarController::setTaskbarVisible(bool visible)

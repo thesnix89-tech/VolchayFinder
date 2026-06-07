@@ -9,6 +9,9 @@
 #include <QCryptographicHash>
 #include <QUrl>
 #include <QSet>
+#include <QSettings>
+
+#include <algorithm>
 
 #include <windows.h>
 #include <psapi.h>
@@ -172,6 +175,7 @@ DockModel::DockModel(QObject* parent)
     QDir().mkpath(m_iconCacheDir);
     m_pinnedResolver = new PinnedTaskbarResolver(this);
     QObject::connect(m_pinnedResolver, &PinnedTaskbarResolver::logMessage, this, &DockModel::logMessage);
+    loadOrder();
     refresh();
 }
 
@@ -227,7 +231,7 @@ QHash<int, QByteArray> DockModel::roleNames() const
 
 void DockModel::refresh()
 {
-    if (m_actionInProgress) {
+    if (m_actionInProgress || m_reorderActive) {
         return;
     }
 
@@ -236,9 +240,82 @@ void DockModel::refresh()
     m_existingIconUrls.clear();
     loadPinnedApps();
     scanWindows();
+    applyCustomOrder();
     endResetModel();
     emitActiveWindowState();
     emit logMessage(QStringLiteral("DockModel refreshed. Items: %1").arg(m_entries.size()));
+}
+
+QString DockModel::entryOrderKey(const DockItemEntry& entry) const
+{
+    if (!entry.exePath.isEmpty()) {
+        return lowerPath(entry.exePath);
+    }
+    if (!entry.appId.isEmpty()) {
+        return entry.appId;
+    }
+    return entry.label.toLower();
+}
+
+void DockModel::applyCustomOrder()
+{
+    // Register any newly seen apps at the end, preserving their first-seen order.
+    for (const auto& entry : m_entries) {
+        const QString key = entryOrderKey(entry);
+        if (!m_customOrder.contains(key)) {
+            m_customOrder.append(key);
+        }
+    }
+
+    // Stable sort by the saved order so icons keep their position across refreshes.
+    std::stable_sort(m_entries.begin(), m_entries.end(),
+                     [this](const DockItemEntry& a, const DockItemEntry& b) {
+                         return m_customOrder.indexOf(entryOrderKey(a)) < m_customOrder.indexOf(entryOrderKey(b));
+                     });
+}
+
+void DockModel::moveItem(int from, int to)
+{
+    if (from < 0 || from >= m_entries.size() || to < 0 || to >= m_entries.size() || from == to) {
+        return;
+    }
+
+    beginResetModel();
+    m_entries.move(from, to);
+
+    // Rebuild the saved order: currently visible apps in their new order first,
+    // then any other remembered apps that are not on the dock right now.
+    QStringList newOrder;
+    for (const auto& entry : m_entries) {
+        newOrder.append(entryOrderKey(entry));
+    }
+    for (const QString& key : m_customOrder) {
+        if (!newOrder.contains(key)) {
+            newOrder.append(key);
+        }
+    }
+    m_customOrder = newOrder;
+    endResetModel();
+
+    saveOrder();
+    emit logMessage(QStringLiteral("Dock item moved: %1 -> %2").arg(from).arg(to));
+}
+
+void DockModel::setReorderActive(bool active)
+{
+    m_reorderActive = active;
+}
+
+void DockModel::loadOrder()
+{
+    QSettings settings;
+    m_customOrder = settings.value(QStringLiteral("dock/customOrder")).toStringList();
+}
+
+void DockModel::saveOrder()
+{
+    QSettings settings;
+    settings.setValue(QStringLiteral("dock/customOrder"), m_customOrder);
 }
 
 void DockModel::activateIndex(int index)
@@ -254,7 +331,19 @@ void DockModel::activateIndex(int index)
     }
 
     m_actionInProgress = true;
-    ShowWindow(hwnd, SW_RESTORE);
+    if (IsIconic(hwnd)) {
+        // Only minimized windows need restoring. Preserve the previous state so a
+        // window that was maximized before minimizing comes back maximized, not windowed.
+        WINDOWPLACEMENT placement = {};
+        placement.length = sizeof(placement);
+        if (GetWindowPlacement(hwnd, &placement) && (placement.flags & WPF_RESTORETOMAXIMIZED)) {
+            ShowWindow(hwnd, SW_MAXIMIZE);
+        } else {
+            ShowWindow(hwnd, SW_RESTORE);
+        }
+    }
+    // If the window is not minimized (e.g. maximized but unfocused), just bring it
+    // forward without changing its size/state.
     SetForegroundWindow(hwnd);
     m_actionInProgress = false;
     emit logMessage(QStringLiteral("Activated window: %1").arg(m_entries[index].windowTitle));

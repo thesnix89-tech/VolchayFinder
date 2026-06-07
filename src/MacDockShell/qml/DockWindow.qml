@@ -2,17 +2,34 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 
 Window {
     id: dockWindow
+    // Extra room below the dock so its soft drop shadow is not clipped by the window edge.
+    property int dockBottomGap: 16
+    // Drag-to-reorder state (shared so neighbors can open a gap for the dragged icon).
+    property int dragFrom: -1
+    property int dragTo: -1
+    readonly property bool reordering: dragFrom >= 0
     width: Math.min(dockRow.implicitWidth + 32, Screen.width - 40)
-    height: taskbarController.dockIconSize + 86
+    height: taskbarController.dockIconSize + 86 + dockBottomGap
     x: Math.round((Screen.width - width) / 2)
-    y: Screen.height - height - 18
+    // Resting position; slides fully below the screen when a fullscreen app is active.
+    readonly property int restY: Screen.height - height - 18 + dockBottomGap
+    y: (taskbarController.shellActive && taskbarController.fullscreenAppActive) ? (Screen.height + 4) : restY
     visible: taskbarController.shellActive
     color: "transparent"
     title: "MacDockShellDock"
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
+
+    // macOS-style: glide the dock down/up when toggling fullscreen.
+    Behavior on y {
+        NumberAnimation {
+            duration: 280
+            easing.type: Easing.InOutCubic
+        }
+    }
 
     Timer {
         interval: 1500
@@ -43,11 +60,48 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: dockWindow.dockBottomGap
         height: taskbarController.dockIconSize + 38
         radius: 28
-        color: "#F8F3F4F6"
+        // Monterey-style frosted panel: solid (opaque) light gradient, no see-through.
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#FFF6F7F9" }
+            GradientStop { position: 1.0; color: "#FFE9EBEF" }
+        }
         border.width: 1
-        border.color: "#E2E4E9"
+        border.color: "#FFFFFFFF"
+
+        // Soft drop shadow to lift the dock off the wallpaper like macOS.
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: "#55000000"
+            shadowBlur: 0.7
+            shadowVerticalOffset: 6
+            autoPaddingEnabled: true
+        }
+
+        // Bright rim highlight along the top edge (glass sheen).
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.topMargin: 1
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            height: 1
+            radius: 1
+            color: "#AAFFFFFF"
+        }
+
+        // Thin inner hairline for crisp definition.
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: "transparent"
+            border.width: 1
+            border.color: "#14000000"
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -71,11 +125,12 @@ Window {
         Row {
             id: dockRow
             x: dockRow.implicitWidth < parent.width ? Math.round((parent.width - dockRow.implicitWidth) / 2) : 0
-            y: parent.height - (taskbarController.dockIconSize + 38)
+            y: parent.height - (taskbarController.dockIconSize + 38) - dockWindow.dockBottomGap
             height: taskbarController.dockIconSize + 38
             spacing: 14
 
             Repeater {
+                id: dockRepeater
                 model: dockModel
 
                 delegate: Item {
@@ -91,14 +146,47 @@ Window {
                     required property bool minimized
                     required property bool clickable
 
-                    width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
+                    // Drag-to-reorder bookkeeping
+                    property bool dragging: false
+                    property real grabDX: 0
+                    property real pointerInRow: 0
+                    property bool suppressClick: false
+                    property real dragOffset: dragging ? (pointerInRow - grabDX - x) : 0
+                    // Horizontal shift applied to the icon: the dragged icon follows the
+                    // pointer; the others slide aside to open a gap at the drop target.
+                    property real slideX: {
+                        if (dockItemRoot.dragging)
+                            return dockItemRoot.dragOffset
+                        var from = dockWindow.dragFrom
+                        if (from < 0)
+                            return 0
+                        var to = dockWindow.dragTo
+                        var stride = taskbarController.dockIconSize + dockRow.spacing
+                        var i = dockItemRoot.index
+                        if (to > from && i > from && i <= to)
+                            return -stride
+                        if (to < from && i >= to && i < from)
+                            return stride
+                        return 0
+                    }
+
+                    width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.333) : taskbarController.dockIconSize
                     height: taskbarController.dockIconSize + 38
 
                     opacity: dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55
+                    z: dockItemRoot.dragging ? 100 : 0
 
                     Behavior on width {
                         NumberAnimation {
                             duration: 140
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on slideX {
+                        enabled: !dockItemRoot.dragging
+                        NumberAnimation {
+                            duration: 130
                             easing.type: Easing.OutCubic
                         }
                     }
@@ -110,13 +198,17 @@ Window {
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: (mouseArea.containsMouse && taskbarController.dockHoverBounce && !taskbarController.dockStaticIcons) ? -8 : 0
+                        anchors.verticalCenterOffset: (mouseArea.containsMouse && taskbarController.dockHoverBounce && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? -8 : 0
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
 
-                        // macOS-style launch bounce (separate transform so it does not fight the hover binding)
-                        transform: Translate { id: launchTranslate }
+                        // Drag-follow translate plus the macOS-style launch bounce (kept separate
+                        // so neither fights the hover binding).
+                        transform: [
+                            Translate { x: dockItemRoot.slideX },
+                            Translate { id: launchTranslate }
+                        ]
 
                         SequentialAnimation {
                             id: launchBounceAnim
@@ -137,8 +229,8 @@ Window {
                         Item {
                             id: iconContainer
                             anchors.centerIn: parent
-                            width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
-                            height: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? Math.round(taskbarController.dockIconSize * 1.037) : Math.round(taskbarController.dockIconSize * 0.778)
+                            width: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.05) : Math.round(taskbarController.dockIconSize * 0.82)
+                            height: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? Math.round(taskbarController.dockIconSize * 1.05) : Math.round(taskbarController.dockIconSize * 0.82)
 
                             Behavior on width {
                                 NumberAnimation {
@@ -159,10 +251,23 @@ Window {
                                 width: parent.width
                                 height: parent.height
                                 source: dockItemRoot.iconUrl
+                                // Decode at full icon-cache resolution for crisp scaling.
+                                sourceSize: Qt.size(256, 256)
                                 fillMode: Image.PreserveAspectFit
                                 smooth: true
                                 mipmap: true
+                                antialiasing: true
                                 visible: status === Image.Ready
+
+                                // Subtle shadow gives each icon depth on the glass, like macOS.
+                                layer.enabled: true
+                                layer.effect: MultiEffect {
+                                    shadowEnabled: true
+                                    shadowColor: "#3C000000"
+                                    shadowBlur: 0.45
+                                    shadowVerticalOffset: 3
+                                    autoPaddingEnabled: true
+                                }
                             }
 
                             Rectangle {
@@ -178,7 +283,7 @@ Window {
                                 anchors.centerIn: parent
                                 text: dockItemRoot.iconHint.length > 0 ? dockItemRoot.iconHint : dockItemRoot.label.slice(0, 1)
                                 color: "#1C222B"
-                                font.pixelSize: (mouseArea.containsMouse && !taskbarController.dockStaticIcons) ? 24 : 20
+                                font.pixelSize: (mouseArea.containsMouse && !taskbarController.dockStaticIcons && !dockWindow.reordering) ? 24 : 20
                                 font.weight: Font.DemiBold
                                 visible: dockIconImage.status !== Image.Ready
                             }
@@ -207,7 +312,7 @@ Window {
                         color: "#FFFFFFF7"
                         border.width: 1
                         border.color: "#DDE3EC"
-                        opacity: mouseArea.containsMouse ? 1 : 0
+                        opacity: (mouseArea.containsMouse && !dockWindow.reordering) ? 1 : 0
                         visible: opacity > 0
                         z: 20
 
@@ -263,6 +368,9 @@ Window {
                         popupType: Popup.Window
                         padding: 6
                         implicitWidth: 240
+                        // Centered horizontally over the icon and floating just above it (macOS-style).
+                        x: Math.round(dockItemRoot.width / 2 - width / 2)
+                        y: -height - 12
 
                         background: Rectangle {
                             implicitWidth: 240
@@ -392,15 +500,77 @@ Window {
                         anchors.fill: parent
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        cursorShape: Qt.PointingHandCursor
+                        // Keep the press so a horizontal drag is not stolen by the Flickable.
+                        preventStealing: true
+                        cursorShape: dockItemRoot.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+                        onPressed: function(mouse) {
+                            if (mouse.button !== Qt.LeftButton)
+                                return
+                            dockItemRoot.suppressClick = false
+                            dockItemRoot.dragging = false
+                            var p = mapToItem(dockRow, mouse.x, 0)
+                            dockItemRoot.grabDX = p.x - dockItemRoot.x
+                            dockItemRoot.pointerInRow = p.x
+                        }
+
+                        onPositionChanged: function(mouse) {
+                            if (!(mouse.buttons & Qt.LeftButton))
+                                return
+                            var p = mapToItem(dockRow, mouse.x, 0)
+                            dockItemRoot.pointerInRow = p.x
+                            if (!dockItemRoot.dragging) {
+                                // Start a drag only after a small threshold so taps still click.
+                                if (Math.abs((p.x - dockItemRoot.grabDX) - dockItemRoot.x) <= 6)
+                                    return
+                                dockItemRoot.dragging = true
+                                dockWindow.dragFrom = dockItemRoot.index
+                                dockModel.setReorderActive(true)
+                            }
+                            var stride = taskbarController.dockIconSize + dockRow.spacing
+                            var desired = Math.round((p.x - dockItemRoot.grabDX) / stride)
+                            if (desired < 0)
+                                desired = 0
+                            if (desired > dockRepeater.count - 1)
+                                desired = dockRepeater.count - 1
+                            dockWindow.dragTo = desired
+                        }
+
+                        onReleased: function(mouse) {
+                            if (!dockItemRoot.dragging)
+                                return
+                            var from = dockWindow.dragFrom
+                            var to = dockWindow.dragTo
+                            dockItemRoot.dragging = false
+                            dockItemRoot.suppressClick = true
+                            dockWindow.dragFrom = -1
+                            dockWindow.dragTo = -1
+                            dockModel.setReorderActive(false)
+                            if (from >= 0 && to >= 0 && from !== to)
+                                dockModel.moveItem(from, to)
+                        }
+
+                        onCanceled: {
+                            if (!dockItemRoot.dragging)
+                                return
+                            dockItemRoot.dragging = false
+                            dockWindow.dragFrom = -1
+                            dockWindow.dragTo = -1
+                            dockModel.setReorderActive(false)
+                        }
+
                         onClicked: function(mouse) {
+                            if (dockItemRoot.suppressClick) {
+                                dockItemRoot.suppressClick = false
+                                return
+                            }
                             if (!dockItemRoot.clickable)
                                 return
                             var idx = dockItemRoot.index
                             if (mouse.button === Qt.RightButton) {
                                 // Running apps get the macOS-style menu; pinned-only icons do nothing.
                                 if (dockItemRoot.running)
-                                    appContextMenu.popup()
+                                    appContextMenu.open()
                             } else {
                                 // Defer model actions out of this signal handler: launching/activating
                                 // pumps a nested message loop, and the refresh timer would otherwise

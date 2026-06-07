@@ -63,6 +63,8 @@ public:
     Q_INVOKABLE void launchIndex(int index);
     Q_INVOKABLE void closeIndex(int index);
     Q_INVOKABLE void revealIndex(int index);
+    Q_INVOKABLE void moveItem(int from, int to);
+    Q_INVOKABLE void setReorderActive(bool active);
 
 signals:
     void logMessage(const QString& message);
@@ -71,6 +73,10 @@ signals:
 private:
     void loadPinnedApps();
     void scanWindows();
+    void applyCustomOrder();
+    QString entryOrderKey(const DockItemEntry& entry) const;
+    void loadOrder();
+    void saveOrder();
     DockItemEntry makePinnedEntry(const PinnedShortcutEntry& shortcut) const;
     QString normalizeAppId(const QString& path) const;
     QString labelFromPath(const QString& path) const;
@@ -92,4 +98,10 @@ private:
     // message loop; this guard stops the refresh timer from resetting the model
     // (and destroying delegates) reentrantly during that loop.
     bool m_actionInProgress = false;
+    // User-defined dock order (stable keys). Keeps icons from reshuffling on app
+    // switches and persists drag-and-drop customization across sessions.
+    QStringList m_customOrder;
+    // Set while the user is dragging an icon; suspends refresh so the drag is not
+    // interrupted by the periodic model reset.
+    bool m_reorderActive = false;
 };
