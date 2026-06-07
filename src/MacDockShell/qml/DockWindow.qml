@@ -14,34 +14,109 @@ Window {
     property real dragLeftX: 0
     property real settleDragY: 0
     property bool reorderSettling: false
+    property bool neighborsPacked: false
+    // Vertical offset of the dragged icon; gap preview only when near the dock row.
+    property real dragGripY: 0
+    property bool dragInDockZone: false
+    property bool dockZoneEverEntered: false
+    // 0 = full dock, 1 = compact (lifted icon slot removed) — single driver for pill width.
+    property real dockPackT: 0
+    property int prevLayoutDragTo: -1
+    property int layoutMorphFrom: -1
+    property real layoutMorph: 1
     readonly property bool reordering: dragFrom >= 0 || reorderSettling
-    readonly property int dockStride: taskbarController.dockIconSize + dockRow.spacing
+    readonly property int dockSpacing: 14
+    readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
+    readonly property int dockShrinkAnimMs: 220
+    readonly property int reorderAnimMs: 360
+    // macOS: insertion gap opens only when the icon is lowered back into the dock row.
+    readonly property int dockZoneEnterY: -12
+    readonly property int dockZoneLeaveY: -28
     // Extra headroom so a dragged icon can float above the dock pill (macOS-style).
     readonly property int dockTopAirspace: 128
 
     function slotLeftForIndex(index) {
-        return index * dockStride
+        return hoverBleed + index * dockStride
     }
 
-    function targetIndexForLeftX(leftX, count) {
-        var iconSize = taskbarController.dockIconSize
-        var center = leftX + iconSize / 2
-        var to = 0
-        for (var j = 0; j < count; j++) {
-            if (center > j * dockStride + iconSize / 2)
-                to = j
+    // Full-width preview: one empty slot at `to` while the dragged icon hovers.
+    function previewSlotForIndex(i, from, to) {
+        if (i === from)
+            return -1
+        var compact = i > from ? i - 1 : i
+        if (compact >= to)
+            return compact + 1
+        return compact
+    }
+
+    function packedSlotForIndex(i, from) {
+        if (i === from)
+            return -1
+        if (i > from)
+            return i - 1
+        return i
+    }
+
+    function gapCenterForSlot(slot) {
+        return slotLeftForIndex(slot) + taskbarController.dockIconSize / 2
+    }
+
+    function gapLeftForDragTo(to) {
+        return slotLeftForIndex(to)
+    }
+
+    // Lifted icon tracks the opening gap while the dock expands (same dockPackT curve).
+    function visualDragLeftX() {
+        if (!dragInDockZone)
+            return dragLeftX
+        var gapX = gapLeftForDragTo(dragTo)
+        return dragLeftX * dockPackT + (1 - dockPackT) * gapX
+    }
+
+    function syncDockPackState() {
+        if (dragFrom < 0 || reorderSettling)
+            return
+        if (dragInDockZone)
+            animateDockPack(0)
+        else if (neighborsPacked)
+            animateDockPack(1)
+    }
+
+    function syncDragZone(gripY) {
+        dragGripY = gripY
+        var wasInZone = dragInDockZone
+        if (dragInDockZone) {
+            if (gripY < dockZoneLeaveY)
+                dragInDockZone = false
+        } else if (gripY > dockZoneEnterY) {
+            dragInDockZone = true
+            dockZoneEverEntered = true
         }
-        return Math.max(0, Math.min(count - 1, to))
+        if (wasInZone !== dragInDockZone)
+            syncDockPackState()
     }
 
-    // Hysteresis stops neighbors from jittering when the pointer hovers on a slot boundary.
-    function updateDragTarget(leftX, count, fromIndex) {
+    // Pick the nearest full-width gap; midpoint hysteresis only between adjacent slots.
+    function updateDragTarget(leftX, gripY, count, fromIndex) {
         if (fromIndex < 0)
             return
 
+        syncDragZone(gripY)
+        if (!dragInDockZone)
+            return
+
         var iconSize = taskbarController.dockIconSize
-        var center = leftX + iconSize / 2
-        var candidate = targetIndexForLeftX(leftX, count)
+        var visualX = visualDragLeftX()
+        var dragCenter = visualX + iconSize / 2
+        var candidate = fromIndex
+        var bestDist = Number.MAX_VALUE
+        for (var t = 0; t < count; t++) {
+            var dist = Math.abs(dragCenter - gapCenterForSlot(t))
+            if (dist < bestDist) {
+                bestDist = dist
+                candidate = t
+            }
+        }
 
         if (dragTo < 0) {
             dragTo = fromIndex
@@ -51,16 +126,24 @@ Window {
         if (candidate === dragTo)
             return
 
-        var hysteresis = 10
-        if (candidate > dragTo) {
-            var boundary = (dragTo + 0.5) * dockStride + iconSize / 2 + hysteresis
-            if (center >= boundary)
-                dragTo = candidate
-        } else {
-            var boundary = (dragTo - 0.5) * dockStride + iconSize / 2 - hysteresis
-            if (center <= boundary)
-                dragTo = candidate
+        if (Math.abs(candidate - dragTo) === 1) {
+            var lo = Math.min(candidate, dragTo)
+            var hi = Math.max(candidate, dragTo)
+            var boundary = (gapCenterForSlot(lo) + gapCenterForSlot(hi)) / 2
+            if (candidate > dragTo && dragCenter < boundary)
+                return
+            if (candidate < dragTo && dragCenter > boundary)
+                return
         }
+
+        dragTo = candidate
+        syncDockPackState()
+    }
+
+    function animateDockPack(target) {
+        dockPackAnim.stop()
+        dockPackAnim.to = target
+        dockPackAnim.start()
     }
 
     function beginReorderSettle(from, to, releaseDragY) {
@@ -68,7 +151,8 @@ Window {
         reorderSettling = true
         _settleDoneX = false
         _settleDoneY = false
-        settleAnim.from = dragLeftX
+        animateDockPack(0)
+        settleAnim.from = visualDragLeftX()
         settleAnim.to = slotLeftForIndex(to)
         settleAnim.start()
         settleDragY = releaseDragY
@@ -82,11 +166,19 @@ Window {
             settleAnim.stop()
             settleYAnim.stop()
         }
+        animateDockPack(0)
         dragFrom = -1
         dragTo = -1
         dragLeftX = 0
         settleDragY = 0
         reorderSettling = false
+        neighborsPacked = false
+        dragGripY = 0
+        dragInDockZone = false
+        dockZoneEverEntered = false
+        prevLayoutDragTo = -1
+        layoutMorphFrom = -1
+        layoutMorph = 1
         dockModel.setReorderActive(false)
     }
 
@@ -97,8 +189,8 @@ Window {
         id: settleAnim
         target: dockWindow
         property: "dragLeftX"
-        duration: 380
-        easing.type: Easing.InOutCubic
+        duration: reorderAnimMs
+        easing.type: Easing.OutCubic
         onFinished: {
             dockWindow._settleDoneX = true
             dockWindow.tryFinishReorderSettle()
@@ -109,8 +201,8 @@ Window {
         id: settleYAnim
         target: dockWindow
         property: "settleDragY"
-        duration: 380
-        easing.type: Easing.InOutCubic
+        duration: reorderAnimMs
+        easing.type: Easing.OutCubic
         onFinished: {
             dockWindow._settleDoneY = true
             dockWindow.tryFinishReorderSettle()
@@ -128,6 +220,14 @@ Window {
         dragTo = -1
         dragLeftX = 0
         settleDragY = 0
+        neighborsPacked = false
+        dragGripY = 0
+        dragInDockZone = false
+        dockZoneEverEntered = false
+        prevLayoutDragTo = -1
+        layoutMorphFrom = -1
+        layoutMorph = 1
+        dockPackT = 0
         _settleDoneX = true
         _settleDoneY = true
         dockModel.setReorderActive(false)
@@ -139,10 +239,46 @@ Window {
     readonly property int dockEndCap: 18
     readonly property int hoverBleed: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
     readonly property int tooltipWing: 128
-    readonly property int dockPillWidth: dockRow.implicitWidth + 2 * dockEndCap
+    readonly property real dockRowFullWidth: dockRepeater.count * dockStride + 2 * hoverBleed
+    readonly property real dockRowCompactWidth: Math.max(0, dockRepeater.count - 1) * dockStride + 2 * hoverBleed
+    readonly property real dockRowWidth: dockRowCompactWidth
+            + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
+    readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
     width: Math.min(dockPillWidth + 2 * tooltipWing, Screen.width - 40)
     height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
     x: Math.round((Screen.width - width) / 2)
+
+    NumberAnimation {
+        id: dockPackAnim
+        target: dockWindow
+        property: "dockPackT"
+        duration: dockShrinkAnimMs
+        easing.type: Easing.OutCubic
+    }
+
+    onDragToChanged: {
+        if (dragFrom >= 0 && dragInDockZone && prevLayoutDragTo >= 0 && dragTo !== prevLayoutDragTo) {
+            layoutMorphFrom = prevLayoutDragTo
+            layoutMorph = 0
+            layoutMorphAnim.start()
+        }
+        prevLayoutDragTo = dragTo
+        syncDockPackState()
+    }
+
+    NumberAnimation {
+        id: layoutMorphAnim
+        target: dockWindow
+        property: "layoutMorph"
+        from: 0
+        to: 1
+        duration: dockShrinkAnimMs
+        easing.type: Easing.OutCubic
+    }
+
+    Behavior on x {
+        NumberAnimation { duration: dockShrinkAnimMs; easing.type: Easing.OutCubic }
+    }
     // Resting position; slides fully below the screen when a fullscreen app is active.
     readonly property int restY: Screen.height - height - 18 + dockBottomGap
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
@@ -217,6 +353,7 @@ Window {
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 22
+
         // macOS Monterey 12 dock — opaque tints (no see-through).
         gradient: Gradient {
             GradientStop {
@@ -287,19 +424,21 @@ Window {
     Flickable {
         id: flickable
         anchors.fill: parent
-        contentWidth: Math.max(width, dockRow.implicitWidth)
+        contentWidth: Math.max(width, dockRowHost.width)
         contentHeight: height
         clip: false
-        interactive: dockRow.implicitWidth > width
+        interactive: dockRowHost.width > width
 
-        Row {
-            id: dockRow
-            x: dockRow.implicitWidth < parent.width ? Math.round((parent.width - dockRow.implicitWidth) / 2) : 0
-            y: parent.height - (taskbarController.dockIconSize + 38) - dockWindow.dockBottomGap
+        Item {
+            id: dockRowHost
+            width: dockWindow.dockRowWidth
             height: taskbarController.dockIconSize + 38
-            spacing: 14
-            leftPadding: dockWindow.hoverBleed
-            rightPadding: dockWindow.hoverBleed
+            x: width < parent.width ? Math.round((parent.width - width) / 2) : 0
+            y: parent.height - height - dockWindow.dockBottomGap
+
+            Behavior on x {
+                NumberAnimation { duration: dockWindow.dockShrinkAnimMs; easing.type: Easing.OutCubic }
+            }
 
             Repeater {
                 id: dockRepeater
@@ -327,48 +466,80 @@ Window {
                     property bool suppressClick: false
 
                     function syncGripFromPointer() {
-                        dockItemRoot.gripX = mouseArea.mouseX - dockItemRoot.grabLocalX
                         dockItemRoot.gripY = mouseArea.mouseY - dockItemRoot.grabLocalY
-                        dockWindow.dragLeftX = dockItemRoot.x + dockItemRoot.gripX
+                        dockWindow.dragLeftX = dockItemRoot.x + mouseArea.mouseX - dockItemRoot.grabLocalX
                     }
 
                     function beginDragReorder() {
                         dockItemRoot.dragging = true
+                        dockWindow.neighborsPacked = true
                         dockWindow.dragFrom = dockItemRoot.index
                         dockWindow.dragTo = dockItemRoot.index
+                        dockWindow.dragLeftX = dockItemRoot.x
+                        dockWindow.prevLayoutDragTo = dockItemRoot.index
+                        dockWindow.layoutMorphFrom = -1
+                        dockWindow.layoutMorph = 1
                         dockModel.setReorderActive(true)
-                        // Pickup lift: adjust grab so the icon rises under the cursor.
-                        dockItemRoot.grabLocalY += 18
+                        dockWindow.animateDockPack(1)
+                        dockItemRoot.grabLocalY += 14
                         dockItemRoot.syncGripFromPointer()
                     }
-                    // Fixed slot width: magnify via transform only so Row layout does not shift
-                    // under the cursor (which caused hover enter/leave jitter).
                     property bool magnifyHover: mouseArea.containsMouse
                             && !taskbarController.dockStaticIcons
                             && !dockWindow.reordering
                             && !launchBounceAnim.running
-                    // Dragged icon tracks the pointer 1:1; neighbors glide aside (animated below).
-                    property real slideX: {
-                        var from = dockWindow.dragFrom
-                        if (from < 0)
-                            return 0
-
-                        var i = dockItemRoot.index
-                        var stride = dockWindow.dockStride
-                        var to = dockWindow.dragTo
-
-                        if (dockItemRoot.dragging)
-                            return dockItemRoot.gripX
-
-                        if (i === from)
-                            return dockWindow.dragLeftX - dockItemRoot.x
-
-                        if (to > from && i > from && i <= to)
-                            return -stride
-                        if (to < from && i >= to && i < from)
-                            return stride
-                        return 0
+                    readonly property bool reorderLifted: dockItemRoot.dragging
+                            || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
+                    readonly property real fullRestX: dockWindow.slotLeftForIndex(dockItemRoot.index)
+                    readonly property real compactRestX: {
+                        var packed = dockWindow.packedSlotForIndex(
+                            dockItemRoot.index, dockWindow.dragFrom)
+                        return packed < 0
+                                ? dockItemRoot.fullRestX
+                                : dockWindow.slotLeftForIndex(packed)
                     }
+                    readonly property int layoutDragTo: dockWindow.dragTo
+                    readonly property real previewRestX: {
+                        var slot = dockWindow.previewSlotForIndex(
+                            dockItemRoot.index, dockWindow.dragFrom, dockItemRoot.layoutDragTo)
+                        return slot < 0
+                                ? dockItemRoot.fullRestX
+                                : dockWindow.slotLeftForIndex(slot)
+                    }
+                    readonly property real morphedPreviewRestX: {
+                        if (dockWindow.layoutMorph >= 1
+                                || dockWindow.layoutMorphFrom < 0
+                                || dockWindow.dragFrom < 0)
+                            return dockItemRoot.previewRestX
+                        var oldSlot = dockWindow.previewSlotForIndex(
+                            dockItemRoot.index, dockWindow.dragFrom, dockWindow.layoutMorphFrom)
+                        var oldX = oldSlot < 0
+                                ? dockItemRoot.fullRestX
+                                : dockWindow.slotLeftForIndex(oldSlot)
+                        return oldX + dockWindow.layoutMorph * (dockItemRoot.previewRestX - oldX)
+                    }
+                    // Wide layout endpoint: full row on first lift, preview row after hovering.
+                    readonly property real expandedRestX: {
+                        if (!dockWindow.neighborsPacked || dockWindow.dragFrom < 0)
+                            return dockItemRoot.fullRestX
+                        if (dockWindow.dragInDockZone || dockWindow.dockZoneEverEntered)
+                            return dockItemRoot.morphedPreviewRestX
+                        return dockItemRoot.fullRestX
+                    }
+                    // Single driver with dockPackT — icons and pill width stay in sync.
+                    readonly property real restingX: {
+                        if (!dockWindow.neighborsPacked || dockWindow.dragFrom < 0)
+                            return dockItemRoot.fullRestX
+                        return dockItemRoot.compactRestX
+                               + (1 - dockWindow.dockPackT)
+                                 * (dockItemRoot.expandedRestX - dockItemRoot.compactRestX)
+                    }
+                    readonly property real liftedDragX: dockWindow.visualDragLeftX()
+                    x: dockItemRoot.reorderLifted
+                            ? (dockItemRoot.dragging
+                               ? dockItemRoot.liftedDragX
+                               : dockWindow.dragLeftX)
+                            : dockItemRoot.restingX
                     property real slideY: {
                         if (dockItemRoot.dragging)
                             return dockItemRoot.gripY
@@ -376,8 +547,10 @@ Window {
                             return dockWindow.settleDragY
                         return 0
                     }
-                    property bool reorderLifted: dockItemRoot.dragging
-                            || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
+                    readonly property real runningDotBase: dockWindow.darkTheme ? 0.42 : 0.35
+                    readonly property real runningDotOpacity: dockItemRoot.running && !dockItemRoot.reorderLifted
+                            ? dockItemRoot.runningDotBase
+                            : 0
 
                     width: taskbarController.dockIconSize
                     height: taskbarController.dockIconSize + 38
@@ -390,13 +563,14 @@ Window {
                         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
 
-                    Behavior on slideX {
-                        enabled: !dockItemRoot.dragging
+                    Behavior on x {
+                        enabled: !dockWindow.neighborsPacked
+                                && !dockItemRoot.dragging
                                 && !(dockWindow.reorderSettling
                                      && dockItemRoot.index === dockWindow.dragFrom)
                         NumberAnimation {
-                            duration: 340
-                            easing.type: Easing.InOutCubic
+                            duration: dockWindow.dockShrinkAnimMs
+                            easing.type: Easing.OutCubic
                         }
                     }
 
@@ -405,15 +579,15 @@ Window {
                                 && !(dockWindow.reorderSettling
                                      && dockItemRoot.index === dockWindow.dragFrom)
                         NumberAnimation {
-                            duration: 340
-                            easing.type: Easing.InOutCubic
+                            duration: dockWindow.reorderAnimMs
+                            easing.type: Easing.OutCubic
                         }
                     }
 
                     Rectangle {
                         id: iconBubble
-                        width: parent.width
-                        height: parent.width
+                        width: taskbarController.dockIconSize
+                        height: taskbarController.dockIconSize
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
@@ -422,9 +596,7 @@ Window {
                         border.width: 0
                         border.color: "transparent"
 
-                        // Drag-follow translate, launch bounce, and hover magnify (visual only).
                         transform: [
-                            Translate { x: dockItemRoot.slideX },
                             Translate { y: dockItemRoot.slideY },
                             Translate { id: launchTranslate },
                             Scale {
@@ -503,6 +675,7 @@ Window {
                     }
 
                     Rectangle {
+                        id: runningDot
                         width: 4
                         height: 4
                         radius: 2
@@ -511,12 +684,12 @@ Window {
                         anchors.bottom: parent.bottom
                         anchors.bottomMargin: 6
                         color: dockWindow.darkTheme ? "#FFFFFF" : "#000000"
-                        opacity: dockWindow.darkTheme ? 0.42 : 0.35
+                        opacity: dockItemRoot.runningDotOpacity
                         Behavior on color {
                             ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
                         }
                         Behavior on opacity {
-                            NumberAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                         }
                     }
 
@@ -787,16 +960,21 @@ Window {
                             }
                             dockItemRoot.syncGripFromPointer()
                             dockWindow.updateDragTarget(
-                                dockWindow.dragLeftX, dockRepeater.count, dockWindow.dragFrom)
+                                dockWindow.dragLeftX,
+                                dockItemRoot.gripY,
+                                dockRepeater.count,
+                                dockWindow.dragFrom)
                         }
 
                         onReleased: function(mouse) {
                             if (!dockItemRoot.dragging)
                                 return
                             var from = dockWindow.dragFrom
-                            var to = dockWindow.targetIndexForLeftX(
-                                dockWindow.dragLeftX, dockRepeater.count)
                             dockItemRoot.syncGripFromPointer()
+                            dockWindow.syncDragZone(dockItemRoot.gripY)
+                            if (!dockWindow.dragInDockZone)
+                                dockWindow.dragTo = from
+                            var to = dockWindow.dragTo
                             var releaseDragY = dockItemRoot.gripY
                             dockItemRoot.dragging = false
                             dockItemRoot.suppressClick = true
@@ -814,6 +992,9 @@ Window {
                                 return
                             var from = dockWindow.dragFrom
                             dockItemRoot.syncGripFromPointer()
+                            dockWindow.syncDragZone(dockItemRoot.gripY)
+                            if (!dockWindow.dragInDockZone)
+                                dockWindow.dragTo = from
                             var releaseDragY = dockItemRoot.gripY
                             dockItemRoot.dragging = false
                             dockItemRoot.suppressClick = true
