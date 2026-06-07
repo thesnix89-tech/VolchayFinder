@@ -74,6 +74,7 @@ private:
     void loadPinnedApps();
     void scanWindows();
     void applyCustomOrder();
+    void ensureExplorerPin();
     QString entryOrderKey(const DockItemEntry& entry) const;
     void loadOrder();
     void saveOrder();
@@ -81,6 +82,7 @@ private:
     QString normalizeAppId(const QString& path) const;
     QString labelFromPath(const QString& path) const;
     void upsertEntry(const DockItemEntry& entry);
+    void scheduleRunningStateRefresh();
     QPixmap extractFileIcon(const QString& exePath) const;
     QString ensureIconFile(const QString& appId, const QString& exePath) const;
     void emitActiveWindowState();

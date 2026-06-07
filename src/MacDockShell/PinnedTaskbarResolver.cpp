@@ -52,6 +52,11 @@ PinnedShortcutEntry PinnedTaskbarResolver::resolveShortcut(const QString& shortc
 
     hr = persistFile->Load(reinterpret_cast<LPCWSTR>(shortcutPath.utf16()), STGM_READ);
     if (FAILED(hr)) {
+        const QString shortcutName = QFileInfo(shortcutPath).completeBaseName();
+        if (shortcutName.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0) {
+            entry.appUserModelId = QStringLiteral("Microsoft.Windows.Explorer");
+            entry.iconLocation = QStringLiteral("%windir%\\explorer.exe,0");
+        }
         persistFile->Release();
         shellLink->Release();
         if (mustUninit)
@@ -117,20 +122,51 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
     targetDirs << QDir(basePinnedPath).filePath("TaskBar");
     targetDirs << QDir(basePinnedPath).filePath("ImplicitAppShortcuts");
 
+    auto appendShortcut = [&results, this](const QString& filePath) {
+        if (filePath.isEmpty()) {
+            return;
+        }
+        const QString nativePath = QDir::toNativeSeparators(filePath);
+        const DWORD attributes = GetFileAttributesW(reinterpret_cast<LPCWSTR>(nativePath.utf16()));
+        if (attributes == INVALID_FILE_ATTRIBUTES) {
+            return;
+        }
+        for (const PinnedShortcutEntry& existing : results) {
+            if (existing.shortcutPath.compare(filePath, Qt::CaseInsensitive) == 0) {
+                return;
+            }
+        }
+        // Keep every pinned shortcut, including special shell links like
+        // "File Explorer" whose GetPath() resolves to an empty target.
+        results.push_back(resolveShortcut(filePath));
+    };
+
     for (const QString& dirPath : targetDirs) {
         if (!QDir(dirPath).exists()) {
             continue;
         }
 
+        const QFileInfo dirInfo(dirPath);
+        if (dirInfo.fileName().compare(QStringLiteral("TaskBar"), Qt::CaseInsensitive) == 0) {
+            // QDir::entryList is more reliable than QDirIterator for the flat TaskBar
+            // folder (QDirIterator was skipping "File Explorer.lnk" on some systems).
+            const QDir taskBarDir(dirPath);
+            const QStringList lnkFiles = taskBarDir.entryList(QStringList() << QStringLiteral("*.lnk"),
+                                                                QDir::Files,
+                                                                QDir::Name);
+            for (const QString& fileName : lnkFiles) {
+                appendShortcut(taskBarDir.absoluteFilePath(fileName));
+            }
+            // Qt's directory listing can miss the special "File Explorer" shell pin on
+            // some systems, so always probe the known shortcut path directly.
+            appendShortcut(taskBarDir.absoluteFilePath(QStringLiteral("File Explorer.lnk")));
+            continue;
+        }
+
         const QDirIterator::IteratorFlags flags = QDirIterator::Subdirectories;
-        QDirIterator it(dirPath, QStringList() << "*.lnk", QDir::Files, flags);
+        QDirIterator it(dirPath, QStringList() << QStringLiteral("*.lnk"), QDir::Files, flags);
         while (it.hasNext()) {
-            const QString filePath = it.next();
-            const PinnedShortcutEntry entry = resolveShortcut(filePath);
-            // Keep every pinned shortcut from these curated folders, including special
-            // shell links like "File Explorer" whose GetPath() resolves to an empty
-            // target (they launch via the .lnk and get their icon from it).
-            results.push_back(entry);
+            appendShortcut(it.next());
         }
     }
 

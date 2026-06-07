@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     DockModel dockModel;
     AppBarController appBarController;
     QTimer dockRefreshTimer;
-    dockRefreshTimer.setInterval(1800);
+    dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
 
     QObject::connect(&dockRefreshTimer, &QTimer::timeout, &dockModel, &DockModel::refresh);

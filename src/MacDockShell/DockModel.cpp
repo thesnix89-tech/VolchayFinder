@@ -10,6 +10,8 @@
 #include <QUrl>
 #include <QSet>
 #include <QSettings>
+#include <QProcessEnvironment>
+#include <QTimer>
 
 #include <algorithm>
 
@@ -38,6 +40,56 @@ QString lowerPath(const QString& path)
 QString fileNameKey(const QString& path)
 {
     return QFileInfo(path).fileName().toLower();
+}
+
+QString expandEnvPath(const QString& path)
+{
+    if (path.isEmpty()) {
+        return {};
+    }
+
+    wchar_t buffer[MAX_PATH * 4] = {};
+    const DWORD copied = ExpandEnvironmentStringsW(reinterpret_cast<LPCWSTR>(path.utf16()),
+                                                   buffer,
+                                                   static_cast<DWORD>(std::size(buffer)));
+    if (copied == 0 || copied >= std::size(buffer)) {
+        return path;
+    }
+    return QString::fromWCharArray(buffer);
+}
+
+bool fileExistsOnDisk(const QString& path)
+{
+    if (path.isEmpty()) {
+        return false;
+    }
+
+    const QString nativePath = QDir::toNativeSeparators(path);
+    const DWORD attributes = GetFileAttributesW(reinterpret_cast<LPCWSTR>(nativePath.utf16()));
+    return attributes != INVALID_FILE_ATTRIBUTES;
+}
+
+QString iconLocationToExePath(const QString& iconLocation)
+{
+    if (iconLocation.isEmpty()) {
+        return {};
+    }
+
+    QString path = iconLocation;
+    const int commaIndex = path.lastIndexOf(QLatin1Char(','));
+    if (commaIndex >= 0) {
+        path = path.left(commaIndex);
+    }
+    return QDir::fromNativeSeparators(expandEnvPath(path.trimmed()));
+}
+
+QString defaultExplorerExePath()
+{
+    const QString windir = QProcessEnvironment::systemEnvironment().value(QStringLiteral("WINDIR"));
+    if (!windir.isEmpty()) {
+        return QDir::fromNativeSeparators(windir + QStringLiteral("/explorer.exe"));
+    }
+    return iconLocationToExePath(QStringLiteral("%windir%\\explorer.exe"));
 }
 
 QString executablePathFromHwnd(HWND hwnd)
@@ -100,9 +152,22 @@ BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
 
     QString resolvedExePath = exePath;
     QString exeName = QFileInfo(exePath).fileName().toLower();
-    if (exeName == "explorer.exe" || exeName == "shellexperiencehost.exe" || exeName == "searchhost.exe"
-        || exeName == "startmenuexperiencehost.exe" || exeName == "textinputhost.exe"
-        || exeName == "lockapp.exe") {
+    bool isFileExplorerWindow = false;
+    if (exeName == QLatin1String("explorer.exe")) {
+        wchar_t classNameBuffer[256] = {};
+        GetClassNameW(hwnd, classNameBuffer, 256);
+        const QString className = QString::fromWCharArray(classNameBuffer);
+        // Only actual folder windows (not the desktop/shell surfaces).
+        isFileExplorerWindow = className == QLatin1String("CabinetWClass")
+                            || className == QLatin1String("ExploreWClass");
+        if (!isFileExplorerWindow) {
+            return TRUE;
+        }
+    } else if (exeName == QLatin1String("shellexperiencehost.exe")
+               || exeName == QLatin1String("searchhost.exe")
+               || exeName == QLatin1String("startmenuexperiencehost.exe")
+               || exeName == QLatin1String("textinputhost.exe")
+               || exeName == QLatin1String("lockapp.exe")) {
         return TRUE;
     }
 
@@ -125,8 +190,16 @@ BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
     DockItemEntry entry;
     entry.exePath = resolvedExePath;
     entry.launchPath = resolvedExePath;
-    entry.appId = lowerPath(resolvedExePath);
-    entry.label = (exeName == "steam.exe") ? QStringLiteral("Steam") : QFileInfo(resolvedExePath).completeBaseName();
+    if (isFileExplorerWindow) {
+        entry.appUserModelId = QStringLiteral("Microsoft.Windows.Explorer");
+        entry.appId = QStringLiteral("microsoft.windows.explorer");
+        entry.label = QStringLiteral("File Explorer");
+    } else {
+        entry.appId = lowerPath(resolvedExePath);
+        entry.label = (exeName == QLatin1String("steam.exe"))
+                ? QStringLiteral("Steam")
+                : QFileInfo(resolvedExePath).completeBaseName();
+    }
     entry.windowTitle = title.isEmpty() ? entry.label : title;
     entry.iconHint = entry.label.left(1).toUpper();
     entry.hwndValue = reinterpret_cast<qint64>(hwnd);
@@ -246,6 +319,20 @@ void DockModel::refresh()
     endResetModel();
     emitActiveWindowState();
     emit logMessage(QStringLiteral("DockModel refreshed. Items: %1").arg(m_entries.size()));
+}
+
+void DockModel::scheduleRunningStateRefresh()
+{
+    // Apps often appear a few hundred ms after ShellExecute returns; poll quickly
+    // instead of waiting for the slow periodic refresh timer.
+    static const int delaysMs[] = { 0, 120, 280, 500, 900 };
+    for (const int delayMs : delaysMs) {
+        QTimer::singleShot(delayMs, this, [this]() {
+            if (!m_actionInProgress && !m_reorderActive) {
+                refresh();
+            }
+        });
+    }
 }
 
 QString DockModel::entryOrderKey(const DockItemEntry& entry) const
@@ -429,6 +516,7 @@ void DockModel::launchIndex(int index)
     }
 
     emit logMessage(QStringLiteral("Launched pinned app: %1").arg(launchPath));
+    scheduleRunningStateRefresh();
 }
 
 void DockModel::closeIndex(int index)
@@ -446,6 +534,7 @@ void DockModel::closeIndex(int index)
     // PostMessage is asynchronous, so this does not pump a nested message loop.
     PostMessageW(hwnd, WM_CLOSE, 0, 0);
     emit logMessage(QStringLiteral("Requested close for window: %1").arg(m_entries[index].windowTitle));
+    scheduleRunningStateRefresh();
 }
 
 void DockModel::revealIndex(int index)
@@ -509,6 +598,51 @@ void DockModel::loadPinnedApps()
                                  entry.launchArguments.isEmpty() ? QStringLiteral("<none>") : entry.launchArguments));
         }
     }
+
+    ensureExplorerPin();
+}
+
+void DockModel::ensureExplorerPin()
+{
+    const QString explorerExe = defaultExplorerExePath();
+
+    for (auto& existing : m_entries) {
+        if (existing.appUserModelId.compare(QStringLiteral("Microsoft.Windows.Explorer"), Qt::CaseInsensitive) != 0
+            && !(existing.pinned
+                 && existing.label.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0)) {
+            continue;
+        }
+
+        if (existing.exePath.isEmpty()) {
+            existing.exePath = explorerExe;
+        }
+        if (existing.launchPath.isEmpty()) {
+            existing.launchPath = explorerExe;
+        }
+        if (existing.iconUrl.isEmpty() && !explorerExe.isEmpty()) {
+            const QString iconUrl = ensureIconFile(
+                existing.appId.isEmpty() ? QStringLiteral("microsoft.windows.explorer") : existing.appId,
+                explorerExe);
+            if (!iconUrl.isEmpty()) {
+                existing.iconUrl = iconUrl;
+                m_existingIconUrls.insert(existing.appId, iconUrl);
+            }
+        }
+        return;
+    }
+
+    // The "File Explorer" taskbar pin is a special shell link that is not always
+    // visible to QFileInfo while our shell is active, so synthesize the pin entry.
+    DockItemEntry explorer;
+    explorer.appUserModelId = QStringLiteral("Microsoft.Windows.Explorer");
+    explorer.appId = QStringLiteral("microsoft.windows.explorer");
+    explorer.exePath = explorerExe;
+    explorer.launchPath = explorerExe;
+    explorer.label = QStringLiteral("File Explorer");
+    explorer.iconHint = QStringLiteral("F");
+    explorer.pinned = true;
+    explorer.pinnedOnly = true;
+    upsertEntry(explorer);
 }
 
 void DockModel::scanWindows()
@@ -528,14 +662,35 @@ DockItemEntry DockModel::makePinnedEntry(const PinnedShortcutEntry& shortcut) co
     entry.launchArguments = shortcut.arguments;
     entry.workingDirectory = shortcut.workingDirectory;
     entry.appUserModelId = shortcut.appUserModelId;
+
+    // Shell pins like "File Explorer" have an empty target path but carry the real
+    // executable in IconLocation (e.g. %windir%\explorer.exe,0).
+    if (entry.exePath.isEmpty() && !shortcut.iconLocation.isEmpty()) {
+        entry.exePath = iconLocationToExePath(shortcut.iconLocation);
+    }
+    if (entry.exePath.isEmpty()
+        && entry.appUserModelId.compare(QStringLiteral("Microsoft.Windows.Explorer"), Qt::CaseInsensitive) == 0) {
+        entry.exePath = defaultExplorerExePath();
+    }
+
+    const QString shortcutBaseName = QFileInfo(shortcut.shortcutPath).completeBaseName();
+    if (entry.appUserModelId.isEmpty()
+        && shortcutBaseName.compare(QStringLiteral("File Explorer"), Qt::CaseInsensitive) == 0) {
+        entry.appUserModelId = QStringLiteral("Microsoft.Windows.Explorer");
+        if (entry.exePath.isEmpty()) {
+            entry.exePath = defaultExplorerExePath();
+        }
+    }
+
     // Fall back to the shortcut path for a stable id when the link has no target
     // path or AppUserModelID (e.g. the special "File Explorer" pin).
-    entry.appId = !shortcut.appUserModelId.isEmpty()
-            ? shortcut.appUserModelId.toLower()
-            : (!shortcut.targetPath.isEmpty() ? lowerPath(shortcut.targetPath) : lowerPath(shortcut.shortcutPath));
+    entry.appId = !entry.appUserModelId.isEmpty()
+            ? entry.appUserModelId.toLower()
+            : (!entry.exePath.isEmpty() ? lowerPath(entry.exePath) : lowerPath(shortcut.shortcutPath));
     entry.label = QFileInfo(shortcut.targetPath).completeBaseName();
-    if (entry.label.isEmpty())
-        entry.label = QFileInfo(shortcut.shortcutPath).completeBaseName();
+    if (entry.label.isEmpty()) {
+        entry.label = shortcutBaseName;
+    }
     entry.iconHint = entry.label.left(1).toUpper();
     entry.pinned = true;
     entry.pinnedOnly = true;
@@ -554,8 +709,34 @@ QString DockModel::labelFromPath(const QString& path) const
 
 QPixmap DockModel::extractFileIcon(const QString& exePath) const
 {
+    const QString nativePath = QDir::toNativeSeparators(exePath);
+    if (nativePath.isEmpty()) {
+        return {};
+    }
+
+    const LPCWSTR pathW = reinterpret_cast<LPCWSTR>(nativePath.utf16());
+
+    SHFILEINFOW sfiLarge = {};
+    if (SHGetFileInfoW(pathW, 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
+        QImage image = hiconToImage(sfiLarge.hIcon);
+        DestroyIcon(sfiLarge.hIcon);
+        if (!image.isNull()) {
+            return QPixmap::fromImage(image);
+        }
+    }
+
+    HICON largeIcon = nullptr;
+    const UINT extracted = ExtractIconExW(pathW, 0, &largeIcon, nullptr, 1);
+    if (extracted > 0 && largeIcon) {
+        QImage image = hiconToImage(largeIcon);
+        DestroyIcon(largeIcon);
+        if (!image.isNull()) {
+            return QPixmap::fromImage(image);
+        }
+    }
+
     SHFILEINFOW sfi = {};
-    if (!SHGetFileInfoW(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX)) {
+    if (!SHGetFileInfoW(pathW, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX)) {
         return {};
     }
 
@@ -577,16 +758,6 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
             }
         } else {
             imageList->Release();
-        }
-    }
-
-    // Fallback to standard large icon
-    SHFILEINFOW sfiLarge = {};
-    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(exePath.utf16()), 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
-        QImage image = hiconToImage(sfiLarge.hIcon);
-        DestroyIcon(sfiLarge.hIcon);
-        if (!image.isNull()) {
-            return QPixmap::fromImage(image);
         }
     }
 
