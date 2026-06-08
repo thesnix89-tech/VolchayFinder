@@ -610,7 +610,8 @@ void WindowEffects::setDockDropCapture(QWindow* window, bool active)
     }
 }
 
-void WindowEffects::setDockDropPointer(QWindow* window, int globalX, int globalY)
+void WindowEffects::setDockDropPointer(QWindow* window, int globalX, int globalY,
+                                       int iconCenterGlobalX, int iconCenterGlobalY)
 {
     if (!window) {
         return;
@@ -622,7 +623,7 @@ void WindowEffects::setDockDropPointer(QWindow* window, int globalX, int globalY
         return;
     }
 
-    emit dockDropPointerChanged(window, globalX, globalY);
+    emit dockDropPointerChanged(window, globalX, globalY, iconCenterGlobalX, iconCenterGlobalY);
 }
 
 void WindowEffects::setDockExternalDragPath(QWindow* window, const QString& path)
@@ -667,6 +668,11 @@ void WindowEffects::updateDockDropLayout(QWindow* window, qreal pillLocalLeft, i
     layout.iconSize = iconSize;
     layout.itemCount = qMax(0, itemCount);
     m_dropLayouts.insert(window, layout);
+}
+
+int WindowEffects::dockDropIndexForIconCenter(QWindow* window, int iconCenterGlobalX, int iconCenterGlobalY) const
+{
+    return dockDropIndexForGlobalPoint(window, iconCenterGlobalX, iconCenterGlobalY);
 }
 
 int WindowEffects::dockDropIndexForGlobalPoint(QWindow* window, int globalX, int globalY) const

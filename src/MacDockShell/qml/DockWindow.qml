@@ -42,6 +42,8 @@ Window {
     property bool hasDropPointer: false
     property real lastDropGlobalX: 0
     property real lastDropGlobalY: 0
+    property real lastDropIconCenterGlobalX: 0
+    property real lastDropIconCenterGlobalY: 0
     readonly property bool externalPinLayout: externalPinPreview && externalDragAnchorLeftX >= 0
     readonly property int dockSpacing: 14
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
@@ -376,8 +378,16 @@ Window {
         prevLayoutExternalPinTo = externalPinTo
     }
 
-    function updateExternalPinTargetFromGlobal(globalX, globalY) {
-        var rowLocal = dockRowHost.mapFromGlobal(globalX, globalY)
+    function iconCenterGlobalFromDrag(drag, localX, localY) {
+        var iconSize = taskbarController.dockIconSize
+        var hotSpotX = drag.hotSpot !== undefined ? drag.hotSpot.x : iconSize / 2
+        var hotSpotY = drag.hotSpot !== undefined ? drag.hotSpot.y : iconSize / 2
+        return dockDropArea.mapToGlobal(localX - hotSpotX + iconSize / 2,
+                                        localY - hotSpotY + iconSize / 2)
+    }
+
+    function updateExternalPinTargetFromIconCenter(centerGlobalX, centerGlobalY) {
+        var rowLocal = dockRowHost.mapFromGlobal(centerGlobalX, centerGlobalY)
         var dragCenter = rowLocal.x
         var candidate = candidateInsertSlotForCenter(dragCenter, dockRepeater.count)
 
@@ -423,7 +433,7 @@ Window {
         prevLayoutExternalPinTo = externalPinTo
         externalPinPreview = true
         if (hasDropPointer)
-            updateExternalPinTargetFromGlobal(lastDropGlobalX, lastDropGlobalY)
+            updateExternalPinTargetFromIconCenter(lastDropIconCenterGlobalX, lastDropIconCenterGlobalY)
         dockPackT = 1
         animateDockPack(0)
         publishDropGeometry()
@@ -649,14 +659,16 @@ Window {
             if (window === dockWindow)
                 dockWindow.externalDropActive = active
         }
-        function onDockDropPointerChanged(window, globalX, globalY) {
+        function onDockDropPointerChanged(window, globalX, globalY, iconCenterGlobalX, iconCenterGlobalY) {
             if (window !== dockWindow)
                 return
             dockWindow.lastDropGlobalX = globalX
             dockWindow.lastDropGlobalY = globalY
+            dockWindow.lastDropIconCenterGlobalX = iconCenterGlobalX
+            dockWindow.lastDropIconCenterGlobalY = iconCenterGlobalY
             dockWindow.hasDropPointer = true
             if (dockWindow.externalPinPreview || dockWindow.externalDropActive)
-                dockWindow.updateExternalPinTargetFromGlobal(globalX, globalY)
+                dockWindow.updateExternalPinTargetFromIconCenter(iconCenterGlobalX, iconCenterGlobalY)
         }
         function onDockExternalDragPathChanged(window, path) {
             if (window !== dockWindow)
@@ -702,8 +714,11 @@ Window {
             if (!drag.contains(drag.x, drag.y))
                 return
             drag.accept(Qt.CopyAction)
-            const global = dockDropArea.mapToGlobal(drag.x, drag.y)
-            dockWindow.updateExternalPinTargetFromGlobal(global.x, global.y)
+            const center = dockWindow.iconCenterGlobalFromDrag(drag, drag.x, drag.y)
+            dockWindow.lastDropIconCenterGlobalX = center.x
+            dockWindow.lastDropIconCenterGlobalY = center.y
+            dockWindow.hasDropPointer = true
+            dockWindow.updateExternalPinTargetFromIconCenter(center.x, center.y)
         }
         onExited: dockWindow.externalDropActive = false
         onDropped: (drop) => {

@@ -3,13 +3,117 @@
 #include "DockModel.h"
 #include "WindowEffects.h"
 
+#include <QDir>
 #include <QGuiApplication>
 #include <QWindow>
 
 #include <oleidl.h>
 #include <shlobj.h>
+#include <shellapi.h>
 
 namespace {
+
+QSize iconPixelSize(HICON icon)
+{
+    if (!icon) {
+        return QSize(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+    }
+
+    ICONINFO iconInfo = {};
+    if (!GetIconInfo(icon, &iconInfo)) {
+        DestroyIcon(icon);
+        return QSize(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+    }
+
+    BITMAP bitmap = {};
+    const int bitmapSize = GetObject(iconInfo.hbmColor ? iconInfo.hbmColor : iconInfo.hbmMask,
+                                     sizeof(bitmap),
+                                     &bitmap);
+    if (iconInfo.hbmColor) {
+        DeleteObject(iconInfo.hbmColor);
+    }
+    if (iconInfo.hbmMask) {
+        DeleteObject(iconInfo.hbmMask);
+    }
+    DestroyIcon(icon);
+
+    if (bitmapSize == 0 || bitmap.bmWidth <= 0 || bitmap.bmHeight <= 0) {
+        return QSize(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+    }
+
+    return QSize(bitmap.bmWidth, bitmap.bmHeight);
+}
+
+QSize iconSizeForPath(const QString& path)
+{
+    if (path.isEmpty()) {
+        return QSize(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+    }
+
+    const QString nativePath = QDir::toNativeSeparators(path);
+    SHFILEINFOW fileInfo = {};
+    const DWORD_PTR result = SHGetFileInfoW(reinterpret_cast<LPCWSTR>(nativePath.utf16()),
+                                            0,
+                                            &fileInfo,
+                                            sizeof(fileInfo),
+                                            SHGFI_ICON | SHGFI_LARGEICON);
+    if (result == 0 || !fileInfo.hIcon) {
+        return QSize(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+    }
+
+    return iconPixelSize(fileInfo.hIcon);
+}
+
+bool readDragImageInfo(IDataObject* dataObject, QSize& imageSize, QPoint& hotspot)
+{
+    if (!dataObject) {
+        return false;
+    }
+
+    static const UINT format = RegisterClipboardFormatW(L"DragImageBits");
+    if (format == 0) {
+        return false;
+    }
+
+    FORMATETC formatEtc = {};
+    formatEtc.cfFormat = static_cast<CLIPFORMAT>(format);
+    formatEtc.dwAspect = DVASPECT_CONTENT;
+    formatEtc.lindex = -1;
+    formatEtc.tymed = TYMED_HGLOBAL;
+
+    STGMEDIUM medium = {};
+    if (FAILED(dataObject->GetData(&formatEtc, &medium)) || !medium.hGlobal) {
+        return false;
+    }
+
+    const auto* dragImage = static_cast<const SHDRAGIMAGE*>(GlobalLock(medium.hGlobal));
+    if (!dragImage || dragImage->sizeDragImage.cx <= 0 || dragImage->sizeDragImage.cy <= 0) {
+        if (dragImage) {
+            GlobalUnlock(medium.hGlobal);
+        }
+        ReleaseStgMedium(&medium);
+        return false;
+    }
+
+    imageSize = QSize(dragImage->sizeDragImage.cx, dragImage->sizeDragImage.cy);
+    hotspot = QPoint(dragImage->ptOffset.x, dragImage->ptOffset.y);
+    GlobalUnlock(medium.hGlobal);
+    ReleaseStgMedium(&medium);
+    return true;
+}
+
+QPoint iconCenterFromCursor(const QPoint& cursor,
+                            const QSize& imageSize,
+                            const QPoint& hotspot,
+                            bool hasDragImageInfo)
+{
+    if (hasDragImageInfo && imageSize.width() > 0 && imageSize.height() > 0) {
+        return cursor - hotspot + QPoint(imageSize.width() / 2, imageSize.height() / 2);
+    }
+
+    // Shell fallback: drag image top-left follows the cursor.
+    return cursor + QPoint(imageSize.width() / 2, imageSize.height() / 2);
+}
 
 QString pathFromDataObject(IDataObject* dataObject)
 {
@@ -99,8 +203,9 @@ struct DropTargetImpl final : public IDropTarget
         setHover(true);
         const QString path = pathFromDataObject(dataObject);
         if (m_windowEffects && m_window) {
+            updateDragImageInfo(dataObject, path);
             m_windowEffects->setDockExternalDragPath(m_window, path);
-            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
+            emitPointer(point);
         }
         *effect = DROPEFFECT_COPY;
         return S_OK;
@@ -119,9 +224,7 @@ struct DropTargetImpl final : public IDropTarget
         }
 
         setHover(true);
-        if (m_windowEffects && m_window) {
-            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
-        }
+        emitPointer(point);
         *effect = DROPEFFECT_COPY;
         return S_OK;
     }
@@ -164,11 +267,13 @@ struct DropTargetImpl final : public IDropTarget
             return S_OK;
         }
 
+        const QPoint cursor(point.x, point.y);
+        const QPoint center = iconCenterFromCursor(cursor, m_dragImageSize, m_dragHotspot, m_hasDragImageInfo);
         if (m_windowEffects && m_window) {
-            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
+            m_windowEffects->setDockDropPointer(m_window, cursor.x(), cursor.y(), center.x(), center.y());
         }
 
-        const int dropIndex = m_windowEffects->dockDropIndexForGlobalPoint(m_window, point.x, point.y);
+        const int dropIndex = m_windowEffects->dockDropIndexForIconCenter(m_window, center.x(), center.y());
         m_windowEffects->notifyDockExternalDrop(m_window, path, dropIndex);
 
         *effect = DROPEFFECT_COPY;
@@ -202,10 +307,35 @@ private:
         m_windowEffects->setDockDropHover(m_window, active);
     }
 
+    void updateDragImageInfo(IDataObject* dataObject, const QString& path)
+    {
+        m_dragPath = path;
+        m_hasDragImageInfo = readDragImageInfo(dataObject, m_dragImageSize, m_dragHotspot);
+        if (!m_hasDragImageInfo) {
+            m_dragImageSize = iconSizeForPath(path);
+            m_dragHotspot = QPoint(0, 0);
+        }
+    }
+
+    void emitPointer(const POINTL& point)
+    {
+        if (!m_windowEffects || !m_window) {
+            return;
+        }
+
+        const QPoint cursor(point.x, point.y);
+        const QPoint center = iconCenterFromCursor(cursor, m_dragImageSize, m_dragHotspot, m_hasDragImageInfo);
+        m_windowEffects->setDockDropPointer(m_window, cursor.x(), cursor.y(), center.x(), center.y());
+    }
+
     QPointer<QWindow> m_window;
     DockModel* m_dockModel = nullptr;
     WindowEffects* m_windowEffects = nullptr;
     bool m_dragAccepted = false;
+    QString m_dragPath;
+    QSize m_dragImageSize;
+    QPoint m_dragHotspot;
+    bool m_hasDragImageInfo = false;
     ULONG m_refCount = 1;
 };
 
