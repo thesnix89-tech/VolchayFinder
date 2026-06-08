@@ -32,6 +32,7 @@ Window {
     property bool externalPinSettling: false
     property bool externalPinRetracting: false
     property bool externalPinCommitting: false
+    property bool unpinCommitting: false
     // Frozen expanded slot count/width during model handoff — prevents one-frame pill shrink.
     property int externalPinCommitLayoutCount: -1
     property real externalPinFrozenPillWidth: -1
@@ -52,6 +53,8 @@ Window {
     property int externalPinRestEdge: 0
     property real externalPinRestAnchorLeftX: -1
     property real externalPinRestAnchorRightX: -1
+    // Only one dock icon label at a time — fast sweeps must not stack tooltips.
+    property int activeTooltipIndex: -1
     property bool hasDropPointer: false
     property real lastDropGlobalX: 0
     property real lastDropGlobalY: 0
@@ -289,13 +292,12 @@ Window {
         settleYAnim.start()
     }
 
-    function cancelReorder() {
+    function clearReorderState() {
         if (reorderSettling) {
             settleAnim.stop()
             settleYAnim.stop()
         }
         dockPackAnim.stop()
-        animateDockPack(0)
         dragFrom = -1
         dragTo = -1
         dragLeftX = 0
@@ -309,6 +311,25 @@ Window {
         layoutMorphFrom = -1
         layoutMorph = 1
         dockModel.setReorderActive(false)
+    }
+
+    function cancelReorder() {
+        clearReorderState()
+        animateDockPack(0)
+    }
+
+    // Unpin: skip pack-back animation — model removal shrinks the dock once.
+    function finishUnpin(index) {
+        clearReorderState()
+        clearActiveTooltip()
+        dockPackT = 0
+        unpinCommitting = true
+        dockModel.unpinIndex(index)
+        unpinCommitting = false
+        clearExternalPinRestAnchor()
+        syncAnimatedPillWidth(true)
+        publishDropGeometry()
+        Qt.callLater(dockWindow.refreshClickHitRegions)
     }
 
     property bool _settleDoneX: true
@@ -413,7 +434,8 @@ Window {
             animatedPillWidth = externalPinFrozenPillWidth
             return
         }
-        if (immediate || externalPinPreview || externalPinCommitting || dockPackAnim.running) {
+        if (immediate || externalPinPreview || externalPinCommitting || unpinCommitting
+                || dockPackAnim.running) {
             dockChromeWidthAnim.stop()
             animatedPillWidth = dockPillWidth
             return
@@ -617,7 +639,7 @@ Window {
     }
 
     function resetDockChromeLayout() {
-        if (externalPinPreview || externalPinDropping || externalPinSettling)
+        if (externalPinPreview || externalPinDropping || externalPinSettling || unpinCommitting)
             return
         clearExternalPinRestAnchor()
         resetExternalPinState()
@@ -819,6 +841,34 @@ Window {
         windowEffects.updateDockHitRegions(dockWindow, clipRegions, hitRegions)
     }
 
+    // Defer hit-region refresh — synchronous SetWindowRgn on hover drops containsMouse.
+    function requestHitRegionRefresh() {
+        hitRegionRefreshDefer.restart()
+    }
+
+    function showTooltipForIndex(index) {
+        dockTooltipHideTimer.stop()
+        if (activeTooltipIndex !== index) {
+            activeTooltipIndex = index
+            requestHitRegionRefresh()
+        }
+    }
+
+    function scheduleHideTooltipForIndex(index) {
+        if (activeTooltipIndex !== index)
+            return
+        dockTooltipHideTimer.pendingIndex = index
+        dockTooltipHideTimer.restart()
+    }
+
+    function clearActiveTooltip() {
+        dockTooltipHideTimer.stop()
+        if (activeTooltipIndex >= 0) {
+            activeTooltipIndex = -1
+            requestHitRegionRefresh()
+        }
+    }
+
     function someVisualOverflow() {
         for (var i = 0; i < dockRepeater.count; ++i) {
             var item = dockRepeater.itemAt(i)
@@ -828,7 +878,11 @@ Window {
         return false
     }
 
-    onReorderingChanged: refreshClickHitRegions()
+    onReorderingChanged: {
+        if (reordering)
+            clearActiveTooltip()
+        refreshClickHitRegions()
+    }
     onExternalDropActiveChanged: {
         if (externalDropActive) {
             externalDragLeaveTimer.stop()
@@ -988,6 +1042,25 @@ Window {
                 Qt.callLater(dockWindow.armClickThrough)
             else
                 windowEffects.clearDockHitRegions(dockWindow)
+        }
+    }
+
+    Timer {
+        id: hitRegionRefreshDefer
+        interval: 16
+        repeat: false
+        onTriggered: dockWindow.refreshClickHitRegions()
+    }
+
+    Timer {
+        id: dockTooltipHideTimer
+        interval: 120
+        repeat: false
+        property int pendingIndex: -1
+        onTriggered: {
+            if (dockWindow.activeTooltipIndex === pendingIndex)
+                dockWindow.clearActiveTooltip()
+            pendingIndex = -1
         }
     }
 
@@ -1248,13 +1321,15 @@ Window {
 
                     function localHitRect() {
                         var pt = iconBubble.mapToItem(dockWindow.contentItem, 0, 0)
-                        var scale = dockItemRoot.magnifyHover ? 1.18 : 1.0
+                        // Reserve magnify + tooltip room up front — hover must not resize hit regions.
+                        var scale = 1.18
                         var pad = dockItemRoot.reorderLifted ? 12 : 8
+                        var tooltipHeadroom = 36
                         var w = iconBubble.width * scale + pad * 2
-                        var h = iconBubble.height * scale + pad * 2
+                        var halfH = iconBubble.height * scale / 2 + pad
                         var cx = pt.x + iconBubble.width / 2
                         var cy = pt.y + iconBubble.height / 2
-                        return Qt.rect(cx - w / 2, cy - h / 2, w, h)
+                        return Qt.rect(cx - w / 2, cy - halfH - tooltipHeadroom, w, halfH * 2 + tooltipHeadroom)
                     }
 
                     function playLaunchBounce() {
@@ -1262,6 +1337,7 @@ Window {
                     }
 
                     function beginDragReorder() {
+                        dockWindow.clearActiveTooltip()
                         dockItemRoot.dragging = true
                         dockWindow.neighborsPacked = true
                         dockWindow.dragFrom = dockItemRoot.index
@@ -1280,7 +1356,8 @@ Window {
                             && !dockWindow.reordering
                             && !dockWindow.externalPinPreview
                             && !launchBounceAnim.running
-                    onMagnifyHoverChanged: dockWindow.refreshClickHitRegions()
+                    readonly property bool showTooltip: dockWindow.activeTooltipIndex === dockItemRoot.index
+                    onMagnifyHoverChanged: dockWindow.requestHitRegionRefresh()
                     readonly property bool reorderLifted: dockItemRoot.dragging
                             || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
                     readonly property real fullRestX: dockWindow.slotLeftForIndex(dockItemRoot.index)
@@ -1543,7 +1620,7 @@ Window {
                         anchors.bottomMargin: 8
                         width: tooltipBg.width
                         height: tooltipBg.height + tooltipTail.height
-                        opacity: (mouseArea.containsMouse && !dockWindow.reordering) ? 1 : 0
+                        opacity: (dockItemRoot.showTooltip && !dockWindow.reordering) ? 1 : 0
                         visible: opacity > 0
                         z: 20
 
@@ -1772,6 +1849,7 @@ Window {
 
                     readonly property bool launchBouncing: launchBounceAnim.running
                     readonly property bool hasVisualOverflow: dockItemRoot.magnifyHover
+                            || dockItemRoot.showTooltip
                             || dockItemRoot.reorderLifted
                             || dockItemRoot.launchBouncing
 
@@ -1783,6 +1861,13 @@ Window {
                         // Keep the press so a horizontal drag is not stolen by the Flickable.
                         preventStealing: true
                         cursorShape: dockItemRoot.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+                        onContainsMouseChanged: {
+                            if (mouseArea.containsMouse && !dockWindow.reordering)
+                                dockWindow.showTooltipForIndex(dockItemRoot.index)
+                            else if (!mouseArea.containsMouse)
+                                dockWindow.scheduleHideTooltipForIndex(dockItemRoot.index)
+                        }
 
                         onPressed: function(mouse) {
                             if (mouse.button !== Qt.LeftButton)
@@ -1833,9 +1918,7 @@ Window {
 
                             if (dockItemRoot.unpinDragPreview && dockItemRoot.pinned) {
                                 dockItemRoot.unpinDragPreview = false
-                                var idx = from
-                                dockWindow.cancelReorder()
-                                Qt.callLater(function() { dockModel.unpinIndex(idx) })
+                                dockWindow.finishUnpin(from)
                                 return
                             }
 
@@ -1860,9 +1943,7 @@ Window {
                             dockItemRoot.suppressClick = true
                             if (dockItemRoot.unpinDragPreview && from >= 0 && dockItemRoot.pinned) {
                                 dockItemRoot.unpinDragPreview = false
-                                var idx2 = from
-                                dockWindow.cancelReorder()
-                                Qt.callLater(function() { dockModel.unpinIndex(idx2) })
+                                dockWindow.finishUnpin(from)
                                 return
                             }
                             if (from >= 0)
