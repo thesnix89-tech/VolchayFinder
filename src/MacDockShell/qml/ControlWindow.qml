@@ -314,6 +314,47 @@ Window {
                         }
                     }
 
+                    // Separator 1a
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 1b: Keep Windows auto-hide after exit
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Оставить панель задач Windows скрытой после выхода"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "При выходе сохраняет включённой настройку «Автоматически скрывать панель задач» в Windows"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: keepTaskbarAutoHideOnExitToggle
+                            checked: taskbarController.keepTaskbarAutoHideOnExit
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: keepTaskbarAutoHideOnExitToggle.checked = !keepTaskbarAutoHideOnExitToggle.checked
+                        }
+                    }
+
                     // Separator 1
                     Rectangle {
                         Layout.fillWidth: true
@@ -780,7 +821,7 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
                     }
                 }
             }

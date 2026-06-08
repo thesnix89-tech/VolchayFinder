@@ -462,6 +462,7 @@ Window {
             if (dockWindow.externalPinRetracting)
                 dockWindow.clearExternalPinPreview()
             dockWindow.syncAnimatedPillWidth(true)
+            dockWindow.refreshClickHitRegions()
         }
     }
 
@@ -785,11 +786,31 @@ Window {
 
     // Window x/width track dockPillWidth instantly — animated Behaviors desynced the pill from wings.
     // Resting position; slides fully below the screen when a fullscreen app is active.
-    readonly property int restY: Screen.height - height - 18 + dockBottomGap
+    readonly property int dockRestY: Screen.height - height - 18 + dockBottomGap
+    readonly property int dockHiddenY: Screen.height + 4
+    property real dockSlideY: dockRestY
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
     readonly property bool darkTheme: taskbarController.darkTheme
     readonly property int themeAnimMs: 320
-    y: (taskbarController.shellActive && taskbarController.dockAutoHidden) ? (Screen.height + 4) : restY
+    y: dockSlideY
+
+    function dockSlideTargetY() {
+        return (taskbarController.shellActive && taskbarController.dockAutoHidden)
+                ? dockHiddenY : dockRestY
+    }
+
+    function animateDockSlide() {
+        var target = dockSlideTargetY()
+        if (Math.abs(dockSlideY - target) < 0.5) {
+            dockSlideY = target
+            refreshClickHitRegions()
+            return
+        }
+        dockSlideAnim.to = target
+        hitRegionRefreshDefer.stop()
+        refreshClickHitRegions()
+        dockSlideAnim.start()
+    }
     visible: taskbarController.shellActive
     color: "transparent"
     title: "MacDockShellDock"
@@ -803,6 +824,13 @@ Window {
     function pillLocalRect() {
         var pillPt = dockBg.mapToItem(dockWindow.contentItem, 0, 0)
         return Qt.rect(pillPt.x, pillPt.y, dockBg.width, dockBg.height)
+    }
+
+    // Clip rect slightly wider than the pill so animated growth does not square off the rounded caps.
+    function pillClipLocalRect() {
+        var pill = pillLocalRect()
+        var capPad = dockBg.radius + 8
+        return Qt.rect(pill.x - capPad, pill.y, pill.width + 2 * capPad, pill.height)
     }
 
     function appendIconHitRegions(list) {
@@ -822,7 +850,8 @@ Window {
         var fullWin = dockWindow.dockWindowLocalRect()
         var pill = dockWindow.pillLocalRect()
 
-        if (dockWindow.reordering || dockWindow.externalDropActive || dockWindow.externalPinPreview) {
+        if (dockWindow.reordering || dockWindow.externalDropActive || dockWindow.externalPinPreview
+                || dockSlideAnim.running) {
             clipRegions.push(fullWin)
             hitRegions.push(fullWin)
         } else {
@@ -833,7 +862,7 @@ Window {
             if (dockWindow.someVisualOverflow()) {
                 clipRegions.push(fullWin)
             } else {
-                clipRegions.push(pill)
+                clipRegions.push(dockWindow.pillClipLocalRect())
                 dockWindow.appendIconHitRegions(clipRegions)
             }
         }
@@ -844,6 +873,26 @@ Window {
     // Defer hit-region refresh — synchronous SetWindowRgn on hover drops containsMouse.
     function requestHitRegionRefresh() {
         hitRegionRefreshDefer.restart()
+    }
+
+    function layoutChromeAnimating() {
+        return dockPackAnim.running || reordering || externalPinPreview
+                || externalPinDropping || externalPinSettling
+    }
+
+    function needsImmediateHitRegionRefresh() {
+        return externalDropActive || externalPinPreview || reordering || dockPackAnim.running
+                || dockSlideAnim.running
+    }
+
+    function scheduleClickHitRegionRefresh() {
+        // Debounced refresh starves updates while width animates — clip stays narrow and squares the right cap.
+        if (needsImmediateHitRegionRefresh()) {
+            hitRegionRefreshDefer.stop()
+            refreshClickHitRegions()
+        } else {
+            requestHitRegionRefresh()
+        }
     }
 
     function showTooltipForIndex(index) {
@@ -881,7 +930,7 @@ Window {
     onReorderingChanged: {
         if (reordering)
             clearActiveTooltip()
-        refreshClickHitRegions()
+        scheduleClickHitRegionRefresh()
     }
     onExternalDropActiveChanged: {
         if (externalDropActive) {
@@ -997,6 +1046,7 @@ Window {
     }
 
     Component.onCompleted: {
+        dockSlideY = dockSlideTargetY()
         windowEffects.applyDockGlass(dockWindow)
         Qt.callLater(dockWindow.armClickThrough)
         publishDropGeometry()
@@ -1026,6 +1076,11 @@ Window {
     Connections {
         target: taskbarController
         function onDockIconSizeChanged() { dockWindow.publishDropGeometry() }
+        function onDockAutoHiddenChanged() { dockWindow.animateDockSlide() }
+        function onShellActiveChanged() {
+            if (!dockSlideAnim.running)
+                dockWindow.dockSlideY = dockWindow.dockSlideTargetY()
+        }
     }
 
     onVisibleChanged: {
@@ -1080,29 +1135,37 @@ Window {
     }
 
     onWidthChanged: {
-        if (!externalPinPreview)
+        scheduleClickHitRegionRefresh()
+        if (!layoutChromeAnimating())
             clickThroughWarmupTimer.restart()
     }
     onHeightChanged: {
-        if (!externalPinPreview)
+        if (!dockSlideAnim.running)
+            dockSlideY = dockSlideTargetY()
+        if (!layoutChromeAnimating())
             clickThroughWarmupTimer.restart()
     }
-    onXChanged: refreshClickHitRegions()
-    onYChanged: refreshClickHitRegions()
+    onXChanged: scheduleClickHitRegionRefresh()
+    onYChanged: scheduleClickHitRegionRefresh()
     onDockPackTChanged: {
         if (externalPinPreview || reordering) {
             animatedPillWidth = dockPillWidth
             if (externalPinPreview)
                 publishDropGeometry()
         }
-        if (!externalPinPreview)
+        if (!layoutChromeAnimating())
             clickThroughWarmupTimer.restart()
     }
     // macOS-style: glide the dock down/up when toggling fullscreen.
-    Behavior on y {
-        NumberAnimation {
-            duration: 280
-            easing.type: Easing.InOutCubic
+    NumberAnimation {
+        id: dockSlideAnim
+        target: dockWindow
+        property: "dockSlideY"
+        duration: 280
+        easing.type: Easing.InOutCubic
+        onRunningChanged: {
+            if (!running)
+                dockWindow.refreshClickHitRegions()
         }
     }
 

@@ -17,6 +17,89 @@
 namespace {
 constexpr auto kTaskbarClass = TEXT("Shell_TrayWnd");
 constexpr auto kStartButtonClass = TEXT("Button");
+constexpr int kStuckRectsAutoHideByteIndex = 8;
+
+constexpr wchar_t kStuckRects3Path[] =
+    L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StuckRects3";
+constexpr wchar_t kStuckRects2Path[] =
+    L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StuckRects2";
+
+bool readStuckRectsSettings(const wchar_t* subkeyPath, QByteArray* out)
+{
+    if (!out) {
+        return false;
+    }
+
+    HKEY key = nullptr;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, subkeyPath, 0, KEY_READ, &key) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    DWORD type = 0;
+    DWORD size = 0;
+    const LSTATUS sizeStatus = RegQueryValueExW(key, L"Settings", nullptr, &type, nullptr, &size);
+    if (sizeStatus != ERROR_SUCCESS || type != REG_BINARY
+        || size <= static_cast<DWORD>(kStuckRectsAutoHideByteIndex)) {
+        RegCloseKey(key);
+        return false;
+    }
+
+    out->resize(static_cast<int>(size));
+    DWORD readSize = size;
+    const LSTATUS readStatus = RegQueryValueExW(
+        key, L"Settings", nullptr, &type,
+        reinterpret_cast<LPBYTE>(out->data()), &readSize);
+    RegCloseKey(key);
+    return readStatus == ERROR_SUCCESS
+        && readSize > static_cast<DWORD>(kStuckRectsAutoHideByteIndex);
+}
+
+bool writeStuckRectsSettings(const wchar_t* subkeyPath, const QByteArray& bytes)
+{
+    if (bytes.size() <= kStuckRectsAutoHideByteIndex) {
+        return false;
+    }
+
+    HKEY key = nullptr;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, subkeyPath, 0, KEY_SET_VALUE, &key) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    const LSTATUS writeStatus = RegSetValueExW(
+        key, L"Settings", 0, REG_BINARY,
+        reinterpret_cast<const BYTE*>(bytes.constData()),
+        static_cast<DWORD>(bytes.size()));
+    RegCloseKey(key);
+    return writeStatus == ERROR_SUCCESS;
+}
+
+quint8 autoHideEnabledRegistryByte(quint8 reference)
+{
+    if (reference == 122 || reference == 123 || (reference >= 120 && reference <= 130)) {
+        return 123;
+    }
+    if (reference == 0x22) {
+        return 0x02;
+    }
+    if (reference == 2 || reference == 3) {
+        return 2;
+    }
+    return 2;
+}
+
+quint8 autoHideDisabledRegistryByte(quint8 reference)
+{
+    if (reference == 122 || reference == 123 || (reference >= 120 && reference <= 130)) {
+        return 122;
+    }
+    if (reference == 0x02 || reference == 0x22) {
+        return 0x22;
+    }
+    if (reference == 2 || reference == 3) {
+        return 3;
+    }
+    return 3;
+}
 
 QString executablePathFromHwnd(HWND hwnd)
 {
@@ -307,9 +390,173 @@ bool TaskbarController::showTaskbar()
     return changed;
 }
 
+void TaskbarController::capturePreShellTaskbarState()
+{
+    HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+    if (!taskbar) {
+        return;
+    }
+
+    if (!m_hasOriginalTaskbarState) {
+        APPBARDATA abd = {};
+        abd.cbSize = sizeof(APPBARDATA);
+        abd.hWnd = taskbar;
+        m_originalTaskbarState = SHAppBarMessage(ABM_GETSTATE, &abd);
+        m_hasOriginalTaskbarState = true;
+        emit shellActionLogged(QStringLiteral("Saved original taskbar AppBar state: %1")
+                                   .arg(m_originalTaskbarState));
+    }
+
+    if (!m_hasOriginalStuckRectsSettings) {
+        QByteArray settings;
+        if (readStuckRectsSettings(kStuckRects3Path, &settings)) {
+            m_stuckRectsRegPath = QStringLiteral("StuckRects3");
+        } else if (readStuckRectsSettings(kStuckRects2Path, &settings)) {
+            m_stuckRectsRegPath = QStringLiteral("StuckRects2");
+        }
+
+        if (!settings.isEmpty()) {
+            m_originalStuckRectsSettings = settings;
+            m_hasOriginalStuckRectsSettings = true;
+            emit shellActionLogged(QStringLiteral("Saved original taskbar registry auto-hide byte: %1")
+                                       .arg(static_cast<quint8>(
+                                           m_originalStuckRectsSettings[kStuckRectsAutoHideByteIndex])));
+        }
+    }
+}
+
+void TaskbarController::showTaskbarWindows()
+{
+    HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+    if (!taskbar) {
+        emit shellActionLogged(QStringLiteral("Shell_TrayWnd not found."));
+        return;
+    }
+
+    ShowWindow(taskbar, SW_SHOW);
+    EnableWindow(taskbar, TRUE);
+
+    HWND startButton = FindWindow(kStartButtonClass, nullptr);
+    if (startButton) {
+        ShowWindow(startButton, SW_SHOW);
+        EnableWindow(startButton, TRUE);
+    }
+}
+
+void TaskbarController::restoreTaskbarRegistrySettings()
+{
+    if (!m_hasOriginalStuckRectsSettings || m_stuckRectsRegPath.isEmpty()) {
+        return;
+    }
+
+    const wchar_t* subkeyPath = m_stuckRectsRegPath == QStringLiteral("StuckRects2")
+        ? kStuckRects2Path
+        : kStuckRects3Path;
+    if (writeStuckRectsSettings(subkeyPath, m_originalStuckRectsSettings)) {
+        emit shellActionLogged(QStringLiteral("Restored taskbar registry Settings blob."));
+    } else {
+        emit shellActionLogged(QStringLiteral("Failed to restore taskbar registry Settings blob."));
+    }
+
+    m_hasOriginalStuckRectsSettings = false;
+    m_originalStuckRectsSettings.clear();
+    m_stuckRectsRegPath.clear();
+}
+
+void TaskbarController::setTaskbarRegistryAutoHide(bool enabled)
+{
+    const wchar_t* subkeyPath = nullptr;
+    QByteArray settings;
+    if (readStuckRectsSettings(kStuckRects3Path, &settings)) {
+        subkeyPath = kStuckRects3Path;
+    } else if (readStuckRectsSettings(kStuckRects2Path, &settings)) {
+        subkeyPath = kStuckRects2Path;
+    }
+
+    if (!subkeyPath || settings.isEmpty()) {
+        emit shellActionLogged(QStringLiteral("Taskbar registry Settings blob not found."));
+        return;
+    }
+
+    const quint8 reference = m_hasOriginalStuckRectsSettings
+        ? static_cast<quint8>(m_originalStuckRectsSettings[kStuckRectsAutoHideByteIndex])
+        : static_cast<quint8>(settings[kStuckRectsAutoHideByteIndex]);
+    settings[kStuckRectsAutoHideByteIndex] = static_cast<char>(
+        enabled ? autoHideEnabledRegistryByte(reference)
+                : autoHideDisabledRegistryByte(reference));
+
+    if (writeStuckRectsSettings(subkeyPath, settings)) {
+        emit shellActionLogged(QStringLiteral("Taskbar registry auto-hide set to %1.")
+                                   .arg(enabled ? QStringLiteral("enabled")
+                                                : QStringLiteral("disabled")));
+    } else {
+        emit shellActionLogged(QStringLiteral("Failed to update taskbar registry auto-hide."));
+    }
+}
+
 void TaskbarController::restoreShell()
 {
-    showTaskbar();
+    if (m_keepTaskbarAutoHideOnExit) {
+        showTaskbarWindows();
+
+        HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+        if (taskbar) {
+            APPBARDATA abd = {};
+            abd.cbSize = sizeof(APPBARDATA);
+            abd.hWnd = taskbar;
+            abd.lParam = ABS_AUTOHIDE;
+            SHAppBarMessage(ABM_SETSTATE, &abd);
+        }
+
+        setTaskbarRegistryAutoHide(true);
+        m_hasOriginalTaskbarState = false;
+        m_hasOriginalStuckRectsSettings = false;
+        m_originalStuckRectsSettings.clear();
+        m_stuckRectsRegPath.clear();
+        m_taskbarShellModified = false;
+
+        if (m_taskbarHidden) {
+            m_taskbarHidden = false;
+            emit taskbarHiddenChanged();
+        }
+
+        emit shellActionLogged(QStringLiteral("Exit: keeping Windows taskbar auto-hide enabled."));
+        return;
+    }
+
+    showTaskbarWindows();
+
+    HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+    if (taskbar) {
+        APPBARDATA abd = {};
+        abd.cbSize = sizeof(APPBARDATA);
+        abd.hWnd = taskbar;
+
+        if (m_hasOriginalTaskbarState) {
+            abd.lParam = m_originalTaskbarState;
+            SHAppBarMessage(ABM_SETSTATE, &abd);
+            emit shellActionLogged(QStringLiteral("Restored taskbar AppBar state: %1")
+                                       .arg(m_originalTaskbarState));
+            m_hasOriginalTaskbarState = false;
+        } else if (m_taskbarShellModified) {
+            abd.lParam = ABS_ALWAYSONTOP;
+            SHAppBarMessage(ABM_SETSTATE, &abd);
+            emit shellActionLogged(QStringLiteral("Cleared taskbar AppBar auto-hide state."));
+        }
+    }
+
+    if (m_hasOriginalStuckRectsSettings) {
+        restoreTaskbarRegistrySettings();
+    } else if (m_taskbarShellModified) {
+        setTaskbarRegistryAutoHide(false);
+    }
+
+    m_taskbarShellModified = false;
+
+    if (m_taskbarHidden) {
+        m_taskbarHidden = false;
+        emit taskbarHiddenChanged();
+    }
 }
 
 void TaskbarController::quitApplication()
@@ -500,6 +747,8 @@ void TaskbarController::enforceTaskbarHidden()
         return;
     }
 
+    capturePreShellTaskbarState();
+
     HWND taskbar = FindWindow(kTaskbarClass, nullptr);
     if (taskbar) {
         APPBARDATA abd = {};
@@ -507,6 +756,7 @@ void TaskbarController::enforceTaskbarHidden()
         abd.hWnd = taskbar;
         abd.lParam = ABS_AUTOHIDE;
         SHAppBarMessage(ABM_SETSTATE, &abd);
+        m_taskbarShellModified = true;
     }
     if (!m_taskbarHidden) {
         m_taskbarHidden = true;
@@ -540,21 +790,18 @@ bool TaskbarController::setTaskbarVisible(bool visible)
     abd.hWnd = taskbar;
 
     if (!visible) {
-        if (!m_hasOriginalTaskbarState) {
-            m_originalTaskbarState = SHAppBarMessage(ABM_GETSTATE, &abd);
-            m_hasOriginalTaskbarState = true;
-            emit shellActionLogged(QString("Saved original taskbar state: %1").arg(m_originalTaskbarState));
-        }
-        
+        capturePreShellTaskbarState();
+
         abd.lParam = ABS_AUTOHIDE;
         SHAppBarMessage(ABM_SETSTATE, &abd);
+        m_taskbarShellModified = true;
         emit shellActionLogged(QStringLiteral("Taskbar state set to ABS_AUTOHIDE."));
     } else {
         if (m_hasOriginalTaskbarState) {
             abd.lParam = m_originalTaskbarState;
             SHAppBarMessage(ABM_SETSTATE, &abd);
             m_hasOriginalTaskbarState = false;
-            emit shellActionLogged(QString("Restored taskbar state: %1").arg(m_originalTaskbarState));
+            emit shellActionLogged(QString("Restored taskbar AppBar state: %1").arg(m_originalTaskbarState));
         }
     }
 
@@ -634,6 +881,20 @@ void TaskbarController::setAutoHideWindowsTaskbar(bool autoHide)
     emit autoHideWindowsTaskbarChanged();
 
     updateTaskbarVisibility();
+}
+
+bool TaskbarController::keepTaskbarAutoHideOnExit() const
+{
+    return m_keepTaskbarAutoHideOnExit;
+}
+
+void TaskbarController::setKeepTaskbarAutoHideOnExit(bool keep)
+{
+    if (m_keepTaskbarAutoHideOnExit == keep)
+        return;
+    m_keepTaskbarAutoHideOnExit = keep;
+    emit keepTaskbarAutoHideOnExitChanged();
+    saveSettings();
 }
 
 bool TaskbarController::dockHoverBounce() const
@@ -753,6 +1014,7 @@ void TaskbarController::loadSettings()
 {
     QSettings settings;
     m_autoHideWindowsTaskbar = settings.value(QStringLiteral("shell/autoHideTaskbar"), true).toBool();
+    m_keepTaskbarAutoHideOnExit = settings.value(QStringLiteral("shell/keepTaskbarAutoHideOnExit"), false).toBool();
     m_showTopBar = settings.value(QStringLiteral("shell/showTopBar"), true).toBool();
     m_dockIconSize = settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt();
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
@@ -767,6 +1029,7 @@ void TaskbarController::saveSettings()
 {
     QSettings settings;
     settings.setValue(QStringLiteral("shell/autoHideTaskbar"), m_autoHideWindowsTaskbar);
+    settings.setValue(QStringLiteral("shell/keepTaskbarAutoHideOnExit"), m_keepTaskbarAutoHideOnExit);
     settings.setValue(QStringLiteral("shell/showTopBar"), m_showTopBar);
     settings.setValue(QStringLiteral("shell/dockIconSize"), m_dockIconSize);
     settings.setValue(QStringLiteral("shell/dockHoverBounce"), m_dockHoverBounce);
@@ -785,9 +1048,10 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
+    setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
     setShowTopBar(showTopBar);
     setDockIconSize(iconSize);
     setDockHoverBounce(dockHoverBounce);

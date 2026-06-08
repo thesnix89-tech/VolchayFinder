@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QByteArray>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -16,6 +17,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(int dockIconSize READ dockIconSize WRITE setDockIconSize NOTIFY dockIconSizeChanged)
     Q_PROPERTY(bool showTopBar READ showTopBar WRITE setShowTopBar NOTIFY showTopBarChanged)
     Q_PROPERTY(bool autoHideWindowsTaskbar READ autoHideWindowsTaskbar WRITE setAutoHideWindowsTaskbar NOTIFY autoHideWindowsTaskbarChanged)
+    Q_PROPERTY(bool keepTaskbarAutoHideOnExit READ keepTaskbarAutoHideOnExit WRITE setKeepTaskbarAutoHideOnExit NOTIFY keepTaskbarAutoHideOnExitChanged)
     Q_PROPERTY(bool dockHoverBounce READ dockHoverBounce WRITE setDockHoverBounce NOTIFY dockHoverBounceChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
@@ -32,7 +34,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
     Q_INVOKABLE void tryAutostartShell();
     Q_INVOKABLE void enforceTaskbarHidden();
 
@@ -48,6 +50,8 @@ public:
     void setShowTopBar(bool show);
     bool autoHideWindowsTaskbar() const;
     void setAutoHideWindowsTaskbar(bool autoHide);
+    bool keepTaskbarAutoHideOnExit() const;
+    void setKeepTaskbarAutoHideOnExit(bool keep);
     bool dockHoverBounce() const;
     void setDockHoverBounce(bool enabled);
     bool dockStaticIcons() const;
@@ -70,6 +74,7 @@ signals:
     void dockIconSizeChanged();
     void showTopBarChanged();
     void autoHideWindowsTaskbarChanged();
+    void keepTaskbarAutoHideOnExitChanged();
     void dockHoverBounceChanged();
     void dockStaticIconsChanged();
     void darkThemeChanged();
@@ -83,6 +88,10 @@ private:
     void loadSettings();
     void saveSettings();
     bool setTaskbarVisible(bool visible);
+    void capturePreShellTaskbarState();
+    void showTaskbarWindows();
+    void restoreTaskbarRegistrySettings();
+    void setTaskbarRegistryAutoHide(bool enabled);
     void updateTaskbarVisibility();
     bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
@@ -93,11 +102,16 @@ private:
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
     bool m_hasOriginalTaskbarState = false;
+    bool m_hasOriginalStuckRectsSettings = false;
+    bool m_taskbarShellModified = false;
+    QByteArray m_originalStuckRectsSettings;
+    QString m_stuckRectsRegPath;
     bool m_shellActive = false;
     bool m_settingsVisible = true;
     int m_dockIconSize = 54;
     bool m_showTopBar = true;
     bool m_autoHideWindowsTaskbar = true;
+    bool m_keepTaskbarAutoHideOnExit = false;
     bool m_dockHoverBounce = true;
     bool m_dockStaticIcons = false;
     bool m_darkTheme = false;
