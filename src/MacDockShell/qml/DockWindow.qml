@@ -195,12 +195,9 @@ Window {
         externalPinSlotAnim.start()
     }
 
-    // Lifted icon tracks the opening gap while the dock expands (same dockPackT curve).
+    // Lifted icon follows the pointer; neighbors glide via layoutMorph / dockPackT.
     function visualDragLeftX() {
-        if (!dragInDockZone)
-            return dragLeftX
-        var gapX = gapLeftForDragTo(dragTo)
-        return dragLeftX * dockPackT + (1 - dockPackT) * gapX
+        return dragLeftX
     }
 
     function syncDockPackState() {
@@ -584,7 +581,7 @@ Window {
         property: "layoutMorph"
         from: 0
         to: 1
-        duration: dockWindow.dockPackAnimMs
+        duration: dockWindow.reorderAnimMs
         easing.type: Easing.OutCubic
     }
 
