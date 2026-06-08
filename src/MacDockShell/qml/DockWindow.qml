@@ -30,7 +30,7 @@ Window {
     property int externalPinTo: 0
     property bool externalPinDropping: false
     property bool externalPinSettling: false
-    property real externalPinSettleT: 0
+    property bool externalPinGhostVisible: false
     property string externalPinPath: ""
     property string externalPinIconUrl: ""
     property int prevLayoutExternalPinTo: -1
@@ -49,7 +49,7 @@ Window {
     readonly property int reorderAnimMs: 360
     readonly property int dockPackAnimMs: 220
     readonly property int externalPinMorphMs: 320
-    readonly property int externalPinSettleMs: 280
+    readonly property int externalPinSettleMs: 260
     // macOS: insertion gap opens only when the icon is lowered back into the dock row.
     readonly property int dockZoneEnterY: -12
     readonly property int dockZoneLeaveY: -28
@@ -140,10 +140,19 @@ Window {
         return externalPinInsertSlotX(externalPinMorphSlot)
     }
 
+    function showExternalPinGhostIfReady() {
+        if (!externalPinPreview || !hasDropPointer || externalPinIconUrl.length === 0)
+            return
+        externalPinSlotAnim.stop()
+        externalPinMorphSlot = externalPinTo
+        externalPinGhostVisible = true
+    }
+
     function snapExternalPinMorphSlot() {
         externalPinSlotAnim.stop()
         externalPinMorphSlot = externalPinTo
         externalPinSlotSnapped = true
+        showExternalPinGhostIfReady()
     }
 
     function animateExternalPinMorphSlot(targetSlot) {
@@ -351,6 +360,15 @@ Window {
     onExternalPinToChanged: {
         if (!externalPinPreview || externalPinDropping || externalPinSettling)
             return
+        // While the ghost is still hidden, track the slot silently so the first
+        // paint is already under the cursor (no slide from the trailing edge).
+        if (!externalPinGhostVisible) {
+            externalPinSlotAnim.stop()
+            externalPinMorphSlot = externalPinTo
+            prevLayoutExternalPinTo = externalPinTo
+            showExternalPinGhostIfReady()
+            return
+        }
         if (externalPinSlotSnapped
                 && prevLayoutExternalPinTo >= 0
                 && externalPinTo !== prevLayoutExternalPinTo)
@@ -385,6 +403,8 @@ Window {
             return
         externalPinPath = path
         externalPinIconUrl = path.length > 0 ? dockModel.externalIconUrlForPath(path) : ""
+        if (externalPinSlotSnapped)
+            showExternalPinGhostIfReady()
     }
 
     function beginExternalPinPreview() {
@@ -397,11 +417,13 @@ Window {
         layoutMorphFrom = -1
         layoutMorph = 1
         externalPinSlotSnapped = false
+        externalPinGhostVisible = false
+        externalPinMorphSlot = dockRepeater.count
         externalPinTo = dockRepeater.count
         prevLayoutExternalPinTo = externalPinTo
+        externalPinPreview = true
         if (hasDropPointer)
             updateExternalPinTargetFromGlobal(lastDropGlobalX, lastDropGlobalY)
-        externalPinPreview = true
         dockPackT = 1
         animateDockPack(0)
         publishDropGeometry()
@@ -411,7 +433,8 @@ Window {
     function cancelExternalPinPreview() {
         if (!externalPinPreview)
             return
-        externalPinSettleAnim.stop()
+        externalPinDropSettleAnim.stop()
+        externalPinSettlePauseTimer.stop()
         clearExternalPinPreview()
     }
 
@@ -428,7 +451,7 @@ Window {
         dockPackT = 0
         externalPinDropping = false
         externalPinSettling = false
-        externalPinSettleT = 0
+        externalPinGhostVisible = false
         externalPinMorphSlot = 0
         externalPinSlotSnapped = false
         externalPinSlotAnim.stop()
@@ -444,25 +467,35 @@ Window {
         externalDropActive = false
         externalPinTo = index
         setExternalPinPath(path)
-        externalPinSlotAnim.stop()
-        externalPinMorphSlot = index
         layoutMorphAnim.stop()
         layoutMorph = 1
         layoutMorphFrom = -1
         prevLayoutExternalPinTo = index
+        externalPinSlotAnim.stop()
         externalPinSettling = true
-        externalPinSettleT = 0
-        externalPinSettleAnim.restart()
+        externalPinGhostVisible = true
+        if (Math.abs(externalPinMorphSlot - index) < 0.01) {
+            externalPinMorphSlot = index
+            externalPinSettlePauseTimer.restart()
+        } else {
+            externalPinDropSettleAnim.from = externalPinMorphSlot
+            externalPinDropSettleAnim.to = index
+            externalPinDropSettleAnim.restart()
+        }
     }
 
     function commitExternalPinDrop() {
         var path = externalPinPath
         var index = externalPinTo
+        // Ghost off before the model inserts the real icon — no overlap frame.
+        externalPinGhostVisible = false
         dockModel.pinPathAt(path, index)
         clearExternalPinPreview()
-        var item = dockRepeater.itemAt(index)
-        if (item && item.playLaunchBounce)
-            item.playLaunchBounce()
+        Qt.callLater(function() {
+            var item = dockRepeater.itemAt(index)
+            if (item && item.playLaunchBounce)
+                item.playLaunchBounce()
+        })
     }
 
     Timer {
@@ -495,14 +528,19 @@ Window {
     }
 
     NumberAnimation {
-        id: externalPinSettleAnim
+        id: externalPinDropSettleAnim
         target: dockWindow
-        property: "externalPinSettleT"
-        from: 0
-        to: 1
+        property: "externalPinMorphSlot"
         duration: dockWindow.externalPinSettleMs
         easing.type: Easing.OutCubic
         onFinished: dockWindow.commitExternalPinDrop()
+    }
+
+    Timer {
+        id: externalPinSettlePauseTimer
+        interval: dockWindow.externalPinSettleMs
+        repeat: false
+        onTriggered: dockWindow.commitExternalPinDrop()
     }
 
     Behavior on x {
@@ -921,21 +959,18 @@ Window {
             Rectangle {
                 id: externalPinSlotGhost
                 visible: dockWindow.externalPinPreview && dockWindow.dragFrom < 0
-                        && (dockWindow.hasDropPointer || dockWindow.externalPinSettling)
+                        && dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
-                y: 19 - 10 * (1 - dockWindow.externalPinSettleT)
+                y: 19
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize
                 radius: 18
                 z: 50
                 color: "transparent"
                 border.width: 0
-                opacity: dockWindow.externalPinPreview
-                        ? (0.88 + 0.12 * dockWindow.externalPinSettleT)
-                        : 0.0
-                scale: dockWindow.externalPinPreview
-                        ? (0.96 + 0.04 * dockWindow.externalPinSettleT)
-                        : 0.82
+                opacity: 1.0
+                scale: 1.0
+                transformOrigin: Item.Center
 
                 Image {
                     id: externalPinPreviewIcon
@@ -945,25 +980,8 @@ Window {
                     asynchronous: false
                     smooth: true
                     mipmap: true
-                    opacity: dockWindow.externalPinIconUrl.length > 0
-                            ? (status === Image.Ready ? 1.0 : 0.72)
-                            : 0.0
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowColor: "#55000000"
-                        shadowBlur: 0.35
-                        shadowVerticalOffset: 3
-                    }
-                }
-
-                Behavior on opacity {
-                    enabled: !dockWindow.externalPinSettling && !dockWindow.externalPinPreview
-                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-                }
-                Behavior on scale {
-                    enabled: !dockWindow.externalPinSettling && !dockWindow.externalPinPreview
-                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    cache: true
+                    opacity: dockWindow.externalPinIconUrl.length > 0 ? 1.0 : 0.0
                 }
             }
 
@@ -1653,17 +1671,12 @@ Window {
 
             Item {
                 id: externalPinGhost
-                visible: dockWindow.externalPinPreview && !dockWindow.externalPinSettling
+                visible: dockWindow.externalPinPreview && !dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize + 38
-                z: 50
+                z: 49
                 opacity: dockWindow.externalPinPreview ? 0.85 * (1 - dockWindow.dockPackT) : 0
-
-                Behavior on opacity {
-                    enabled: !dockWindow.externalPinSettling
-                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
-                }
 
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
