@@ -59,6 +59,10 @@ Window {
     property int externalPinRestEdge: 0
     property real externalPinRestAnchorLeftX: -1
     property real externalPinRestAnchorRightX: -1
+    // Screen center captured at reorder start — pill width may change without shifting the dock.
+    property real reorderAnchorCenterX: -1
+    // Non-magnified drags add +14 to grabLocalY; zone checks must treat that as still seated.
+    readonly property int dockGripLiftBias: reorderDragLiftMagnified ? 0 : 14
     // Only one dock icon label at a time — fast sweeps must not stack tooltips.
     property int activeTooltipIndex: -1
     property bool hasDropPointer: false
@@ -230,13 +234,20 @@ Window {
             animateDockPack(1)
     }
 
+    function dockZoneGripY(gripY) {
+        if (dragFrom < 0)
+            return gripY
+        return gripY + dockGripLiftBias
+    }
+
     function syncDragZone(gripY) {
         dragGripY = gripY
+        var zoneY = dockZoneGripY(gripY)
         var wasInZone = dragInDockZone
         if (dragInDockZone) {
-            if (gripY < dockZoneLeaveY)
+            if (zoneY < dockZoneLeaveY)
                 dragInDockZone = false
-        } else if (gripY > dockZoneEnterY) {
+        } else if (zoneY > dockZoneEnterY) {
             dragInDockZone = true
             dockZoneEverEntered = true
         }
@@ -278,6 +289,10 @@ Window {
     }
 
     function animateDockPack(target) {
+        if (Math.abs(dockPackT - target) < 0.001) {
+            dockPackT = target
+            return
+        }
         dockPackAnim.stop()
         dockPackAnim.to = target
         dockPackAnim.start()
@@ -285,6 +300,16 @@ Window {
 
     function beginReorderSettle(from, to, releaseDragY) {
         dragTo = to
+        var restX = slotLeftForIndex(to)
+        if (from === to && Math.abs(releaseDragY) < 2 && Math.abs(dockPackT) < 0.02
+                && Math.abs(visualDragLeftX() - restX) < 2) {
+            clearReorderState()
+            dockPackT = 0
+            syncAnimatedPillWidth(true)
+            publishDropGeometry()
+            Qt.callLater(dockWindow.refreshClickHitRegions)
+            return
+        }
         reorderSettling = true
         _settleDoneX = false
         _settleDoneY = false
@@ -316,6 +341,7 @@ Window {
         prevLayoutDragTo = -1
         layoutMorphFrom = -1
         layoutMorph = 1
+        reorderAnchorCenterX = -1
         dockModel.setReorderActive(false)
     }
 
@@ -385,6 +411,7 @@ Window {
         layoutMorph = 1
         dockPackAnim.stop()
         dockPackT = 0
+        reorderAnchorCenterX = -1
         _settleDoneX = true
         _settleDoneY = true
         dockModel.setReorderActive(false)
@@ -429,6 +456,8 @@ Window {
                 return Math.round(externalPinRestAnchorRightX - dockWindowWidth)
             return Math.round(externalPinRestAnchorLeftX)
         }
+        if (reordering && reorderAnchorCenterX >= 0)
+            return Math.round(reorderAnchorCenterX - dockWindowWidth / 2)
         return Math.round((Screen.width - dockWindowWidth) / 2)
     }
     width: dockWindowWidth
@@ -1516,11 +1545,14 @@ Window {
                     function beginDragReorder() {
                         var wasMagnified = dockItemRoot.magnifyHover
                         dockWindow.clearActiveTooltip()
+                        dockWindow.reorderAnchorCenterX = dockWindow.x + dockWindow.width / 2
                         dockWindow.reorderDragIconUrl = dockItemRoot.iconUrl
                         dockWindow.reorderDragIconHint = dockItemRoot.iconHint
                         dockWindow.reorderDragLabel = dockItemRoot.label
                         dockWindow.reorderDragLiftMagnified = wasMagnified
-                        dockItemRoot.dragging = true
+                        dockPackAnim.stop()
+                        dockWindow.dockPackT = 0
+                        dockWindow.dragInDockZone = true
                         dockWindow.neighborsPacked = true
                         dockWindow.dragFrom = dockItemRoot.index
                         dockWindow.dragTo = dockItemRoot.index
@@ -1532,8 +1564,8 @@ Window {
                             dockItemRoot.grabLocalY += 14
                         dockItemRoot.syncGripFromPointer()
                         dockWindow.reorderDragOverlayActive = true
+                        dockItemRoot.dragging = true
                         dockWindow.syncDragZone(dockItemRoot.gripY)
-                        dockWindow.syncDockPackState()
                     }
                     readonly property bool liftMagnified: dockItemRoot.magnifyHover || dockItemRoot.dragging
                     property bool magnifyHover: mouseArea.containsMouse
