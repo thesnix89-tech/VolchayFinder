@@ -1090,9 +1090,10 @@ Window {
     onXChanged: refreshClickHitRegions()
     onYChanged: refreshClickHitRegions()
     onDockPackTChanged: {
-        if (externalPinPreview) {
+        if (externalPinPreview || reordering) {
             animatedPillWidth = dockPillWidth
-            publishDropGeometry()
+            if (externalPinPreview)
+                publishDropGeometry()
         }
         if (!externalPinPreview)
             clickThroughWarmupTimer.restart()
@@ -1475,6 +1476,8 @@ Window {
                                 && !dockWindow.externalPinPreview
                                 && !dockWindow.externalPinCommitting
                                 && dockWindow.externalPinHandoffIndex !== dockItemRoot.index
+                                // Pill width follows dockPackT directly — x must not lag behind.
+                                && !dockWindow.dockPackAnim.running
                         NumberAnimation {
                             duration: dockWindow.reorderAnimMs
                             easing.type: Easing.OutCubic
