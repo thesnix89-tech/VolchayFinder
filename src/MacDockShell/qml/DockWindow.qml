@@ -29,6 +29,8 @@ Window {
     property bool externalPinPreview: false
     property int externalPinTo: 0
     property bool externalPinDropping: false
+    property string externalPinPath: ""
+    property string externalPinIconUrl: ""
     property int prevLayoutExternalPinTo: -1
     // Left-edge anchor — pill grows to the right so icons don't jump left on expand.
     property real externalDragAnchorLeftX: -1
@@ -331,6 +333,13 @@ Window {
             externalPinTo = candidate
     }
 
+    function setExternalPinPath(path) {
+        if (externalPinPath === path)
+            return
+        externalPinPath = path
+        externalPinIconUrl = path.length > 0 ? dockModel.externalIconUrlForPath(path) : ""
+    }
+
     function beginExternalPinPreview() {
         if (externalPinPreview || reordering)
             return
@@ -358,6 +367,7 @@ Window {
         externalPinPreview = false
         neighborsPacked = false
         externalDragAnchorLeftX = -1
+        setExternalPinPath("")
         hasDropPointer = false
         windowEffects.setDockDropCapture(dockWindow, false)
         prevLayoutExternalPinTo = -1
@@ -378,6 +388,7 @@ Window {
             externalPinPreview = false
             neighborsPacked = false
             externalDragAnchorLeftX = -1
+            setExternalPinPath("")
             hasDropPointer = false
             windowEffects.setDockDropCapture(dockWindow, false)
             prevLayoutExternalPinTo = -1
@@ -529,6 +540,11 @@ Window {
             if (dockWindow.externalPinPreview || dockWindow.externalDropActive)
                 dockWindow.updateExternalPinTargetFromGlobal(globalX, globalY)
         }
+        function onDockExternalDragPathChanged(window, path) {
+            if (window !== dockWindow)
+                return
+            dockWindow.setExternalPinPath(path)
+        }
         function onDockExternalDrop(window, path, index) {
             if (window !== dockWindow)
                 return
@@ -540,6 +556,7 @@ Window {
             if (!dockWindow.externalPinPreview && index >= 0)
                 dockWindow.externalPinTo = Math.max(0, Math.min(index, dockRepeater.count))
 
+            dockWindow.setExternalPinPath(path)
             dockWindow.finishExternalPinDrop(path, dockWindow.externalPinTo)
         }
     }
@@ -559,6 +576,8 @@ Window {
 
         onEntered: (drag) => {
             dockWindow.externalDropActive = true
+            if (drag.hasUrls && drag.urls.length > 0)
+                dockWindow.setExternalPinPath(drag.urls[0].toLocalFile())
             drag.accept(Qt.CopyAction)
         }
         onPositionChanged: (drag) => {
@@ -574,6 +593,8 @@ Window {
                 dockWindow.externalDropActive = false
                 return
             }
+            if (drop.hasUrls && drop.urls.length > 0)
+                dockWindow.setExternalPinPath(drop.urls[0].toLocalFile())
             dockWindow.finishExternalPinDrop(
                         drop.urls[0].toLocalFile(),
                         dockWindow.externalPinTo)
@@ -826,26 +847,27 @@ Window {
                 height: taskbarController.dockIconSize
                 radius: 18
                 z: 50
-                color: dockWindow.darkTheme ? "#2D3036" : "#F2F5FA"
-                border.width: 1
-                border.color: dockWindow.darkTheme ? "#5D6572" : "#AEB7C6"
-                opacity: dockWindow.externalPinPreview ? 0.72 : 0.0
+                color: "transparent"
+                border.width: 0
+                opacity: dockWindow.externalPinPreview ? 0.94 : 0.0
                 scale: dockWindow.externalPinPreview ? 1.0 : 0.82
 
-                Rectangle {
-                    width: Math.max(18, parent.width * 0.32)
-                    height: 3
-                    radius: 2
-                    anchors.centerIn: parent
-                    color: dockWindow.darkTheme ? "#E7ECF5" : "#536070"
-                }
-
-                Rectangle {
-                    width: 3
-                    height: Math.max(18, parent.height * 0.32)
-                    radius: 2
-                    anchors.centerIn: parent
-                    color: dockWindow.darkTheme ? "#E7ECF5" : "#536070"
+                Image {
+                    id: externalPinPreviewIcon
+                    anchors.fill: parent
+                    source: dockWindow.externalPinIconUrl
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    smooth: true
+                    mipmap: true
+                    opacity: source.toString().length > 0 ? 1.0 : 0.0
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        shadowEnabled: true
+                        shadowColor: "#55000000"
+                        shadowBlur: 0.35
+                        shadowVerticalOffset: 3
+                    }
                 }
 
                 Behavior on x {

@@ -1022,6 +1022,17 @@ QString DockModel::ensureIconFile(const QString& appId, const QString& exePath) 
     return QUrl::fromLocalFile(filePath).toString();
 }
 
+QString DockModel::externalIconUrlForPath(const QString& path) const
+{
+    if (path.trimmed().isEmpty()) {
+        return {};
+    }
+
+    const QString appId = normalizeAppId(path);
+    const QString iconKey = appId.isEmpty() ? QFileInfo(path).absoluteFilePath() : appId;
+    return ensureIconFile(iconKey, path);
+}
+
 QString DockModel::explorerIconStyle() const
 {
     return m_explorerIconStyle;

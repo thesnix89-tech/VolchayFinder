@@ -97,7 +97,9 @@ struct DropTargetImpl final : public IDropTarget
         }
 
         setHover(true);
+        const QString path = pathFromDataObject(dataObject);
         if (m_windowEffects && m_window) {
+            m_windowEffects->setDockExternalDragPath(m_window, path);
             m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
         }
         *effect = DROPEFFECT_COPY;
@@ -193,6 +195,9 @@ private:
     {
         if (!m_windowEffects || !m_window) {
             return;
+        }
+        if (!active) {
+            m_windowEffects->setDockExternalDragPath(m_window, QString());
         }
         m_windowEffects->setDockDropHover(m_window, active);
     }

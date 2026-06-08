@@ -625,6 +625,21 @@ void WindowEffects::setDockDropPointer(QWindow* window, int globalX, int globalY
     emit dockDropPointerChanged(window, globalX, globalY);
 }
 
+void WindowEffects::setDockExternalDragPath(QWindow* window, const QString& path)
+{
+    if (!window) {
+        return;
+    }
+
+    const bool tracked = m_dropHoverActive.value(window, false)
+            || m_dropCaptureActive.value(window, false);
+    if (!tracked) {
+        return;
+    }
+
+    emit dockExternalDragPathChanged(window, path);
+}
+
 void WindowEffects::notifyDockExternalDrop(QWindow* window, const QString& path, int index)
 {
     if (!window || path.isEmpty()) {

@@ -34,6 +34,7 @@ public:
     Q_INVOKABLE void setDockDropHover(QWindow* window, bool active);
     Q_INVOKABLE void setDockDropCapture(QWindow* window, bool active);
     Q_INVOKABLE void setDockDropPointer(QWindow* window, int globalX, int globalY);
+    Q_INVOKABLE void setDockExternalDragPath(QWindow* window, const QString& path);
     Q_INVOKABLE void notifyDockExternalDrop(QWindow* window, const QString& path, int index);
     Q_INVOKABLE void updateDockDropLayout(QWindow* window, qreal pillLocalLeft, int stride, int iconSize, int itemCount);
     Q_INVOKABLE int dockDropIndexForGlobalPoint(QWindow* window, int globalX, int globalY) const;
@@ -41,6 +42,7 @@ public:
 signals:
     void dockDropHoverChanged(QWindow* window, bool active);
     void dockDropPointerChanged(QWindow* window, int globalX, int globalY);
+    void dockExternalDragPathChanged(QWindow* window, const QString& path);
     void dockExternalDrop(QWindow* window, const QString& path, int index);
 
 private:
