@@ -2065,11 +2065,9 @@ Window {
                                 dockItemRoot.beginDragReorder()
                             }
                             dockItemRoot.syncGripFromPointer()
-                            if (dockItemRoot.pinned && dockItemRoot.gripY < dockWindow.unpinThreshold) {
-                                dockItemRoot.unpinDragPreview = true
-                            } else {
-                                dockItemRoot.unpinDragPreview = false
-                            }
+                            dockItemRoot.unpinDragPreview = dockItemRoot.pinned
+                                    && dockItemRoot.gripY < dockWindow.unpinThreshold
+                                    && dockModel.canUnpinIndex(dockItemRoot.index)
                             dockWindow.updateDragTarget(
                                 dockWindow.dragLeftX,
                                 dockItemRoot.gripY,

@@ -68,6 +68,7 @@ public:
     Q_INVOKABLE void pinPathAt(const QString& path, int index = -1);
     Q_INVOKABLE QString externalIconUrlForPath(const QString& path) const;
     Q_INVOKABLE void unpinIndex(int index);
+    Q_INVOKABLE bool canUnpinIndex(int index) const;
     Q_INVOKABLE void setReorderActive(bool active);
     Q_INVOKABLE void setExplorerIconStyle(const QString& style);
     Q_INVOKABLE void syncFromWindowsTaskbarPins();

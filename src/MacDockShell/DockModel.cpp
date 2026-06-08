@@ -662,6 +662,16 @@ void DockModel::pinPathAt(const QString& path, int index)
     emit logMessage(QStringLiteral("Pinned to dock: %1 at slot %2").arg(shortcutPath).arg(targetIndex));
 }
 
+bool DockModel::canUnpinIndex(int index) const
+{
+    if (index < 0 || index >= m_entries.size()) {
+        return false;
+    }
+
+    const DockItemEntry& entry = m_entries.at(index);
+    return entry.pinned && !isExplorerEntry(entry);
+}
+
 void DockModel::unpinIndex(int index)
 {
     if (index < 0 || index >= m_entries.size()) {
@@ -673,18 +683,26 @@ void DockModel::unpinIndex(int index)
         return;
     }
 
-    // Prevent unpinning Explorer / Finder — it is a special synthetic pin.
-    if (isExplorerEntry(entry)) {
-        emit logMessage(QStringLiteral("unpinIndex: blocked — cannot unpin Explorer/Finder (AUMID=%1)").arg(entry.appUserModelId));
+    if (!canUnpinIndex(index)) {
+        if (isExplorerEntry(entry)) {
+            emit logMessage(QStringLiteral("unpinIndex: blocked — cannot unpin Explorer/Finder (AUMID=%1)")
+                                .arg(entry.appUserModelId));
+        }
         return;
     }
 
+    const bool staysOnDockWhileRunning = entry.running;
     hideEntryFromDock(entry);
     clearExplicitDockPin(entry);
     m_customOrder.removeOne(entryOrderKey(entry));
     saveOrder();
-    emit logMessage(QStringLiteral("unpinIndex: hidden from dock only (taskbar pin kept): %1")
-                        .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+    if (staysOnDockWhileRunning) {
+        emit logMessage(QStringLiteral("unpinIndex: dock pin removed; icon stays while running: %1")
+                            .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+    } else {
+        emit logMessage(QStringLiteral("unpinIndex: hidden from dock only (taskbar pin kept): %1")
+                            .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+    }
     m_reorderActive = false;
     refresh();
     emit logMessage(QStringLiteral("Unpinned at index %1. Dock items after refresh: %2").arg(index).arg(m_entries.size()));
@@ -1041,9 +1059,7 @@ void DockModel::scanWindows()
     EnumContext context;
     EnumWindows(enumWindowsProc, reinterpret_cast<LPARAM>(&context));
     for (const auto& entry : context.entries) {
-        if (isHiddenFromDock(entry)) {
-            continue;
-        }
+        // Running apps stay visible after dock-unpin until they quit.
         upsertEntry(entry);
     }
 }
