@@ -897,20 +897,6 @@ void TaskbarController::setKeepTaskbarAutoHideOnExit(bool keep)
     saveSettings();
 }
 
-bool TaskbarController::syncDockWithWindowsTaskbarOnStartup() const
-{
-    return m_syncDockWithWindowsTaskbarOnStartup;
-}
-
-void TaskbarController::setSyncDockWithWindowsTaskbarOnStartup(bool enabled)
-{
-    if (m_syncDockWithWindowsTaskbarOnStartup == enabled)
-        return;
-    m_syncDockWithWindowsTaskbarOnStartup = enabled;
-    emit syncDockWithWindowsTaskbarOnStartupChanged();
-    saveSettings();
-}
-
 bool TaskbarController::dockHoverBounce() const
 {
     return m_dockHoverBounce;
@@ -1042,7 +1028,6 @@ void TaskbarController::loadSettings()
     QSettings settings;
     m_autoHideWindowsTaskbar = settings.value(QStringLiteral("shell/autoHideTaskbar"), true).toBool();
     m_keepTaskbarAutoHideOnExit = settings.value(QStringLiteral("shell/keepTaskbarAutoHideOnExit"), false).toBool();
-    m_syncDockWithWindowsTaskbarOnStartup = settings.value(QStringLiteral("shell/syncDockWithWindowsTaskbarOnStartup"), false).toBool();
     m_showTopBar = settings.value(QStringLiteral("shell/showTopBar"), true).toBool();
     m_dockIconSize = settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt();
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
@@ -1059,7 +1044,6 @@ void TaskbarController::saveSettings()
     QSettings settings;
     settings.setValue(QStringLiteral("shell/autoHideTaskbar"), m_autoHideWindowsTaskbar);
     settings.setValue(QStringLiteral("shell/keepTaskbarAutoHideOnExit"), m_keepTaskbarAutoHideOnExit);
-    settings.setValue(QStringLiteral("shell/syncDockWithWindowsTaskbarOnStartup"), m_syncDockWithWindowsTaskbarOnStartup);
     settings.setValue(QStringLiteral("shell/showTopBar"), m_showTopBar);
     settings.setValue(QStringLiteral("shell/dockIconSize"), m_dockIconSize);
     settings.setValue(QStringLiteral("shell/dockHoverBounce"), m_dockHoverBounce);
@@ -1079,11 +1063,10 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool syncDockWithWindowsTaskbarOnStartup, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
-    setSyncDockWithWindowsTaskbarOnStartup(syncDockWithWindowsTaskbarOnStartup);
     setShowTopBar(showTopBar);
     setDockIconSize(iconSize);
     setDockHoverBounce(dockHoverBounce);

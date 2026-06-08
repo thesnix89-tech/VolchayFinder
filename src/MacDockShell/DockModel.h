@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QPixmap>
 #include <QHash>
+#include <QSet>
 
 struct PinnedShortcutEntry;
 class PinnedTaskbarResolver;
@@ -90,6 +91,9 @@ private:
     bool isHiddenFromDock(const DockItemEntry& entry) const;
     void hideEntryFromDock(const DockItemEntry& entry);
     void restoreEntryToDock(const DockItemEntry& entry);
+    void markExplicitDockPin(const DockItemEntry& entry);
+    void clearExplicitDockPin(const DockItemEntry& entry);
+    bool isExplicitDockPin(const DockItemEntry& entry) const;
     void restorePathsToDock(const QString& sourcePath, const QString& shortcutPath);
     void loadOrder();
     void saveOrder();
@@ -124,6 +128,8 @@ private:
     QStringList m_customOrder;
     // Apps removed from the dock only — Windows taskbar pins stay untouched.
     QStringList m_dockHiddenPins;
+    // Apps pinned via the dock that may not yet appear in the Windows taskbar registry.
+    QStringList m_dockExplicitPins;
     // Set while the user is dragging an icon; suspends refresh so the drag is not
     // interrupted by the periodic model reset.
     bool m_reorderActive = false;

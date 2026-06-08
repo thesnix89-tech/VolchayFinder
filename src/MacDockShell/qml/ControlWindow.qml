@@ -11,6 +11,13 @@ Window {
 
     property int settingsPage: 0
     property string explorerIconStyle: taskbarController.explorerIconStyle
+    property bool pinFromTaskbarRequested: false
+
+    onVisibleChanged: {
+        if (!visible)
+            pinFromTaskbarRequested = false
+    }
+
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
     visible: taskbarController.settingsVisible
@@ -435,37 +442,79 @@ Window {
                         color: "#F0F0F0"
                     }
 
-                    // Option 1c: Sync dock with Windows taskbar pins on startup
-                    RowLayout {
+                    // Option 1c: Pin apps from Windows taskbar (manual, on Apply)
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 45
+                        spacing: 8
 
-                        ColumnLayout {
-                            spacing: 2
-                            Layout.alignment: Qt.AlignVCenter
+                        Text {
+                            text: "Прикрепить приложения из панели задач Windows"
+                            color: "#1D1D1F"
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
                             Layout.fillWidth: true
-                            Text {
-                                text: "При запуске прикреплять приложения с панели задач Windows"
-                                color: "#1D1D1F"
-                                font.pixelSize: 12
-                                font.weight: Font.Medium
-                                Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
-                            }
-                            Text {
-                                text: "Сканирует закреплённые на панели задач Windows приложения и добавляет их в док"
-                                color: "#86868B"
-                                font.pixelSize: 10
-                                Layout.fillWidth: true
-                                wrapMode: Text.WordWrap
-                            }
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            text: "Одноразовое действие: нажмите кнопку, затем «Применить». При следующем запуске или открытии настроек нужно повторить, если снова хотите синхронизировать док с панелью задач"
+                            color: "#86868B"
+                            font.pixelSize: 10
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                         }
 
-                        MacToggle {
-                            id: syncTaskbarPinsToggle
-                            checked: taskbarController.syncDockWithWindowsTaskbarOnStartup
-                            Layout.alignment: Qt.AlignVCenter
-                            onClicked: syncTaskbarPinsToggle.checked = !syncTaskbarPinsToggle.checked
+                        Rectangle {
+                            id: pinFromTaskbarRow
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 36
+                            radius: 6
+                            color: pinFromTaskbarMouse.pressed ? "#D1D1D6"
+                                    : (pinFromTaskbarMouse.containsMouse ? "#ECECEF" : "#FFFFFF")
+                            border.width: 1
+                            border.color: settingsWindow.pinFromTaskbarRequested ? "#34C759" : "#D1D1D6"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                spacing: 10
+
+                                Rectangle {
+                                    width: 20
+                                    height: 20
+                                    radius: 4
+                                    color: settingsWindow.pinFromTaskbarRequested ? "#34C759" : "#FFFFFF"
+                                    border.width: settingsWindow.pinFromTaskbarRequested ? 0 : 1.5
+                                    border.color: settingsWindow.pinFromTaskbarRequested ? "#34C759" : "#86868B"
+                                    Layout.alignment: Qt.AlignVCenter
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: settingsWindow.pinFromTaskbarRequested
+                                        text: "✓"
+                                        color: "#FFFFFF"
+                                        font.pixelSize: 13
+                                        font.weight: Font.Bold
+                                    }
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Прикрепить из панели задач Windows"
+                                    color: "#1D1D1F"
+                                    font.pixelSize: 12
+                                    font.weight: Font.Medium
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+
+                            MouseArea {
+                                id: pinFromTaskbarMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: settingsWindow.pinFromTaskbarRequested = !settingsWindow.pinFromTaskbarRequested
+                            }
                         }
                     }
 
@@ -921,9 +970,11 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, syncTaskbarPinsToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
-                        if (syncTaskbarPinsToggle.checked)
+                        const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
+                        if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
+                        settingsWindow.pinFromTaskbarRequested = false
                         dockModel.refresh()
                     }
                 }

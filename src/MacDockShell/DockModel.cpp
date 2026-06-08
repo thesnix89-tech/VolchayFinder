@@ -296,9 +296,6 @@ DockModel::DockModel(QObject* parent)
         m_explorerIconStyle = QStringLiteral("default");
     }
     loadOrder();
-    if (settings.value(QStringLiteral("shell/syncDockWithWindowsTaskbarOnStartup"), false).toBool()) {
-        syncFromWindowsTaskbarPins();
-    }
     refresh();
 }
 
@@ -463,6 +460,32 @@ void DockModel::restoreEntryToDock(const DockItemEntry& entry)
     }
 }
 
+void DockModel::markExplicitDockPin(const DockItemEntry& entry)
+{
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        if (!m_dockExplicitPins.contains(key)) {
+            m_dockExplicitPins.append(key);
+        }
+    }
+}
+
+void DockModel::clearExplicitDockPin(const DockItemEntry& entry)
+{
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        m_dockExplicitPins.removeAll(key);
+    }
+}
+
+bool DockModel::isExplicitDockPin(const DockItemEntry& entry) const
+{
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        if (m_dockExplicitPins.contains(key)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void DockModel::restorePathsToDock(const QString& sourcePath, const QString& shortcutPath)
 {
     const QString sourceKey = lowerPath(sourcePath);
@@ -568,6 +591,11 @@ void DockModel::pinPathAt(const QString& path, int index)
 
     // A prior dock-unpin only hid the app — clear that before reloading entries.
     restorePathsToDock(path, shortcutPath);
+
+    DockItemEntry explicitEntry;
+    explicitEntry.exePath = path;
+    explicitEntry.launchPath = shortcutPath;
+    markExplicitDockPin(explicitEntry);
     saveOrder();
 
     // QML keeps reorderActive=true while the external drop preview is open.
@@ -598,7 +626,7 @@ void DockModel::pinPathAt(const QString& path, int index)
     int foundIndex = findPinnedIndex(shortcutKey, sourceKey);
 
     if (foundIndex < 0 && !shortcutPath.isEmpty() && m_pinnedResolver) {
-        const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolvePinnedShortcuts();
+        const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolveAllFolderShortcuts();
         for (const PinnedShortcutEntry& shortcut : shortcuts) {
             if (lowerPath(shortcut.shortcutPath) != shortcutKey
                 && lowerPath(shortcut.targetPath) != sourceKey) {
@@ -652,6 +680,7 @@ void DockModel::unpinIndex(int index)
     }
 
     hideEntryFromDock(entry);
+    clearExplicitDockPin(entry);
     m_customOrder.removeOne(entryOrderKey(entry));
     saveOrder();
     emit logMessage(QStringLiteral("unpinIndex: hidden from dock only (taskbar pin kept): %1")
@@ -698,6 +727,7 @@ void DockModel::loadOrder()
     QSettings settings;
     m_customOrder = settings.value(QStringLiteral("dock/customOrder")).toStringList();
     m_dockHiddenPins = settings.value(QStringLiteral("dock/hiddenPins")).toStringList();
+    m_dockExplicitPins = settings.value(QStringLiteral("dock/explicitPins")).toStringList();
     ensureExplorerLeadingInOrder();
 }
 
@@ -706,6 +736,7 @@ void DockModel::saveOrder()
     QSettings settings;
     settings.setValue(QStringLiteral("dock/customOrder"), m_customOrder);
     settings.setValue(QStringLiteral("dock/hiddenPins"), m_dockHiddenPins);
+    settings.setValue(QStringLiteral("dock/explicitPins"), m_dockExplicitPins);
 }
 
 void DockModel::activateIndex(int index)
@@ -870,44 +901,57 @@ void DockModel::syncFromWindowsTaskbarPins()
         return;
     }
 
-    const QList<PinnedShortcutEntry> activeShortcuts = m_pinnedResolver->resolvePinnedShortcuts();
+    const QList<PinnedShortcutEntry> activeShortcuts = m_pinnedResolver->resolvePinnedShortcutsForDockSync();
+    if (activeShortcuts.isEmpty()) {
+        emit logMessage(QStringLiteral("Taskbar sync skipped: no active Windows taskbar pins resolved."));
+        return;
+    }
+
     QSet<QString> activeShortcutPaths;
-    int restoredCount = 0;
+    activeShortcutPaths.reserve(activeShortcuts.size());
     for (const PinnedShortcutEntry& shortcut : activeShortcuts) {
-        if (shortcut.targetPath.isEmpty() && shortcut.shortcutPath.isEmpty()) {
+        if (!shortcut.shortcutPath.isEmpty()) {
+            activeShortcutPaths.insert(lowerPath(shortcut.shortcutPath));
+        }
+    }
+
+    m_dockHiddenPins.clear();
+
+    for (const PinnedShortcutEntry& shortcut : activeShortcuts) {
+        if (shortcut.shortcutPath.isEmpty()) {
             continue;
         }
-
-        activeShortcutPaths.insert(lowerPath(shortcut.shortcutPath));
         DockItemEntry entry = makePinnedEntry(shortcut);
-        const int hiddenBefore = m_dockHiddenPins.size();
         restoreEntryToDock(entry);
-        if (m_dockHiddenPins.size() < hiddenBefore) {
-            ++restoredCount;
-        }
+        markExplicitDockPin(entry);
     }
 
     int hiddenCount = 0;
     for (const PinnedShortcutEntry& shortcut : m_pinnedResolver->resolveAllFolderShortcuts()) {
-        if (activeShortcutPaths.contains(lowerPath(shortcut.shortcutPath))) {
+        if (!shortcut.shortcutPath.isEmpty()
+            && activeShortcutPaths.contains(lowerPath(shortcut.shortcutPath))) {
             continue;
         }
-        const int hiddenBefore = m_dockHiddenPins.size();
-        hideEntryFromDock(makePinnedEntry(shortcut));
-        if (m_dockHiddenPins.size() > hiddenBefore) {
-            ++hiddenCount;
+
+        const DockItemEntry folderEntry = makePinnedEntry(shortcut);
+        if (isExplicitDockPin(folderEntry)) {
+            continue;
         }
+
+        hideEntryFromDock(folderEntry);
+        ++hiddenCount;
     }
 
     saveOrder();
-    emit logMessage(QStringLiteral("Synced dock with Windows taskbar pins: %1 restored, %2 hidden.")
-                        .arg(restoredCount)
+    emit logMessage(QStringLiteral("Synced dock with Windows taskbar pins: %1 active, %2 hidden from dock.")
+                        .arg(activeShortcuts.size())
                         .arg(hiddenCount));
 }
 
 void DockModel::loadPinnedApps()
 {
-    const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolvePinnedShortcuts();
+    const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolveDockPinnedShortcuts(m_dockExplicitPins);
+
     QStringList currentShortcutSnapshot;
     currentShortcutSnapshot.reserve(shortcuts.size());
 

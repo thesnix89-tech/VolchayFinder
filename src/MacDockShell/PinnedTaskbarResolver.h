@@ -23,6 +23,8 @@ public:
 
     QStringList resolvePinnedExecutablePaths() const;
     QList<PinnedShortcutEntry> resolvePinnedShortcuts() const;
+    QList<PinnedShortcutEntry> resolvePinnedShortcutsForDockSync() const;
+    QList<PinnedShortcutEntry> resolveDockPinnedShortcuts(const QStringList& explicitDockPinKeys) const;
     QList<PinnedShortcutEntry> resolveAllFolderShortcuts() const;
     QString createPinFromPath(const QString& sourcePath) const;
 
