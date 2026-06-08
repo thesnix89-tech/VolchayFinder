@@ -30,6 +30,7 @@ Window {
     property int externalPinTo: 0
     property bool externalPinDropping: false
     property bool externalPinSettling: false
+    property bool externalPinRetracting: false
     property bool externalPinGhostVisible: false
     property string externalPinPath: ""
     property string externalPinIconUrl: ""
@@ -347,6 +348,10 @@ Window {
         property: "dockPackT"
         duration: dockWindow.dockPackAnimMs
         easing.type: Easing.OutCubic
+        onFinished: {
+            if (dockWindow.externalPinRetracting)
+                dockWindow.clearExternalPinPreview()
+        }
     }
 
     onDragToChanged: {
@@ -440,15 +445,30 @@ Window {
         refreshClickHitRegions()
     }
 
+    function beginExternalPinRetract() {
+        if (!externalPinPreview || externalPinRetracting
+                || externalPinDropping || externalPinSettling)
+            return
+        externalPinRetracting = true
+        externalPinGhostVisible = false
+        externalPinSlotAnim.stop()
+        externalPinDropSettleAnim.stop()
+        externalPinSettlePauseTimer.stop()
+        if (dockPackT >= 0.99) {
+            clearExternalPinPreview()
+            return
+        }
+        animateDockPack(1)
+    }
+
     function cancelExternalPinPreview() {
         if (!externalPinPreview)
             return
-        externalPinDropSettleAnim.stop()
-        externalPinSettlePauseTimer.stop()
-        clearExternalPinPreview()
+        beginExternalPinRetract()
     }
 
     function clearExternalPinPreview() {
+        externalPinRetracting = false
         externalPinPreview = false
         neighborsPacked = false
         externalDragAnchorLeftX = -1
@@ -514,8 +534,8 @@ Window {
         repeat: false
         onTriggered: {
             if (!dockWindow.externalDropActive && !dockWindow.externalPinDropping
-                    && !dockWindow.externalPinSettling)
-                dockWindow.cancelExternalPinPreview()
+                    && !dockWindow.externalPinSettling && !dockWindow.externalPinRetracting)
+                dockWindow.beginExternalPinRetract()
         }
     }
 
@@ -635,8 +655,19 @@ Window {
     onExternalDropActiveChanged: {
         if (externalDropActive) {
             externalDragLeaveTimer.stop()
-            beginExternalPinPreview()
-        } else if (!externalPinDropping) {
+            if (externalPinRetracting) {
+                externalPinRetracting = false
+                dockPackAnim.stop()
+                animateDockPack(0)
+                if (hasDropPointer)
+                    updateExternalPinTargetFromIconCenter(lastDropIconCenterGlobalX,
+                                                          lastDropIconCenterGlobalY)
+            } else if (!externalPinPreview) {
+                beginExternalPinPreview()
+            } else {
+                animateDockPack(0)
+            }
+        } else if (!externalPinDropping && !externalPinSettling) {
             externalDragLeaveTimer.restart()
         }
     }
