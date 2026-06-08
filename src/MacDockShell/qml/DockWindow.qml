@@ -29,6 +29,8 @@ Window {
     property bool externalPinPreview: false
     property int externalPinTo: 0
     property bool externalPinDropping: false
+    property bool externalPinSettling: false
+    property real externalPinSettleT: 0
     property string externalPinPath: ""
     property string externalPinIconUrl: ""
     property int prevLayoutExternalPinTo: -1
@@ -43,6 +45,8 @@ Window {
     readonly property int dockShrinkAnimMs: 220
     readonly property int reorderAnimMs: 360
     readonly property int dockPackAnimMs: 220
+    readonly property int externalPinMorphMs: 300
+    readonly property int externalPinSettleMs: 280
     // macOS: insertion gap opens only when the icon is lowered back into the dock row.
     readonly property int dockZoneEnterY: -12
     readonly property int dockZoneLeaveY: -28
@@ -106,6 +110,23 @@ Window {
 
     function gapLeftForDragTo(to) {
         return slotLeftForIndex(to)
+    }
+
+    // Interpolate preview slot X the same way neighbor icons do (layoutMorph).
+    function morphedExternalPinSlotX() {
+        if (layoutMorphFrom >= 0 && layoutMorph < 1) {
+            var oldX = slotLeftForIndex(layoutMorphFrom)
+            var newX = slotLeftForIndex(externalPinTo)
+            return oldX + layoutMorph * (newX - oldX)
+        }
+        return slotLeftForIndex(externalPinTo)
+    }
+
+    // Blend compact → expanded row while the dock opens a gap (dockPackT).
+    function externalPinGhostX() {
+        var expandedX = morphedExternalPinSlotX()
+        var compactX = slotLeftForIndex(dockRepeater.count)
+        return compactX + (1 - dockPackT) * (expandedX - compactX)
     }
 
     // Lifted icon tracks the opening gap while the dock expands (same dockPackT curve).
@@ -304,12 +325,12 @@ Window {
     }
 
     onExternalPinToChanged: {
-        if (!externalPinPreview || externalPinDropping)
+        if (!externalPinPreview || externalPinDropping || externalPinSettling)
             return
         if (prevLayoutExternalPinTo >= 0 && externalPinTo !== prevLayoutExternalPinTo) {
             layoutMorphFrom = prevLayoutExternalPinTo
             layoutMorph = 0
-            layoutMorphAnim.start()
+            layoutMorphAnim.restart()
         }
         prevLayoutExternalPinTo = externalPinTo
     }
@@ -364,6 +385,11 @@ Window {
     function cancelExternalPinPreview() {
         if (!externalPinPreview)
             return
+        externalPinSettleAnim.stop()
+        clearExternalPinPreview()
+    }
+
+    function clearExternalPinPreview() {
         externalPinPreview = false
         neighborsPacked = false
         externalDragAnchorLeftX = -1
@@ -374,35 +400,38 @@ Window {
         layoutMorphFrom = -1
         layoutMorph = 1
         dockPackT = 0
+        externalPinDropping = false
+        externalPinSettling = false
+        externalPinSettleT = 0
         dockModel.setReorderActive(false)
         publishDropGeometry()
         refreshClickHitRegions()
     }
 
     function finishExternalPinDrop(path, index) {
+        if (externalPinSettling)
+            return
         externalPinDropping = true
         externalDropActive = false
         externalPinTo = index
+        setExternalPinPath(path)
+        layoutMorphAnim.stop()
+        layoutMorph = 1
+        layoutMorphFrom = -1
+        prevLayoutExternalPinTo = index
+        externalPinSettling = true
+        externalPinSettleT = 0
+        externalPinSettleAnim.restart()
+    }
+
+    function commitExternalPinDrop() {
+        var path = externalPinPath
+        var index = externalPinTo
         dockModel.pinPathAt(path, index)
-        Qt.callLater(function() {
-            externalPinPreview = false
-            neighborsPacked = false
-            externalDragAnchorLeftX = -1
-            setExternalPinPath("")
-            hasDropPointer = false
-            windowEffects.setDockDropCapture(dockWindow, false)
-            prevLayoutExternalPinTo = -1
-            layoutMorphFrom = -1
-            layoutMorph = 1
-            dockPackT = 0
-            externalPinDropping = false
-            dockModel.setReorderActive(false)
-            publishDropGeometry()
-            refreshClickHitRegions()
-            var item = dockRepeater.itemAt(index)
-            if (item && item.playLaunchBounce)
-                item.playLaunchBounce()
-        })
+        clearExternalPinPreview()
+        var item = dockRepeater.itemAt(index)
+        if (item && item.playLaunchBounce)
+            item.playLaunchBounce()
     }
 
     Timer {
@@ -410,7 +439,8 @@ Window {
         interval: 180
         repeat: false
         onTriggered: {
-            if (!dockWindow.externalDropActive && !dockWindow.externalPinDropping)
+            if (!dockWindow.externalDropActive && !dockWindow.externalPinDropping
+                    && !dockWindow.externalPinSettling)
                 dockWindow.cancelExternalPinPreview()
         }
     }
@@ -421,8 +451,19 @@ Window {
         property: "layoutMorph"
         from: 0
         to: 1
-        duration: dockWindow.dockPackAnimMs
+        duration: dockWindow.externalPinPreview ? dockWindow.externalPinMorphMs : dockWindow.dockPackAnimMs
+        easing.type: dockWindow.externalPinPreview ? Easing.InOutCubic : Easing.OutCubic
+    }
+
+    NumberAnimation {
+        id: externalPinSettleAnim
+        target: dockWindow
+        property: "externalPinSettleT"
+        from: 0
+        to: 1
+        duration: dockWindow.externalPinSettleMs
         easing.type: Easing.OutCubic
+        onFinished: dockWindow.commitExternalPinDrop()
     }
 
     Behavior on x {
@@ -841,16 +882,20 @@ Window {
             Rectangle {
                 id: externalPinSlotGhost
                 visible: dockWindow.externalPinPreview && dockWindow.dragFrom < 0
-                x: dockWindow.slotLeftForIndex(dockWindow.externalPinTo)
-                y: 19
+                x: dockWindow.externalPinGhostX()
+                y: 19 - 10 * (1 - dockWindow.externalPinSettleT)
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize
                 radius: 18
                 z: 50
                 color: "transparent"
                 border.width: 0
-                opacity: dockWindow.externalPinPreview ? 0.94 : 0.0
-                scale: dockWindow.externalPinPreview ? 1.0 : 0.82
+                opacity: dockWindow.externalPinPreview
+                        ? (0.88 + 0.12 * dockWindow.externalPinSettleT) * (0.35 + 0.65 * (1 - dockWindow.dockPackT))
+                        : 0.0
+                scale: dockWindow.externalPinPreview
+                        ? (0.92 + 0.08 * dockWindow.externalPinSettleT) * (0.9 + 0.1 * (1 - dockWindow.dockPackT))
+                        : 0.82
 
                 Image {
                     id: externalPinPreviewIcon
@@ -870,14 +915,13 @@ Window {
                     }
                 }
 
-                Behavior on x {
-                    NumberAnimation { duration: dockWindow.reorderAnimMs; easing.type: Easing.OutCubic }
-                }
                 Behavior on opacity {
-                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+                    enabled: !dockWindow.externalPinSettling
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                 }
                 Behavior on scale {
-                    NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+                    enabled: !dockWindow.externalPinSettling
+                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                 }
             }
 
@@ -1064,6 +1108,7 @@ Window {
                         enabled: !dockItemRoot.dragging
                                 && !(dockWindow.reorderSettling
                                      && dockItemRoot.index === dockWindow.dragFrom)
+                                && !dockWindow.externalPinPreview
                         NumberAnimation {
                             duration: dockWindow.reorderAnimMs
                             easing.type: Easing.OutCubic
@@ -1564,22 +1609,16 @@ Window {
 
             Item {
                 id: externalPinGhost
-                visible: dockWindow.externalPinPreview
-                x: dockWindow.slotLeftForIndex(dockWindow.externalPinTo)
+                visible: dockWindow.externalPinPreview && !dockWindow.externalPinSettling
+                x: dockWindow.externalPinGhostX()
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize + 38
                 z: 50
-                opacity: dockWindow.externalPinPreview ? 0.9 * (1 - dockWindow.dockPackT) : 0
-
-                Behavior on x {
-                    NumberAnimation {
-                        duration: dockWindow.dockPackAnimMs
-                        easing.type: Easing.OutCubic
-                    }
-                }
+                opacity: dockWindow.externalPinPreview ? 0.85 * (1 - dockWindow.dockPackT) : 0
 
                 Behavior on opacity {
-                    NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+                    enabled: !dockWindow.externalPinSettling
+                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
 
                 Rectangle {
