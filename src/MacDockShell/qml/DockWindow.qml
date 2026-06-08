@@ -44,6 +44,10 @@ Window {
     property bool externalPinRetracting: false
     property bool externalPinCommitting: false
     property bool unpinCommitting: false
+    // Screen center held while the model shrinks — prevents one-frame dock slide on unpin.
+    property real unpinAnchorCenterX: -1
+    // Screen center frozen for external-pin preview — slot changes must not retarget window x.
+    property real externalPinFrozenCenterX: -1
     // Frozen expanded slot count/width during model handoff — prevents one-frame pill shrink.
     property int externalPinCommitLayoutCount: -1
     property real externalPinFrozenPillWidth: -1
@@ -118,6 +122,29 @@ Window {
 
     function candidateInsertSlotForCenter(center, itemCount) {
         return candidateSlotForCenter(center, itemCount + 1)
+    }
+
+    // Fractional insertion slot — neighbors glide while the desktop icon is wiggled over the dock.
+    function continuousInsertSlotForCenter(center, itemCount) {
+        var slotCount = itemCount + 1
+        if (slotCount <= 1)
+            return 0
+        var last = slotCount - 1
+        var leftCenter = gapCenterForSlot(0)
+        var rightCenter = gapCenterForSlot(last)
+        if (center <= leftCenter)
+            return 0
+        if (center >= rightCenter)
+            return last
+        for (var s = 0; s < last; s++) {
+            var curCenter = gapCenterForSlot(s)
+            var nextCenter = gapCenterForSlot(s + 1)
+            if (center <= nextCenter) {
+                var span = nextCenter - curCenter
+                return span <= 0.001 ? s : s + (center - curCenter) / span
+            }
+        }
+        return last
     }
 
     function packedSlotForIndex(i, from) {
@@ -243,7 +270,6 @@ Window {
 
     function snapExternalPinMorphSlot() {
         externalPinSlotAnim.stop()
-        externalPinMorphSlot = externalPinTo
         externalPinSlotSnapped = true
         showExternalPinGhostIfReady()
     }
@@ -421,16 +447,29 @@ Window {
 
     // Unpin: skip pack-back animation — model removal shrinks the dock once.
     function finishUnpin(index) {
+        // Pin screen center before releasing frozen reorder geometry.
+        unpinAnchorCenterX = dockWindow.x + dockWindow.width / 2
         clearReorderState()
         clearActiveTooltip()
         dockPackT = 0
+        dockChromeWidthAnim.stop()
+        dockPackAnim.stop()
+        // Pre-shrink animated pill width so dockRowHost and flickable stay aligned
+        // when the model drops one item (avoids a one-frame slide to the right).
+        var newCount = Math.max(0, dockRepeater.count - 1)
+        var newRowWidth = newCount * dockStride + 2 * hoverBleed
+        var newPillWidth = newRowWidth + 2 * dockEndCap
         unpinCommitting = true
+        animatedPillWidth = newPillWidth
         dockModel.unpinIndex(index)
-        unpinCommitting = false
         clearExternalPinRestAnchor()
-        syncAnimatedPillWidth(true)
-        publishDropGeometry()
-        Qt.callLater(dockWindow.refreshClickHitRegions)
+        Qt.callLater(function() {
+            dockWindow.unpinAnchorCenterX = -1
+            dockWindow.unpinCommitting = false
+            dockWindow.syncAnimatedPillWidth(true)
+            dockWindow.publishDropGeometry()
+            Qt.callLater(dockWindow.refreshClickHitRegions)
+        })
     }
 
     property bool _settleDoneX: true
@@ -517,13 +556,10 @@ Window {
                 Math.round(animatedPillWidth) + 2 * tooltipWing, Screen.width - 40)
     // Middle slot: grow symmetrically. Left insert: grow left (right edge fixed). Right append: grow right.
     readonly property real dockWindowX: {
-        if (externalPinPreview && externalPinAnchorLeftX >= 0) {
-            if (externalPinTo <= 0)
-                return Math.round(externalPinAnchorRightX - dockWindowWidth)
-            if (externalPinTo >= dockRepeater.count)
-                return Math.round(externalPinAnchorLeftX)
-            return Math.round((Screen.width - dockWindowWidth) / 2)
-        }
+        if (unpinAnchorCenterX >= 0)
+            return Math.round(unpinAnchorCenterX - dockWindowWidth / 2)
+        if (externalPinPreview && externalPinFrozenCenterX >= 0)
+            return Math.round(externalPinFrozenCenterX - dockWindowWidth / 2)
         if (externalPinRestEdge !== 0 && externalPinRestAnchorLeftX >= 0) {
             if (externalPinRestEdge < 0)
                 return Math.round(externalPinRestAnchorRightX - dockWindowWidth)
@@ -608,21 +644,12 @@ Window {
     onExternalPinToChanged: {
         if (!externalPinPreview || externalPinDropping || externalPinSettling)
             return
-        // While the ghost is still hidden, track the slot silently so the first
-        // paint is already under the cursor (no slide from the trailing edge).
+        prevLayoutExternalPinTo = externalPinTo
         if (!externalPinGhostVisible) {
-            externalPinSlotAnim.stop()
-            externalPinMorphSlot = externalPinTo
-            prevLayoutExternalPinTo = externalPinTo
             showExternalPinGhostIfReady()
             publishDropGeometry()
             return
         }
-        if (externalPinSlotSnapped
-                && prevLayoutExternalPinTo >= 0
-                && externalPinTo !== prevLayoutExternalPinTo)
-            animateExternalPinMorphSlot(externalPinTo)
-        prevLayoutExternalPinTo = externalPinTo
         publishDropGeometry()
     }
 
@@ -638,6 +665,9 @@ Window {
         var rowLocal = dockRowHost.mapFromGlobal(centerGlobalX, centerGlobalY)
         var dragCenter = rowLocal.x
         var candidate = candidateInsertSlotForCenter(dragCenter, dockRepeater.count)
+
+        externalPinSlotAnim.stop()
+        externalPinMorphSlot = continuousInsertSlotForCenter(dragCenter, dockRepeater.count)
 
         if (externalPinSlotSnapped && prevLayoutExternalPinTo >= 0 && candidate !== externalPinTo) {
             if (Math.abs(candidate - externalPinTo) === 1) {
@@ -677,6 +707,7 @@ Window {
         if (externalPinPreview || reordering)
             return
         clearExternalPinRestAnchor()
+        externalPinFrozenCenterX = dockWindow.x + dockWindow.width / 2
         externalPinAnchorLeftX = dockWindow.x
         externalPinAnchorRightX = dockWindow.x + dockWindow.width
         windowEffects.setDockDropCapture(dockWindow, true)
@@ -722,6 +753,7 @@ Window {
 
     function resetExternalPinState() {
         externalPinRetracting = false
+        externalPinFrozenCenterX = -1
         externalPinAnchorLeftX = -1
         externalPinAnchorRightX = -1
         neighborsPacked = false
@@ -1059,7 +1091,8 @@ Window {
                                                           lastDropIconCenterGlobalY)
             } else if (!externalPinPreview) {
                 beginExternalPinPreview()
-            } else {
+            } else if (dockPackT > 0.02) {
+                dockPackAnim.stop()
                 animateDockPack(0)
             }
         } else if (!externalPinDropping && !externalPinSettling) {
@@ -1171,7 +1204,7 @@ Window {
         target: dockModel
         function onModelReset() {
             if (!dockWindow.externalPinPreview && !dockWindow.externalPinDropping
-                    && !dockWindow.externalPinSettling)
+                    && !dockWindow.externalPinSettling && !dockWindow.unpinCommitting)
                 dockWindow.resetDockChromeLayout()
             else
                 dockWindow.publishDropGeometry()
@@ -1181,7 +1214,7 @@ Window {
         }
         function onRowsRemoved() {
             if (!dockWindow.externalPinPreview && !dockWindow.externalPinDropping
-                    && !dockWindow.externalPinSettling)
+                    && !dockWindow.externalPinSettling && !dockWindow.unpinCommitting)
                 dockWindow.resetDockChromeLayout()
             else
                 dockWindow.publishDropGeometry()
@@ -1436,7 +1469,8 @@ Window {
             y: 0
 
             Behavior on x {
-                enabled: (dockWindow.reordering || dockWindow.externalPinPreview)
+                enabled: dockWindow.reordering
+                        && !dockWindow.externalPinPreview
                         && !dockWindow.dockPackAnim.running
                 NumberAnimation { duration: dockWindow.dockPackAnimMs; easing.type: Easing.OutCubic }
             }
