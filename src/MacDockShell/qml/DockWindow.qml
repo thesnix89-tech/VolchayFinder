@@ -45,6 +45,8 @@ Window {
     readonly property int dockZoneLeaveY: -28
     // Extra headroom so a dragged icon can float above the dock pill (macOS-style).
     readonly property int dockTopAirspace: 128
+    // Drag upward past this gripY threshold to enter unpin-preview state.
+    readonly property int unpinThreshold: -80
 
     function slotLeftForIndex(index) {
         return hoverBleed + index * dockStride
@@ -270,11 +272,11 @@ Window {
     readonly property real dockRowFullWidth: layoutDockCount * dockStride + 2 * hoverBleed
     readonly property real dockRowCompactWidth: externalPinPreview
             ? dockRepeater.count * dockStride + 2 * hoverBleed
-            : Math.max(0, dockRepeater.count - 1) * dockStride + 2 * hoverBleed
+            : (reordering ? Math.max(0, dockRepeater.count - 1) : dockRepeater.count) * dockStride + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
-    width: Math.min(dockPillWidth + 2 * tooltipWing, Screen.width - 40)
+    width: Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
     height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
     x: externalPinLayout
             ? Math.round(externalDragAnchorLeftX)
@@ -568,9 +570,19 @@ Window {
 
     Connections {
         target: dockModel
-        function onModelReset() { dockWindow.publishDropGeometry() }
-        function onRowsInserted() { dockWindow.publishDropGeometry() }
-        function onRowsRemoved() { dockWindow.publishDropGeometry() }
+        function onModelReset() {
+            dockWindow.publishDropGeometry()
+            // Force width recalculation after model reset (e.g. after unpin)
+            Qt.callLater(function() {
+                dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
+            })
+        }
+        function onRowsInserted() {
+            dockWindow.publishDropGeometry()
+        }
+        function onRowsRemoved() {
+            dockWindow.publishDropGeometry()
+        }
     }
 
     Connections {
@@ -790,6 +802,15 @@ Window {
                 id: dockRepeater
                 model: dockModel
 
+                onCountChanged: {
+                    // Force geometry update when repeater count changes (e.g. after unpin)
+                    dockWindow.publishDropGeometry()
+                    // Force width recalculation after model changes
+                    Qt.callLater(function() {
+                        dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
+                    })
+                }
+
                 delegate: Item {
                     id: dockItemRoot
                     required property int index
@@ -810,6 +831,8 @@ Window {
                     property real gripX: 0
                     property real gripY: 0
                     property bool suppressClick: false
+                    // Becomes true when dragging upward past unpinThreshold — triggers visual feedback.
+                    property bool unpinDragPreview: false
 
                     function syncGripFromPointer() {
                         dockItemRoot.gripY = mouseArea.mouseY - dockItemRoot.grabLocalY
@@ -983,6 +1006,7 @@ Window {
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
+                        opacity: dockItemRoot.unpinDragPreview ? 0.55 : 1.0
 
                         transform: [
                             Translate { y: dockItemRoot.slideY },
@@ -1079,6 +1103,17 @@ Window {
                         Behavior on opacity {
                             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                         }
+                        Rectangle {
+                            id: unpinnedRunningRing
+                            anchors.fill: parent
+                            anchors.margins: -1
+                            radius: 3
+                            color: "transparent"
+                            border.width: dockItemRoot.running && !dockItemRoot.pinned ? 1.5 : 0
+                            border.color: dockWindow.darkTheme ? "#FFFFFF" : "#000000"
+                            opacity: dockItemRoot.running && !dockItemRoot.pinned ? dockItemRoot.runningDotBase : 0
+                            visible: dockItemRoot.running && !dockItemRoot.pinned
+                        }
                     }
 
                     // macOS-style label: compact bubble centered above the icon (app name only).
@@ -1111,7 +1146,7 @@ Window {
                             Text {
                                 id: tooltipText
                                 anchors.centerIn: parent
-                                text: dockItemRoot.label
+                                text: dockItemRoot.pinned ? dockItemRoot.label : dockItemRoot.label + " (не закреплено)"
                                 color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -1352,6 +1387,11 @@ Window {
                                 dockItemRoot.beginDragReorder()
                             }
                             dockItemRoot.syncGripFromPointer()
+                            if (dockItemRoot.pinned && dockItemRoot.gripY < dockWindow.unpinThreshold) {
+                                dockItemRoot.unpinDragPreview = true
+                            } else {
+                                dockItemRoot.unpinDragPreview = false
+                            }
                             dockWindow.updateDragTarget(
                                 dockWindow.dragLeftX,
                                 dockItemRoot.gripY,
@@ -1372,6 +1412,14 @@ Window {
                             dockItemRoot.dragging = false
                             dockItemRoot.suppressClick = true
 
+                            if (dockItemRoot.unpinDragPreview && dockItemRoot.pinned) {
+                                dockItemRoot.unpinDragPreview = false
+                                var idx = from
+                                dockWindow.cancelReorder()
+                                Qt.callLater(function() { dockModel.unpinIndex(idx) })
+                                return
+                            }
+
                             if (from < 0) {
                                 dockWindow.cancelReorder()
                                 return
@@ -1391,6 +1439,13 @@ Window {
                             var releaseDragY = dockItemRoot.gripY
                             dockItemRoot.dragging = false
                             dockItemRoot.suppressClick = true
+                            if (dockItemRoot.unpinDragPreview && from >= 0 && dockItemRoot.pinned) {
+                                dockItemRoot.unpinDragPreview = false
+                                var idx2 = from
+                                dockWindow.cancelReorder()
+                                Qt.callLater(function() { dockModel.unpinIndex(idx2) })
+                                return
+                            }
                             if (from >= 0)
                                 dockWindow.beginReorderSettle(from, from, releaseDragY)
                             else
