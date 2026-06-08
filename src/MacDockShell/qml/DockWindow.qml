@@ -32,6 +32,9 @@ Window {
     property bool externalPinSettling: false
     property bool externalPinRetracting: false
     property bool externalPinCommitting: false
+    // Frozen expanded slot count/width during model handoff — prevents one-frame pill shrink.
+    property int externalPinCommitLayoutCount: -1
+    property real externalPinFrozenPillWidth: -1
     // Suppress post-commit x slide for the icon that just replaced the ghost.
     property int externalPinHandoffIndex: -1
     property bool externalPinGhostVisible: false
@@ -367,16 +370,15 @@ Window {
     readonly property int hoverBleed: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
     readonly property int tooltipWing: 128
     readonly property int layoutDockCount: {
+        if (externalPinCommitting && externalPinCommitLayoutCount >= 0)
+            return externalPinCommitLayoutCount
         if (!externalPinPreview)
-            return dockRepeater.count
-        // Ghost slot is already included once the model has caught up during commit.
-        if (externalPinCommitting)
             return dockRepeater.count
         return dockRepeater.count + 1
     }
     readonly property real dockRowFullWidth: layoutDockCount * dockStride + 2 * hoverBleed
-    readonly property real dockRowCompactWidth: externalPinPreview
-            ? dockRepeater.count * dockStride + 2 * hoverBleed
+    readonly property real dockRowCompactWidth: (externalPinPreview || externalPinCommitting)
+            ? Math.max(0, layoutDockCount - 1) * dockStride + 2 * hoverBleed
             : (reordering ? Math.max(0, dockRepeater.count - 1) : dockRepeater.count) * dockStride + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
@@ -406,7 +408,12 @@ Window {
     x: dockWindowX
 
     function syncAnimatedPillWidth(immediate) {
-        if (immediate || externalPinPreview || dockPackAnim.running) {
+        if (externalPinCommitting && externalPinFrozenPillWidth >= 0) {
+            dockChromeWidthAnim.stop()
+            animatedPillWidth = externalPinFrozenPillWidth
+            return
+        }
+        if (immediate || externalPinPreview || externalPinCommitting || dockPackAnim.running) {
             dockChromeWidthAnim.stop()
             animatedPillWidth = dockPillWidth
             return
@@ -591,6 +598,9 @@ Window {
 
     function endExternalPinPreview() {
         externalPinHandoffIndex = -1
+        externalPinCommitLayoutCount = -1
+        externalPinFrozenPillWidth = -1
+        externalPinCommitting = false
         externalPinPreview = false
         externalPinDropping = false
         externalPinSettling = false
@@ -656,6 +666,8 @@ Window {
         var anchorRight = externalPinAnchorRightX
         // Keep preview width (N+1 slots) while the model catches up — no shrink/grow flicker.
         externalPinHandoffIndex = index
+        externalPinCommitLayoutCount = itemCount + 1
+        externalPinFrozenPillWidth = animatedPillWidth
         externalPinCommitting = true
         externalPinGhostVisible = false
         dockModel.pinPathAt(path, index)
@@ -677,7 +689,6 @@ Window {
         externalPinSlotSnapped = false
         setExternalPinPath("")
         prevLayoutExternalPinTo = -1
-        externalPinCommitting = false
         resetExternalPinState()
         syncAnimatedPillWidth(true)
         publishDropGeometry()
@@ -686,7 +697,11 @@ Window {
             var item = dockRepeater.itemAt(index)
             if (item)
                 item.x = dockWindow.slotLeftForIndex(index)
+            externalPinCommitting = false
+            externalPinCommitLayoutCount = -1
+            externalPinFrozenPillWidth = -1
             externalPinHandoffIndex = -1
+            dockWindow.syncAnimatedPillWidth(true)
             dockWindow.refreshClickHitRegions()
             if (item && item.playLaunchBounce)
                 item.playLaunchBounce()
@@ -1381,6 +1396,7 @@ Window {
                                 && !(dockWindow.reorderSettling
                                      && dockItemRoot.index === dockWindow.dragFrom)
                                 && !dockWindow.externalPinPreview
+                                && !dockWindow.externalPinCommitting
                                 && dockWindow.externalPinHandoffIndex !== dockItemRoot.index
                         NumberAnimation {
                             duration: dockWindow.reorderAnimMs
