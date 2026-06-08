@@ -33,9 +33,8 @@ Window {
     property bool dockZoneEverEntered: false
     // 0 = full dock, 1 = compact (lifted icon slot removed) — single driver for pill width.
     property real dockPackT: 0
-    property int prevLayoutDragTo: -1
-    property int layoutMorphFrom: -1
-    property real layoutMorph: 1
+    // Continuous insertion slot — glides between targets without snapping morph to 0.
+    property real reorderMorphSlot: -1
     readonly property bool reordering: dragFrom >= 0 || reorderSettling
     property bool externalDropActive: false
     property bool externalPinPreview: false
@@ -153,6 +152,33 @@ Window {
         return slotLeftForIndex(to)
     }
 
+    function reorderPreviewXForItem(itemIndex, from, slotReal) {
+        var slotFloor = Math.floor(slotReal)
+        var slotCeil = Math.ceil(slotReal)
+        var xAtSlot = function(s) {
+            var slot = previewSlotForIndex(itemIndex, from, s)
+            if (slot < 0)
+                return slotLeftForIndex(itemIndex)
+            return slotLeftForIndex(slot)
+        }
+        if (slotFloor === slotCeil)
+            return xAtSlot(slotFloor)
+        var xFloor = xAtSlot(slotFloor)
+        var xCeil = xAtSlot(slotCeil)
+        return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
+    }
+
+    function animateReorderMorphSlot(targetSlot) {
+        if (Math.abs(reorderMorphSlot - targetSlot) < 0.001) {
+            reorderMorphSlot = targetSlot
+            return
+        }
+        reorderSlotAnim.stop()
+        reorderSlotAnim.from = reorderMorphSlot
+        reorderSlotAnim.to = targetSlot
+        reorderSlotAnim.start()
+    }
+
     function insertSlotXForItem(itemIndex, slotReal) {
         var slotFloor = Math.floor(slotReal)
         var slotCeil = Math.ceil(slotReal)
@@ -227,7 +253,7 @@ Window {
         externalPinSlotAnim.start()
     }
 
-    // Lifted icon follows the pointer; neighbors glide via layoutMorph / dockPackT.
+    // Lifted icon follows the pointer; neighbors glide via reorderMorphSlot / dockPackT.
     function visualDragLeftX() {
         return dragLeftX
     }
@@ -372,9 +398,8 @@ Window {
         dragGripY = 0
         dragInDockZone = false
         dockZoneEverEntered = false
-        prevLayoutDragTo = -1
-        layoutMorphFrom = -1
-        layoutMorph = 1
+        reorderSlotAnim.stop()
+        reorderMorphSlot = -1
         reorderFrozenWindowX = -1
         reorderFrozenWindowWidth = -1
         dragPointerGlobalX = 0
@@ -445,9 +470,8 @@ Window {
         dragGripY = 0
         dragInDockZone = false
         dockZoneEverEntered = false
-        prevLayoutDragTo = -1
-        layoutMorphFrom = -1
-        layoutMorph = 1
+        reorderSlotAnim.stop()
+        reorderMorphSlot = -1
         dockPackAnim.stop()
         dockPackT = 0
         reorderFrozenWindowX = -1
@@ -571,12 +595,8 @@ Window {
     }
 
     onDragToChanged: {
-        if (dragFrom >= 0 && dragInDockZone && prevLayoutDragTo >= 0 && dragTo !== prevLayoutDragTo) {
-            layoutMorphFrom = prevLayoutDragTo
-            layoutMorph = 0
-            layoutMorphAnim.start()
-        }
-        prevLayoutDragTo = dragTo
+        if (dragFrom >= 0 && dragInDockZone && dragTo >= 0)
+            animateReorderMorphSlot(dragTo)
         syncDockPackState()
     }
 
@@ -657,8 +677,6 @@ Window {
         windowEffects.setDockDropCapture(dockWindow, true)
         neighborsPacked = true
         dockModel.setReorderActive(true)
-        layoutMorphFrom = -1
-        layoutMorph = 1
         externalPinSlotSnapped = false
         externalPinGhostVisible = false
         externalPinMorphSlot = dockRepeater.count
@@ -702,11 +720,10 @@ Window {
         externalPinAnchorLeftX = -1
         externalPinAnchorRightX = -1
         neighborsPacked = false
-        layoutMorphFrom = -1
-        layoutMorph = 1
         dockPackAnim.stop()
         dockChromeWidthAnim.stop()
-        layoutMorphAnim.stop()
+        reorderSlotAnim.stop()
+        reorderMorphSlot = -1
         externalPinSlotAnim.stop()
         dockPackT = 0
         externalDropActive = false
@@ -756,9 +773,8 @@ Window {
         externalDropActive = false
         externalPinTo = index
         setExternalPinPath(path)
-        layoutMorphAnim.stop()
-        layoutMorph = 1
-        layoutMorphFrom = -1
+        reorderSlotAnim.stop()
+        reorderMorphSlot = -1
         prevLayoutExternalPinTo = index
         externalPinSlotAnim.stop()
         externalPinSettling = true
@@ -839,11 +855,9 @@ Window {
     }
 
     NumberAnimation {
-        id: layoutMorphAnim
+        id: reorderSlotAnim
         target: dockWindow
-        property: "layoutMorph"
-        from: 0
-        to: 1
+        property: "reorderMorphSlot"
         duration: dockWindow.reorderAnimMs
         easing.type: Easing.OutCubic
     }
@@ -1577,7 +1591,7 @@ Window {
                         launchBounceAnim.restart()
                     }
 
-                    function beginDragReorder() {
+                    function beginDragReorder(packNeighbors) {
                         var wasMagnified = dockItemRoot.magnifyHover
                         dockWindow.abortReorderSettle()
                         dockWindow.clearActiveTooltip()
@@ -1585,30 +1599,32 @@ Window {
                         dockWindow.reorderDragIconHint = dockItemRoot.iconHint
                         dockWindow.reorderDragLabel = dockItemRoot.label
                         dockWindow.reorderDragLiftMagnified = wasMagnified
+                        if (!wasMagnified)
+                            dockItemRoot.grabLocalY += 14
+                        dockItemRoot.syncGripFromPointer()
+                        // Hide the slot delegate and show the overlay before layout state changes
+                        // so magnify scale does not pop and neighbors do not jerk on vertical lift.
+                        dockItemRoot.dragging = true
+                        dockWindow.reorderDragOverlayActive = true
                         dockPackAnim.stop()
                         dockWindow.dockPackT = 0
                         dockWindow.dragInDockZone = true
                         dockWindow.dockZoneEverEntered = false
-                        dockWindow.neighborsPacked = true
+                        dockWindow.neighborsPacked = packNeighbors
                         dockWindow.dragFrom = dockItemRoot.index
                         dockWindow.dragTo = dockItemRoot.index
-                        dockWindow.prevLayoutDragTo = dockItemRoot.index
-                        dockWindow.layoutMorphFrom = -1
-                        dockWindow.layoutMorph = 1
+                        dockWindow.reorderMorphSlot = dockItemRoot.index
                         dockModel.setReorderActive(true)
-                        if (!wasMagnified)
-                            dockItemRoot.grabLocalY += 14
-                        dockItemRoot.syncGripFromPointer()
-                        dockWindow.reorderDragOverlayActive = true
-                        dockItemRoot.dragging = true
                         dockWindow.reorderFrozenWindowX = dockWindow.x
                         dockWindow.reorderFrozenWindowWidth = dockWindow.dockWindowWidth
                         dockWindow.syncDragZone(dockItemRoot.gripY)
+                        if (packNeighbors)
+                            dockWindow.syncDockPackState()
                     }
                     readonly property bool liftMagnified: dockItemRoot.magnifyHover || dockItemRoot.dragging
                     property bool magnifyHover: mouseArea.containsMouse
                             && !taskbarController.dockStaticIcons
-                            && !dockWindow.reordering
+                            && (!dockWindow.reordering || dockItemRoot.dragging)
                             && !dockWindow.externalPinPreview
                             && !launchBounceAnim.running
                     readonly property bool showTooltip: dockWindow.activeTooltipIndex === dockItemRoot.index
@@ -1635,16 +1651,10 @@ Window {
                                 : dockWindow.slotLeftForIndex(slot)
                     }
                     readonly property real morphedPreviewRestX: {
-                        if (dockWindow.layoutMorph >= 1
-                                || dockWindow.layoutMorphFrom < 0
-                                || dockWindow.dragFrom < 0)
+                        if (dockWindow.reorderMorphSlot < 0 || dockWindow.dragFrom < 0)
                             return dockItemRoot.previewRestX
-                        var oldSlot = dockWindow.previewSlotForIndex(
-                            dockItemRoot.index, dockWindow.dragFrom, dockWindow.layoutMorphFrom)
-                        var oldX = oldSlot < 0
-                                ? dockItemRoot.fullRestX
-                                : dockWindow.slotLeftForIndex(oldSlot)
-                        return oldX + dockWindow.layoutMorph * (dockItemRoot.previewRestX - oldX)
+                        return dockWindow.reorderPreviewXForItem(
+                            dockItemRoot.index, dockWindow.dragFrom, dockWindow.reorderMorphSlot)
                     }
                     readonly property real insertPreviewX: {
                         if (!dockWindow.externalPinPreview)
@@ -1657,16 +1667,7 @@ Window {
                         if (dockWindow.externalPinPreview)
                             return dockWindow.insertSlotXForItem(
                                 dockItemRoot.index, dockWindow.externalPinMorphSlot)
-                        if (dockWindow.layoutMorph >= 1
-                                || dockWindow.layoutMorphFrom < 0)
-                            return dockItemRoot.insertPreviewX
-                        var oldSlot = dockWindow.previewSlotForInsert(
-                            dockItemRoot.index, dockWindow.layoutMorphFrom)
-                        var newSlot = dockWindow.previewSlotForInsert(
-                            dockItemRoot.index, dockWindow.externalPinTo)
-                        var oldX = dockWindow.slotLeftForIndex(oldSlot)
-                        var newX = dockWindow.slotLeftForIndex(newSlot)
-                        return oldX + dockWindow.layoutMorph * (newX - oldX)
+                        return dockItemRoot.insertPreviewX
                     }
                     // Wide layout endpoint: full row on first lift, preview row after hovering.
                     readonly property real expandedRestX: {
@@ -1737,6 +1738,7 @@ Window {
                                 // Pill width follows dockPackT directly — x must not lag behind.
                                 && !dockWindow.dockPackAnim.running
                                 && !dockWindow.dockChromeWidthAnim.running
+                                && !dockWindow.reorderSlotAnim.running
                         NumberAnimation {
                             duration: dockWindow.reorderAnimMs
                             easing.type: Easing.OutCubic
@@ -2152,7 +2154,11 @@ Window {
                                 var movedY = Math.abs(mouse.y - dockItemRoot.grabLocalY)
                                 if (movedX <= 6 && movedY <= 6)
                                     return
-                                dockItemRoot.beginDragReorder()
+                                dockItemRoot.beginDragReorder(movedX > movedY)
+                            } else if (!dockWindow.neighborsPacked
+                                       && Math.abs(mouse.x - dockItemRoot.grabLocalX) > 6) {
+                                dockWindow.neighborsPacked = true
+                                dockWindow.syncDockPackState()
                             }
                             dockItemRoot.syncGripFromPointer()
                             dockItemRoot.unpinDragPreview = dockItemRoot.pinned
