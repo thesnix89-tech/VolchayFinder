@@ -305,6 +305,9 @@ Window {
         syncDragZone(gripY)
         if (!dragInDockZone)
             return
+        // Vertical lift only — keep dragTo pinned until horizontal reorder intent opens the gap.
+        if (!neighborsPacked)
+            return
 
         var iconSize = taskbarController.dockIconSize
         var dragCenter = leftX + iconSize / 2
@@ -595,7 +598,7 @@ Window {
     }
 
     onDragToChanged: {
-        if (dragFrom >= 0 && dragInDockZone && dragTo >= 0)
+        if (dragFrom >= 0 && dragInDockZone && dragTo >= 0 && neighborsPacked)
             animateReorderMorphSlot(dragTo)
         syncDockPackState()
     }
@@ -1445,6 +1448,8 @@ Window {
                 z: 200
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize + 38
+                layer.enabled: dockWindow.reorderDragOverlayActive
+                layer.smooth: true
 
                 Item {
                     id: reorderDragBubble
@@ -1591,7 +1596,7 @@ Window {
                         launchBounceAnim.restart()
                     }
 
-                    function beginDragReorder(packNeighbors) {
+                    function beginDragReorder() {
                         var wasMagnified = dockItemRoot.magnifyHover
                         dockWindow.abortReorderSettle()
                         dockWindow.clearActiveTooltip()
@@ -1610,7 +1615,7 @@ Window {
                         dockWindow.dockPackT = 0
                         dockWindow.dragInDockZone = true
                         dockWindow.dockZoneEverEntered = false
-                        dockWindow.neighborsPacked = packNeighbors
+                        dockWindow.neighborsPacked = false
                         dockWindow.dragFrom = dockItemRoot.index
                         dockWindow.dragTo = dockItemRoot.index
                         dockWindow.reorderMorphSlot = dockItemRoot.index
@@ -1618,8 +1623,6 @@ Window {
                         dockWindow.reorderFrozenWindowX = dockWindow.x
                         dockWindow.reorderFrozenWindowWidth = dockWindow.dockWindowWidth
                         dockWindow.syncDragZone(dockItemRoot.gripY)
-                        if (packNeighbors)
-                            dockWindow.syncDockPackState()
                     }
                     readonly property bool liftMagnified: dockItemRoot.magnifyHover || dockItemRoot.dragging
                     property bool magnifyHover: mouseArea.containsMouse
@@ -1766,6 +1769,7 @@ Window {
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
+                        visible: !dockItemRoot.dragging
                         opacity: dockItemRoot.unpinDragPreview ? 0.55 : 1.0
 
                         transform: [
@@ -2149,14 +2153,15 @@ Window {
                         onPositionChanged: function(mouse) {
                             if (!(mouse.buttons & Qt.LeftButton))
                                 return
+                            var movedX = Math.abs(mouse.x - dockItemRoot.grabLocalX)
+                            var movedY = Math.abs(mouse.y - dockItemRoot.grabLocalY)
                             if (!dockItemRoot.dragging) {
-                                var movedX = Math.abs(mouse.x - dockItemRoot.grabLocalX)
-                                var movedY = Math.abs(mouse.y - dockItemRoot.grabLocalY)
                                 if (movedX <= 6 && movedY <= 6)
                                     return
-                                dockItemRoot.beginDragReorder(movedX > movedY)
+                                dockItemRoot.beginDragReorder()
                             } else if (!dockWindow.neighborsPacked
-                                       && Math.abs(mouse.x - dockItemRoot.grabLocalX) > 6) {
+                                       && movedX > 6
+                                       && movedX > movedY) {
                                 dockWindow.neighborsPacked = true
                                 dockWindow.syncDockPackState()
                             }
