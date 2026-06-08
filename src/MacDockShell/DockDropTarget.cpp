@@ -162,7 +162,12 @@ struct DropTargetImpl final : public IDropTarget
             return S_OK;
         }
 
-        m_windowEffects->notifyDockExternalDrop(m_window, path, 0);
+        if (m_windowEffects && m_window) {
+            m_windowEffects->setDockDropPointer(m_window, point.x, point.y);
+        }
+
+        const int dropIndex = m_windowEffects->dockDropIndexForGlobalPoint(m_window, point.x, point.y);
+        m_windowEffects->notifyDockExternalDrop(m_window, path, dropIndex);
 
         *effect = DROPEFFECT_COPY;
         m_dragAccepted = false;

@@ -40,6 +40,7 @@ Window {
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     readonly property int dockShrinkAnimMs: 220
     readonly property int reorderAnimMs: 360
+    readonly property int dockPackAnimMs: 220
     // macOS: insertion gap opens only when the icon is lowered back into the dock row.
     readonly property int dockZoneEnterY: -12
     readonly property int dockZoneLeaveY: -28
@@ -286,7 +287,7 @@ Window {
         id: dockPackAnim
         target: dockWindow
         property: "dockPackT"
-        duration: dockShrinkAnimMs
+        duration: dockWindow.dockPackAnimMs
         easing.type: Easing.OutCubic
     }
 
@@ -409,7 +410,7 @@ Window {
         property: "layoutMorph"
         from: 0
         to: 1
-        duration: dockShrinkAnimMs
+        duration: dockWindow.dockPackAnimMs
         easing.type: Easing.OutCubic
     }
 
@@ -529,8 +530,17 @@ Window {
                 dockWindow.updateExternalPinTargetFromGlobal(globalX, globalY)
         }
         function onDockExternalDrop(window, path, index) {
-            if (window === dockWindow)
-                dockWindow.finishExternalPinDrop(path, dockWindow.externalPinTo)
+            if (window !== dockWindow)
+                return
+
+            // During external pin preview the QML side already tracks the visible
+            // insertion slot under the cursor. Do not let the native/OLE fallback
+            // index overwrite it on Drop: that is what made the app land at the
+            // right edge while the plus placeholder was shown elsewhere.
+            if (!dockWindow.externalPinPreview && index >= 0)
+                dockWindow.externalPinTo = Math.max(0, Math.min(index, dockRepeater.count))
+
+            dockWindow.finishExternalPinDrop(path, dockWindow.externalPinTo)
         }
     }
 
@@ -804,7 +814,49 @@ Window {
 
             Behavior on x {
                 enabled: dockWindow.reordering || dockWindow.externalPinPreview
-                NumberAnimation { duration: dockWindow.dockShrinkAnimMs; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: dockWindow.dockPackAnimMs; easing.type: Easing.OutCubic }
+            }
+
+            Rectangle {
+                id: externalPinSlotGhost
+                visible: dockWindow.externalPinPreview && dockWindow.dragFrom < 0
+                x: dockWindow.slotLeftForIndex(dockWindow.externalPinTo)
+                y: 19
+                width: taskbarController.dockIconSize
+                height: taskbarController.dockIconSize
+                radius: 18
+                z: 50
+                color: dockWindow.darkTheme ? "#2D3036" : "#F2F5FA"
+                border.width: 1
+                border.color: dockWindow.darkTheme ? "#5D6572" : "#AEB7C6"
+                opacity: dockWindow.externalPinPreview ? 0.72 : 0.0
+                scale: dockWindow.externalPinPreview ? 1.0 : 0.82
+
+                Rectangle {
+                    width: Math.max(18, parent.width * 0.32)
+                    height: 3
+                    radius: 2
+                    anchors.centerIn: parent
+                    color: dockWindow.darkTheme ? "#E7ECF5" : "#536070"
+                }
+
+                Rectangle {
+                    width: 3
+                    height: Math.max(18, parent.height * 0.32)
+                    radius: 2
+                    anchors.centerIn: parent
+                    color: dockWindow.darkTheme ? "#E7ECF5" : "#536070"
+                }
+
+                Behavior on x {
+                    NumberAnimation { duration: dockWindow.reorderAnimMs; easing.type: Easing.OutCubic }
+                }
+                Behavior on opacity {
+                    NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+                }
+                Behavior on scale {
+                    NumberAnimation { duration: 180; easing.type: Easing.OutBack }
+                }
             }
 
             Repeater {
@@ -983,13 +1035,15 @@ Window {
                     }
 
                     Behavior on x {
-                        enabled: ((!dockWindow.neighborsPacked
-                                   && !dockItemRoot.dragging
-                                   && !(dockWindow.reorderSettling
-                                        && dockItemRoot.index === dockWindow.dragFrom))
-                                  || (dockWindow.externalPinPreview && !dockItemRoot.dragging))
+                        // macOS-style reorder: while dragging, neighboring icons must glide
+                        // into the newly opened slot instead of snapping through each other.
+                        // The lifted icon itself stays under the pointer/settle animation;
+                        // only the non-lifted delegates animate their horizontal slot changes.
+                        enabled: !dockItemRoot.dragging
+                                && !(dockWindow.reorderSettling
+                                     && dockItemRoot.index === dockWindow.dragFrom)
                         NumberAnimation {
-                            duration: dockWindow.dockShrinkAnimMs
+                            duration: dockWindow.reorderAnimMs
                             easing.type: Easing.OutCubic
                         }
                     }
@@ -1497,7 +1551,7 @@ Window {
 
                 Behavior on x {
                     NumberAnimation {
-                        duration: dockWindow.dockShrinkAnimMs
+                        duration: dockWindow.dockPackAnimMs
                         easing.type: Easing.OutCubic
                     }
                 }
