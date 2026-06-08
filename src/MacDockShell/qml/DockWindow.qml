@@ -34,6 +34,9 @@ Window {
     property string externalPinPath: ""
     property string externalPinIconUrl: ""
     property int prevLayoutExternalPinTo: -1
+    // Continuous insertion index — glides between slots without snapping layoutMorph to 0.
+    property real externalPinMorphSlot: 0
+    property bool externalPinSlotSnapped: false
     // Left-edge anchor — pill grows to the right so icons don't jump left on expand.
     property real externalDragAnchorLeftX: -1
     property bool hasDropPointer: false
@@ -45,7 +48,7 @@ Window {
     readonly property int dockShrinkAnimMs: 220
     readonly property int reorderAnimMs: 360
     readonly property int dockPackAnimMs: 220
-    readonly property int externalPinMorphMs: 300
+    readonly property int externalPinMorphMs: 320
     readonly property int externalPinSettleMs: 280
     // macOS: insertion gap opens only when the icon is lowered back into the dock row.
     readonly property int dockZoneEnterY: -12
@@ -112,21 +115,42 @@ Window {
         return slotLeftForIndex(to)
     }
 
-    // Interpolate preview slot X the same way neighbor icons do (layoutMorph).
-    function morphedExternalPinSlotX() {
-        if (layoutMorphFrom >= 0 && layoutMorph < 1) {
-            var oldX = slotLeftForIndex(layoutMorphFrom)
-            var newX = slotLeftForIndex(externalPinTo)
-            return oldX + layoutMorph * (newX - oldX)
-        }
-        return slotLeftForIndex(externalPinTo)
+    function insertSlotXForItem(itemIndex, slotReal) {
+        var slotFloor = Math.floor(slotReal)
+        var slotCeil = Math.ceil(slotReal)
+        if (slotFloor === slotCeil)
+            return slotLeftForIndex(previewSlotForInsert(itemIndex, slotFloor))
+        var xFloor = slotLeftForIndex(previewSlotForInsert(itemIndex, slotFloor))
+        var xCeil = slotLeftForIndex(previewSlotForInsert(itemIndex, slotCeil))
+        return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
     }
 
-    // Blend compact → expanded row while the dock opens a gap (dockPackT).
+    function externalPinInsertSlotX(slotReal) {
+        var slotFloor = Math.floor(slotReal)
+        var slotCeil = Math.ceil(slotReal)
+        if (slotFloor === slotCeil)
+            return slotLeftForIndex(slotFloor)
+        var xFloor = slotLeftForIndex(slotFloor)
+        var xCeil = slotLeftForIndex(slotCeil)
+        return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
+    }
+
+    // Preview icon sits at the insertion gap — not at the compact trailing edge.
     function externalPinGhostX() {
-        var expandedX = morphedExternalPinSlotX()
-        var compactX = slotLeftForIndex(dockRepeater.count)
-        return compactX + (1 - dockPackT) * (expandedX - compactX)
+        return externalPinInsertSlotX(externalPinMorphSlot)
+    }
+
+    function snapExternalPinMorphSlot() {
+        externalPinSlotAnim.stop()
+        externalPinMorphSlot = externalPinTo
+        externalPinSlotSnapped = true
+    }
+
+    function animateExternalPinMorphSlot(targetSlot) {
+        externalPinSlotAnim.stop()
+        externalPinSlotAnim.from = externalPinMorphSlot
+        externalPinSlotAnim.to = targetSlot
+        externalPinSlotAnim.start()
     }
 
     // Lifted icon tracks the opening gap while the dock expands (same dockPackT curve).
@@ -327,11 +351,10 @@ Window {
     onExternalPinToChanged: {
         if (!externalPinPreview || externalPinDropping || externalPinSettling)
             return
-        if (prevLayoutExternalPinTo >= 0 && externalPinTo !== prevLayoutExternalPinTo) {
-            layoutMorphFrom = prevLayoutExternalPinTo
-            layoutMorph = 0
-            layoutMorphAnim.restart()
-        }
+        if (externalPinSlotSnapped
+                && prevLayoutExternalPinTo >= 0
+                && externalPinTo !== prevLayoutExternalPinTo)
+            animateExternalPinMorphSlot(externalPinTo)
         prevLayoutExternalPinTo = externalPinTo
     }
 
@@ -340,7 +363,7 @@ Window {
         var dragCenter = rowLocal.x
         var candidate = candidateInsertSlotForCenter(dragCenter, dockRepeater.count)
 
-        if (prevLayoutExternalPinTo >= 0 && candidate !== externalPinTo) {
+        if (externalPinSlotSnapped && prevLayoutExternalPinTo >= 0 && candidate !== externalPinTo) {
             if (Math.abs(candidate - externalPinTo) === 1) {
                 var boundary = insertionBoundaryBefore(Math.max(candidate, externalPinTo))
                 if (candidate > externalPinTo && dragCenter < boundary)
@@ -352,6 +375,9 @@ Window {
 
         if (externalPinTo !== candidate)
             externalPinTo = candidate
+
+        if (!externalPinSlotSnapped)
+            snapExternalPinMorphSlot()
     }
 
     function setExternalPinPath(path) {
@@ -366,16 +392,16 @@ Window {
             return
         externalDragAnchorLeftX = dockWindow.x
         windowEffects.setDockDropCapture(dockWindow, true)
-        externalPinPreview = true
-        externalPinTo = dockRepeater.count
-        prevLayoutExternalPinTo = externalPinTo
-        layoutMorphFrom = -1
-        layoutMorph = 1
         neighborsPacked = true
         dockModel.setReorderActive(true)
+        layoutMorphFrom = -1
+        layoutMorph = 1
+        externalPinSlotSnapped = false
+        externalPinTo = dockRepeater.count
+        prevLayoutExternalPinTo = externalPinTo
         if (hasDropPointer)
             updateExternalPinTargetFromGlobal(lastDropGlobalX, lastDropGlobalY)
-        prevLayoutExternalPinTo = externalPinTo
+        externalPinPreview = true
         dockPackT = 1
         animateDockPack(0)
         publishDropGeometry()
@@ -403,6 +429,9 @@ Window {
         externalPinDropping = false
         externalPinSettling = false
         externalPinSettleT = 0
+        externalPinMorphSlot = 0
+        externalPinSlotSnapped = false
+        externalPinSlotAnim.stop()
         dockModel.setReorderActive(false)
         publishDropGeometry()
         refreshClickHitRegions()
@@ -415,6 +444,8 @@ Window {
         externalDropActive = false
         externalPinTo = index
         setExternalPinPath(path)
+        externalPinSlotAnim.stop()
+        externalPinMorphSlot = index
         layoutMorphAnim.stop()
         layoutMorph = 1
         layoutMorphFrom = -1
@@ -451,8 +482,16 @@ Window {
         property: "layoutMorph"
         from: 0
         to: 1
-        duration: dockWindow.externalPinPreview ? dockWindow.externalPinMorphMs : dockWindow.dockPackAnimMs
-        easing.type: dockWindow.externalPinPreview ? Easing.InOutCubic : Easing.OutCubic
+        duration: dockWindow.dockPackAnimMs
+        easing.type: Easing.OutCubic
+    }
+
+    NumberAnimation {
+        id: externalPinSlotAnim
+        target: dockWindow
+        property: "externalPinMorphSlot"
+        duration: dockWindow.externalPinMorphMs
+        easing.type: Easing.InOutCubic
     }
 
     NumberAnimation {
@@ -882,6 +921,7 @@ Window {
             Rectangle {
                 id: externalPinSlotGhost
                 visible: dockWindow.externalPinPreview && dockWindow.dragFrom < 0
+                        && (dockWindow.hasDropPointer || dockWindow.externalPinSettling)
                 x: dockWindow.externalPinGhostX()
                 y: 19 - 10 * (1 - dockWindow.externalPinSettleT)
                 width: taskbarController.dockIconSize
@@ -891,10 +931,10 @@ Window {
                 color: "transparent"
                 border.width: 0
                 opacity: dockWindow.externalPinPreview
-                        ? (0.88 + 0.12 * dockWindow.externalPinSettleT) * (0.35 + 0.65 * (1 - dockWindow.dockPackT))
+                        ? (0.88 + 0.12 * dockWindow.externalPinSettleT)
                         : 0.0
                 scale: dockWindow.externalPinPreview
-                        ? (0.92 + 0.08 * dockWindow.externalPinSettleT) * (0.9 + 0.1 * (1 - dockWindow.dockPackT))
+                        ? (0.96 + 0.04 * dockWindow.externalPinSettleT)
                         : 0.82
 
                 Image {
@@ -902,10 +942,12 @@ Window {
                     anchors.fill: parent
                     source: dockWindow.externalPinIconUrl
                     fillMode: Image.PreserveAspectFit
-                    asynchronous: true
+                    asynchronous: false
                     smooth: true
                     mipmap: true
-                    opacity: source.toString().length > 0 ? 1.0 : 0.0
+                    opacity: dockWindow.externalPinIconUrl.length > 0
+                            ? (status === Image.Ready ? 1.0 : 0.72)
+                            : 0.0
                     layer.enabled: true
                     layer.effect: MultiEffect {
                         shadowEnabled: true
@@ -916,11 +958,11 @@ Window {
                 }
 
                 Behavior on opacity {
-                    enabled: !dockWindow.externalPinSettling
+                    enabled: !dockWindow.externalPinSettling && !dockWindow.externalPinPreview
                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                 }
                 Behavior on scale {
-                    enabled: !dockWindow.externalPinSettling
+                    enabled: !dockWindow.externalPinSettling && !dockWindow.externalPinPreview
                     NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                 }
             }
@@ -1039,9 +1081,11 @@ Window {
                         return dockWindow.slotLeftForIndex(slot)
                     }
                     readonly property real morphedInsertPreviewX: {
+                        if (dockWindow.externalPinPreview)
+                            return dockWindow.insertSlotXForItem(
+                                dockItemRoot.index, dockWindow.externalPinMorphSlot)
                         if (dockWindow.layoutMorph >= 1
-                                || dockWindow.layoutMorphFrom < 0
-                                || !dockWindow.externalPinPreview)
+                                || dockWindow.layoutMorphFrom < 0)
                             return dockItemRoot.insertPreviewX
                         var oldSlot = dockWindow.previewSlotForInsert(
                             dockItemRoot.index, dockWindow.layoutMorphFrom)
