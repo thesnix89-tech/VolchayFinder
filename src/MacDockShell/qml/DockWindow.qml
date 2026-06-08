@@ -12,6 +12,10 @@ Window {
     property int dragFrom: -1
     property int dragTo: -1
     property real dragLeftX: 0
+    property real dragPointerGlobalX: 0
+    property real dragPointerGlobalY: 0
+    property real reorderGrabLocalX: 0
+    property real reorderGrabLocalY: 0
     property real settleDragY: 0
     property bool reorderSettling: false
     property bool neighborsPacked: false
@@ -228,6 +232,15 @@ Window {
         return dragLeftX
     }
 
+    // Pill width can change while the pointer is still — reproject the stored global grab point.
+    function refreshDragOverlayPosition() {
+        if (!reorderDragOverlayActive || dragFrom < 0)
+            return
+        var rowPt = dockRowHost.mapFromGlobal(dragPointerGlobalX, dragPointerGlobalY)
+        dragLeftX = rowPt.x - reorderGrabLocalX
+        dragGripY = rowPt.y - reorderGrabLocalY
+    }
+
     function syncDockPackState() {
         if (dragFrom < 0 || reorderSettling)
             return
@@ -291,12 +304,15 @@ Window {
         syncDockPackState()
     }
 
-    function animateDockPack(target) {
+    function animateDockPack(target, durationMs) {
         if (Math.abs(dockPackT - target) < 0.001) {
             dockPackT = target
             return
         }
         dockPackAnim.stop()
+        dockPackAnim.duration = (durationMs !== undefined && durationMs > 0)
+                ? durationMs
+                : dockPackAnimMs
         dockPackAnim.to = target
         dockPackAnim.start()
     }
@@ -314,12 +330,10 @@ Window {
             return
         }
         var settleFromX = visualDragLeftX()
-        dockPackAnim.stop()
-        dockPackT = 0
-        syncAnimatedPillWidth(true)
         reorderSettling = true
         _settleDoneX = false
         _settleDoneY = false
+        animateDockPack(0, reorderAnimMs)
         settleAnim.from = settleFromX
         settleAnim.to = restX
         settleAnim.start()
@@ -363,6 +377,10 @@ Window {
         layoutMorph = 1
         reorderFrozenWindowX = -1
         reorderFrozenWindowWidth = -1
+        dragPointerGlobalX = 0
+        dragPointerGlobalY = 0
+        reorderGrabLocalX = 0
+        reorderGrabLocalY = 0
         dockModel.setReorderActive(false)
     }
 
@@ -434,6 +452,10 @@ Window {
         dockPackT = 0
         reorderFrozenWindowX = -1
         reorderFrozenWindowWidth = -1
+        dragPointerGlobalX = 0
+        dragPointerGlobalY = 0
+        reorderGrabLocalX = 0
+        reorderGrabLocalY = 0
         _settleDoneX = true
         _settleDoneY = true
         dockModel.setReorderActive(false)
@@ -524,6 +546,7 @@ Window {
         duration: dockWindow.dockPackAnimMs
         easing.type: Easing.OutCubic
         onFinished: {
+            dockPackAnim.duration = dockWindow.dockPackAnimMs
             if (dockWindow.externalPinRetracting)
                 dockWindow.clearExternalPinPreview()
             dockWindow.syncAnimatedPillWidth(true)
@@ -1226,6 +1249,8 @@ Window {
             if (externalPinPreview)
                 publishDropGeometry()
         }
+        if (reorderDragOverlayActive)
+            refreshDragOverlayPosition()
         if (!layoutChromeAnimating())
             clickThroughWarmupTimer.restart()
     }
@@ -1526,6 +1551,10 @@ Window {
                     function syncGripFromPointer() {
                         var globalPt = mouseArea.mapToGlobal(mouseArea.mouseX, mouseArea.mouseY)
                         var rowPt = dockRowHost.mapFromGlobal(globalPt.x, globalPt.y)
+                        dockWindow.dragPointerGlobalX = globalPt.x
+                        dockWindow.dragPointerGlobalY = globalPt.y
+                        dockWindow.reorderGrabLocalX = dockItemRoot.grabLocalX
+                        dockWindow.reorderGrabLocalY = dockItemRoot.grabLocalY
                         dockItemRoot.gripY = rowPt.y - dockItemRoot.grabLocalY
                         dockWindow.dragGripY = dockItemRoot.gripY
                         dockWindow.dragLeftX = rowPt.x - dockItemRoot.grabLocalX
@@ -1701,8 +1730,7 @@ Window {
                         // The lifted icon itself stays under the pointer/settle animation;
                         // only the non-lifted delegates animate their horizontal slot changes.
                         enabled: !dockItemRoot.dragging
-                                && !(dockWindow.reorderSettling
-                                     && dockItemRoot.index === dockWindow.dragFrom)
+                                && !dockWindow.reorderSettling
                                 && !dockWindow.externalPinPreview
                                 && !dockWindow.externalPinCommitting
                                 && dockWindow.externalPinHandoffIndex !== dockItemRoot.index
