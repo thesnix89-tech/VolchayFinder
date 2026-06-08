@@ -90,6 +90,8 @@ Window {
     readonly property int dockZoneLeaveY: -28
     // Extra headroom so a dragged icon can float above the dock pill (macOS-style).
     readonly property int dockTopAirspace: 128
+    // Room for 1.18× magnify on the drag overlay — layer/offscreen bounds must not clip sides.
+    readonly property int reorderOverlayPad: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
     // Drag upward past this gripY threshold to enter unpin-preview state.
     readonly property int unpinThreshold: -80
 
@@ -1443,13 +1445,11 @@ Window {
             Item {
                 id: reorderDragOverlay
                 visible: dockWindow.reorderDragOverlayActive
-                x: dockWindow.dragLeftX
-                y: dockWindow.dragGripY
+                x: dockWindow.dragLeftX - dockWindow.reorderOverlayPad
+                y: dockWindow.dragGripY - dockWindow.reorderOverlayPad
                 z: 200
-                width: taskbarController.dockIconSize
-                height: taskbarController.dockIconSize + 38
-                layer.enabled: dockWindow.reorderDragOverlayActive
-                layer.smooth: true
+                width: taskbarController.dockIconSize + 2 * dockWindow.reorderOverlayPad
+                height: taskbarController.dockIconSize + 38 + 2 * dockWindow.reorderOverlayPad
 
                 Item {
                     id: reorderDragBubble
