@@ -85,6 +85,11 @@ private:
     void applyCustomOrder();
     void ensureExplorerPin();
     QString entryOrderKey(const DockItemEntry& entry) const;
+    QStringList hiddenPinKeysForEntry(const DockItemEntry& entry) const;
+    bool isHiddenFromDock(const DockItemEntry& entry) const;
+    void hideEntryFromDock(const DockItemEntry& entry);
+    void restoreEntryToDock(const DockItemEntry& entry);
+    void restorePathsToDock(const QString& sourcePath, const QString& shortcutPath);
     void loadOrder();
     void saveOrder();
     void ensureExplorerLeadingInOrder();
@@ -116,6 +121,8 @@ private:
     // User-defined dock order (stable keys). Keeps icons from reshuffling on app
     // switches and persists drag-and-drop customization across sessions.
     QStringList m_customOrder;
+    // Apps removed from the dock only — Windows taskbar pins stay untouched.
+    QStringList m_dockHiddenPins;
     // Set while the user is dragging an icon; suspends refresh so the drag is not
     // interrupted by the periodic model reset.
     bool m_reorderActive = false;

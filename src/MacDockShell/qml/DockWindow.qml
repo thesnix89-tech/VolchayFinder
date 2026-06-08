@@ -17,6 +17,11 @@ Window {
     property bool neighborsPacked: false
     // Vertical offset of the dragged icon; gap preview only when near the dock row.
     property real dragGripY: 0
+    property bool reorderDragOverlayActive: false
+    property string reorderDragIconUrl: ""
+    property string reorderDragIconHint: ""
+    property string reorderDragLabel: ""
+    property bool reorderDragLiftMagnified: false
     property bool dragInDockZone: false
     property bool dockZoneEverEntered: false
     // 0 = full dock, 1 = compact (lifted icon slot removed) — single driver for pill width.
@@ -1316,8 +1321,69 @@ Window {
             y: 0
 
             Behavior on x {
-                enabled: dockWindow.reordering || dockWindow.externalPinPreview
+                enabled: (dockWindow.reordering || dockWindow.externalPinPreview)
+                        && !dockWindow.dockPackAnim.running
                 NumberAnimation { duration: dockWindow.dockPackAnimMs; easing.type: Easing.OutCubic }
+            }
+
+            // Lifted icon paints here — the slot delegate stays invisible at home X.
+            Item {
+                id: reorderDragOverlay
+                visible: dockWindow.reorderDragOverlayActive
+                x: dockWindow.dragLeftX
+                y: dockWindow.dragGripY
+                z: 200
+                width: taskbarController.dockIconSize
+                height: taskbarController.dockIconSize + 38
+
+                Item {
+                    id: reorderDragBubble
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenterOffset: (dockWindow.reorderDragLiftMagnified
+                                                   && taskbarController.dockHoverBounce) ? -8 : 0
+                    width: taskbarController.dockIconSize
+                    height: taskbarController.dockIconSize
+                    scale: dockWindow.reorderDragLiftMagnified ? 1.18 : 1.0
+                    transformOrigin: Item.Center
+
+                    Item {
+                        anchors.centerIn: parent
+                        width: Math.round(taskbarController.dockIconSize * 0.96)
+                        height: width
+
+                        Image {
+                            id: reorderDragImage
+                            anchors.fill: parent
+                            source: dockWindow.reorderDragIconUrl
+                            sourceSize: Qt.size(
+                                Math.ceil(width * dockWindow.iconDevicePixelRatio * 1.25),
+                                Math.ceil(height * dockWindow.iconDevicePixelRatio * 1.25))
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: false
+                            visible: status === Image.Ready
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 8
+                            color: "#D7DDE780"
+                            visible: reorderDragImage.status !== Image.Ready
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: dockWindow.reorderDragIconHint.length > 0
+                                  ? dockWindow.reorderDragIconHint
+                                  : dockWindow.reorderDragLabel.slice(0, 1)
+                            color: "#1C222B"
+                            font.pixelSize: dockWindow.reorderDragLiftMagnified ? 24 : 20
+                            font.weight: Font.DemiBold
+                            visible: reorderDragImage.status !== Image.Ready
+                        }
+                    }
+                }
             }
 
             Rectangle {
@@ -1380,6 +1446,7 @@ Window {
 
                     function syncGripFromPointer() {
                         dockItemRoot.gripY = mouseArea.mouseY - dockItemRoot.grabLocalY
+                        dockWindow.dragGripY = dockItemRoot.gripY
                         dockWindow.dragLeftX = dockItemRoot.x + mouseArea.mouseX - dockItemRoot.grabLocalX
                     }
 
@@ -1401,27 +1468,38 @@ Window {
                     }
 
                     function beginDragReorder() {
+                        var wasMagnified = dockItemRoot.magnifyHover
                         dockWindow.clearActiveTooltip()
+                        dockWindow.reorderDragIconUrl = dockItemRoot.iconUrl
+                        dockWindow.reorderDragIconHint = dockItemRoot.iconHint
+                        dockWindow.reorderDragLabel = dockItemRoot.label
+                        dockWindow.reorderDragLiftMagnified = wasMagnified
                         dockItemRoot.dragging = true
                         dockWindow.neighborsPacked = true
                         dockWindow.dragFrom = dockItemRoot.index
                         dockWindow.dragTo = dockItemRoot.index
-                        dockWindow.dragLeftX = dockItemRoot.x
                         dockWindow.prevLayoutDragTo = dockItemRoot.index
                         dockWindow.layoutMorphFrom = -1
                         dockWindow.layoutMorph = 1
                         dockModel.setReorderActive(true)
-                        dockWindow.animateDockPack(1)
-                        dockItemRoot.grabLocalY += 14
+                        if (!wasMagnified)
+                            dockItemRoot.grabLocalY += 14
                         dockItemRoot.syncGripFromPointer()
+                        dockWindow.reorderDragOverlayActive = true
+                        dockWindow.syncDragZone(dockItemRoot.gripY)
+                        dockWindow.syncDockPackState()
                     }
+                    readonly property bool liftMagnified: dockItemRoot.magnifyHover || dockItemRoot.dragging
                     property bool magnifyHover: mouseArea.containsMouse
                             && !taskbarController.dockStaticIcons
                             && !dockWindow.reordering
                             && !dockWindow.externalPinPreview
                             && !launchBounceAnim.running
                     readonly property bool showTooltip: dockWindow.activeTooltipIndex === dockItemRoot.index
-                    onMagnifyHoverChanged: dockWindow.requestHitRegionRefresh()
+                    onMagnifyHoverChanged: {
+                        if (!dockItemRoot.dragging && !dockWindow.reordering)
+                            dockWindow.scheduleClickHitRegionRefresh()
+                    }
                     readonly property bool reorderLifted: dockItemRoot.dragging
                             || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
                     readonly property real fullRestX: dockWindow.slotLeftForIndex(dockItemRoot.index)
@@ -1502,7 +1580,7 @@ Window {
                     readonly property real liftedDragX: dockWindow.visualDragLeftX()
                     x: dockItemRoot.reorderLifted
                             ? (dockItemRoot.dragging
-                               ? dockItemRoot.liftedDragX
+                               ? dockItemRoot.fullRestX
                                : dockWindow.dragLeftX)
                             : dockItemRoot.restingX
                     property real slideY: {
@@ -1520,11 +1598,13 @@ Window {
                     width: taskbarController.dockIconSize
                     height: taskbarController.dockIconSize + 38
 
-                    opacity: dockItemRoot.reorderLifted ? 0.92
-                            : (dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55)
+                    opacity: dockItemRoot.dragging ? 0
+                            : (dockItemRoot.reorderLifted ? 0.92
+                               : (dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55))
                     z: dockItemRoot.reorderLifted ? 100 : (dockItemRoot.magnifyHover ? 10 : 0)
 
                     Behavior on opacity {
+                        enabled: !dockItemRoot.dragging
                         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                     }
 
@@ -1564,7 +1644,7 @@ Window {
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: (dockItemRoot.magnifyHover && taskbarController.dockHoverBounce) ? -8 : 0
+                        anchors.verticalCenterOffset: (dockItemRoot.liftMagnified && taskbarController.dockHoverBounce) ? -8 : 0
                         color: "transparent"
                         border.width: 0
                         border.color: "transparent"
@@ -1577,14 +1657,14 @@ Window {
                                 id: hoverScale
                                 origin.x: iconBubble.width / 2
                                 origin.y: iconBubble.height / 2
-                                xScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
-                                yScale: dockItemRoot.magnifyHover ? 1.18 : 1.0
+                                xScale: dockItemRoot.liftMagnified ? 1.18 : 1.0
+                                yScale: dockItemRoot.liftMagnified ? 1.18 : 1.0
                                 Behavior on xScale {
-                                    enabled: !dockItemRoot.dragging
+                                    enabled: !dockItemRoot.dragging && !dockWindow.reorderSettling
                                     SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
                                 }
                                 Behavior on yScale {
-                                    enabled: !dockItemRoot.dragging
+                                    enabled: !dockItemRoot.dragging && !dockWindow.reorderSettling
                                     SpringAnimation { spring: 4.0; damping: 0.5; epsilon: 0.2 }
                                 }
                             }
@@ -1600,6 +1680,7 @@ Window {
                         }
 
                         Behavior on anchors.verticalCenterOffset {
+                            enabled: !dockItemRoot.dragging
                             NumberAnimation {
                                 duration: 140
                                 easing.type: Easing.OutCubic
@@ -1687,10 +1768,11 @@ Window {
                         width: tooltipBg.width
                         height: tooltipBg.height + tooltipTail.height
                         opacity: (dockItemRoot.showTooltip && !dockWindow.reordering) ? 1 : 0
-                        visible: opacity > 0
+                        visible: opacity > 0 && !dockWindow.reordering
                         z: 20
 
                         Behavior on opacity {
+                            enabled: !dockWindow.reordering && !dockItemRoot.dragging
                             NumberAnimation { duration: 110 }
                         }
 
@@ -1980,6 +2062,7 @@ Window {
                             var to = dockWindow.dragTo
                             var releaseDragY = dockItemRoot.gripY
                             dockItemRoot.dragging = false
+                            dockWindow.reorderDragOverlayActive = false
                             dockItemRoot.suppressClick = true
 
                             if (dockItemRoot.unpinDragPreview && dockItemRoot.pinned) {
@@ -2006,6 +2089,7 @@ Window {
                                 dockWindow.dragTo = from
                             var releaseDragY = dockItemRoot.gripY
                             dockItemRoot.dragging = false
+                            dockWindow.reorderDragOverlayActive = false
                             dockItemRoot.suppressClick = true
                             if (dockItemRoot.unpinDragPreview && from >= 0 && dockItemRoot.pinned) {
                                 dockItemRoot.unpinDragPreview = false
