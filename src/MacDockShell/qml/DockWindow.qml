@@ -412,6 +412,7 @@ Window {
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
     // Single animated driver — window and pill stay in sync (no wing/pill desync).
     property real animatedPillWidth: dockPillWidth
+    readonly property real animatedDockRowWidth: Math.max(0, animatedPillWidth - 2 * dockEndCap)
     readonly property int dockWindowWidth: Math.min(
                 Math.round(animatedPillWidth) + 2 * tooltipWing, Screen.width - 40)
     // Middle slot: grow symmetrically. Left insert: grow left (right edge fixed). Right append: grow right.
@@ -458,6 +459,11 @@ Window {
 
     onDockPillWidthChanged: syncAnimatedPillWidth(false)
 
+    onAnimatedPillWidthChanged: {
+        if (dockChromeWidthAnim.running)
+            refreshClickHitRegions()
+    }
+
     NumberAnimation {
         id: dockPackAnim
         target: dockWindow
@@ -478,6 +484,14 @@ Window {
         property: "animatedPillWidth"
         duration: dockWindow.dockPackAnimMs
         easing.type: Easing.OutCubic
+        onRunningChanged: {
+            if (running) {
+                hitRegionRefreshDefer.stop()
+                dockWindow.refreshClickHitRegions()
+            } else {
+                dockWindow.refreshClickHitRegions()
+            }
+        }
     }
 
     onDragToChanged: {
@@ -877,7 +891,7 @@ Window {
         var pill = dockWindow.pillLocalRect()
 
         if (dockWindow.reordering || dockWindow.externalDropActive || dockWindow.externalPinPreview
-                || dockSlideAnim.running) {
+                || dockSlideAnim.running || dockChromeWidthAnim.running) {
             clipRegions.push(fullWin)
             hitRegions.push(fullWin)
         } else {
@@ -902,13 +916,13 @@ Window {
     }
 
     function layoutChromeAnimating() {
-        return dockPackAnim.running || reordering || externalPinPreview
-                || externalPinDropping || externalPinSettling
+        return dockPackAnim.running || dockChromeWidthAnim.running || reordering
+                || externalPinPreview || externalPinDropping || externalPinSettling
     }
 
     function needsImmediateHitRegionRefresh() {
         return externalDropActive || externalPinPreview || reordering || dockPackAnim.running
-                || dockSlideAnim.running
+                || dockChromeWidthAnim.running || dockSlideAnim.running
     }
 
     function scheduleClickHitRegionRefresh() {
@@ -1327,18 +1341,21 @@ Window {
         anchors.leftMargin: dockWindow.dockEndCap
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
-        width: dockRowHost.width
+        width: dockWindow.animatedDockRowWidth
         height: taskbarController.dockIconSize + 38
         contentWidth: Math.max(width, dockRowHost.width)
         contentHeight: height
-        clip: false
+        // Clip only while the pill width animates (taskbar sync); lifting/reorder needs headroom above the row.
+        clip: dockChromeWidthAnim.running
         interactive: dockRowHost.width > width
 
         Item {
             id: dockRowHost
             width: dockWindow.dockRowWidth
             height: taskbarController.dockIconSize + 38
-            x: width < parent.width ? Math.round((parent.width - width) / 2) : 0
+            x: dockRowHost.width > parent.width
+                    ? 0
+                    : Math.round((parent.width - dockRowHost.width) / 2)
             y: 0
 
             Behavior on x {
@@ -1445,7 +1462,10 @@ Window {
                 id: dockRepeater
                 model: dockModel
 
-                onCountChanged: dockWindow.publishDropGeometry()
+                onCountChanged: {
+                    dockWindow.publishDropGeometry()
+                    dockWindow.scheduleClickHitRegionRefresh()
+                }
 
                 delegate: Item {
                     id: dockItemRoot
@@ -1647,6 +1667,7 @@ Window {
                                 && dockWindow.externalPinHandoffIndex !== dockItemRoot.index
                                 // Pill width follows dockPackT directly — x must not lag behind.
                                 && !dockWindow.dockPackAnim.running
+                                && !dockWindow.dockChromeWidthAnim.running
                         NumberAnimation {
                             duration: dockWindow.reorderAnimMs
                             easing.type: Easing.OutCubic
