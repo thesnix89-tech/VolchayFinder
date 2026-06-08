@@ -714,7 +714,7 @@ Window {
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Через секунду удержания иконка становится полупрозрачной, как на macOS"
+                                text: "Вне области дока иконка полупрозрачная, внутри — непрозрачная, как на macOS"
                                 color: "#86868B"
                                 font.pixelSize: 10
                                 Layout.fillWidth: true

@@ -22,8 +22,10 @@ Window {
     property string reorderDragIconHint: ""
     property string reorderDragLabel: ""
     property bool reorderDragLiftMagnified: false
-    property bool reorderDragFaded: false
     property bool dragInDockZone: false
+    // Lifted icon: opaque in the dock row, semi-transparent when dragged outside it.
+    readonly property real reorderDragOpacity: (!taskbarController.dockDragFadeEnabled || dragInDockZone)
+            ? 1.0 : 0.45
     property bool dockZoneEverEntered: false
     // 0 = full dock, 1 = compact (lifted icon slot removed) — single driver for pill width.
     property real dockPackT: 0
@@ -791,26 +793,6 @@ Window {
         }
     }
 
-    Timer {
-        id: reorderDragFadeTimer
-        interval: 1000
-        repeat: false
-        onTriggered: dockWindow.reorderDragFaded = true
-    }
-
-    onReorderDragOverlayActiveChanged: {
-        if (reorderDragOverlayActive) {
-            reorderDragFaded = false
-            if (taskbarController.dockDragFadeEnabled)
-                reorderDragFadeTimer.restart()
-            else
-                reorderDragFadeTimer.stop()
-        } else {
-            reorderDragFadeTimer.stop()
-            reorderDragFaded = false
-        }
-    }
-
     NumberAnimation {
         id: layoutMorphAnim
         target: dockWindow
@@ -1412,7 +1394,7 @@ Window {
                     width: taskbarController.dockIconSize
                     height: taskbarController.dockIconSize
                     scale: dockWindow.reorderDragLiftMagnified ? 1.18 : 1.0
-                    opacity: (taskbarController.dockDragFadeEnabled && dockWindow.reorderDragFaded) ? 0.45 : 1.0
+                    opacity: dockWindow.reorderDragOpacity
                     transformOrigin: Item.Center
 
                     Behavior on opacity {
