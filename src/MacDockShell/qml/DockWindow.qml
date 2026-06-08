@@ -39,14 +39,14 @@ Window {
     // Continuous insertion index — glides between slots without snapping layoutMorph to 0.
     property real externalPinMorphSlot: 0
     property bool externalPinSlotSnapped: false
-    // Left-edge anchor — pill grows to the right so icons don't jump left on expand.
-    property real externalDragAnchorLeftX: -1
+    // Screen edges captured when external pin preview opens (compact dock, before expand).
+    property real externalPinAnchorLeftX: -1
+    property real externalPinAnchorRightX: -1
     property bool hasDropPointer: false
     property real lastDropGlobalX: 0
     property real lastDropGlobalY: 0
     property real lastDropIconCenterGlobalX: 0
     property real lastDropIconCenterGlobalY: 0
-    readonly property bool externalPinLayout: externalPinPreview && externalDragAnchorLeftX >= 0
     readonly property int dockSpacing: 14
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     readonly property int dockShrinkAnimMs: 220
@@ -90,6 +90,8 @@ Window {
     }
 
     function packedSlotForIndex(i, from) {
+        if (from < 0)
+            return i
         if (i === from)
             return -1
         if (i > from)
@@ -282,6 +284,7 @@ Window {
             settleAnim.stop()
             settleYAnim.stop()
         }
+        dockPackAnim.stop()
         animateDockPack(0)
         dragFrom = -1
         dragTo = -1
@@ -343,6 +346,7 @@ Window {
         prevLayoutDragTo = -1
         layoutMorphFrom = -1
         layoutMorph = 1
+        dockPackAnim.stop()
         dockPackT = 0
         _settleDoneX = true
         _settleDoneY = true
@@ -363,11 +367,21 @@ Window {
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
-    width: Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
+    readonly property int dockWindowWidth: Math.min(
+                dockPillWidth + 2 * tooltipWing, Screen.width - 40)
+    // Middle slot: grow symmetrically around screen center. Edge slots: grow inward only.
+    readonly property real dockWindowX: {
+        if (!externalPinPreview || externalPinAnchorLeftX < 0)
+            return Math.round((Screen.width - dockWindowWidth) / 2)
+        if (externalPinTo <= 0)
+            return Math.round(externalPinAnchorLeftX)
+        if (externalPinTo >= dockRepeater.count)
+            return Math.round(externalPinAnchorRightX - dockWindowWidth)
+        return Math.round((Screen.width - dockWindowWidth) / 2)
+    }
+    width: dockWindowWidth
     height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
-    x: externalPinLayout
-            ? Math.round(externalDragAnchorLeftX)
-            : Math.round((Screen.width - width) / 2)
+    x: dockWindowX
 
     NumberAnimation {
         id: dockPackAnim
@@ -401,6 +415,7 @@ Window {
             externalPinMorphSlot = externalPinTo
             prevLayoutExternalPinTo = externalPinTo
             showExternalPinGhostIfReady()
+            publishDropGeometry()
             return
         }
         if (externalPinSlotSnapped
@@ -408,6 +423,7 @@ Window {
                 && externalPinTo !== prevLayoutExternalPinTo)
             animateExternalPinMorphSlot(externalPinTo)
         prevLayoutExternalPinTo = externalPinTo
+        publishDropGeometry()
     }
 
     function iconCenterGlobalFromDrag(drag, localX, localY) {
@@ -454,7 +470,8 @@ Window {
     function beginExternalPinPreview() {
         if (externalPinPreview || reordering)
             return
-        externalDragAnchorLeftX = dockWindow.x
+        externalPinAnchorLeftX = dockWindow.x
+        externalPinAnchorRightX = dockWindow.x + dockWindow.width
         windowEffects.setDockDropCapture(dockWindow, true)
         neighborsPacked = true
         dockModel.setReorderActive(true)
@@ -475,8 +492,7 @@ Window {
     }
 
     function beginExternalPinRetract() {
-        if (!externalPinPreview || externalPinRetracting
-                || externalPinDropping || externalPinSettling)
+        if (!externalPinPreview || externalPinDropping || externalPinSettling)
             return
         externalPinRetracting = true
         externalPinGhostVisible = false
@@ -484,6 +500,7 @@ Window {
         externalPinSlotAnim.stop()
         externalPinDropSettleAnim.stop()
         externalPinSettlePauseTimer.stop()
+        dockPackAnim.stop()
         if (dockPackT >= 0.99) {
             clearExternalPinPreview()
             return
@@ -497,18 +514,32 @@ Window {
         beginExternalPinRetract()
     }
 
-    function clearExternalPinPreview() {
+    function resetDockChromeLayout() {
+        if (externalPinPreview || externalPinDropping || externalPinSettling)
+            return
         externalPinRetracting = false
-        externalPinPreview = false
+        externalPinAnchorLeftX = -1
+        externalPinAnchorRightX = -1
         neighborsPacked = false
-        externalDragAnchorLeftX = -1
-        setExternalPinPath("")
-        hasDropPointer = false
-        windowEffects.setDockDropCapture(dockWindow, false)
-        prevLayoutExternalPinTo = -1
         layoutMorphFrom = -1
         layoutMorph = 1
+        dockPackAnim.stop()
+        layoutMorphAnim.stop()
+        externalPinSlotAnim.stop()
         dockPackT = 0
+        externalDropActive = false
+        hasDropPointer = false
+        windowEffects.setDockDropCapture(dockWindow, false)
+        dockModel.setReorderActive(false)
+        // Stop width/x glide so chrome stays in sync after model changes or pin cancel.
+        dockWindow.width = Qt.binding(function() { return dockWindow.dockWindowWidth })
+        dockWindow.x = Qt.binding(function() { return dockWindow.dockWindowX })
+        publishDropGeometry()
+        Qt.callLater(dockWindow.refreshClickHitRegions)
+    }
+
+    function clearExternalPinPreview() {
+        externalPinPreview = false
         externalPinDropping = false
         externalPinSettling = false
         externalPinGhostVisible = false
@@ -516,10 +547,9 @@ Window {
         externalPinGhostLiftAnim.stop()
         externalPinMorphSlot = 0
         externalPinSlotSnapped = false
-        externalPinSlotAnim.stop()
-        dockModel.setReorderActive(false)
-        publishDropGeometry()
-        refreshClickHitRegions()
+        setExternalPinPath("")
+        prevLayoutExternalPinTo = -1
+        resetDockChromeLayout()
     }
 
     function finishExternalPinDrop(path, index) {
@@ -570,7 +600,7 @@ Window {
         repeat: false
         onTriggered: {
             if (!dockWindow.externalDropActive && !dockWindow.externalPinDropping
-                    && !dockWindow.externalPinSettling && !dockWindow.externalPinRetracting)
+                    && !dockWindow.externalPinSettling)
                 dockWindow.beginExternalPinRetract()
         }
     }
@@ -818,17 +848,13 @@ Window {
     Connections {
         target: dockModel
         function onModelReset() {
-            dockWindow.publishDropGeometry()
-            // Force width recalculation after model reset (e.g. after unpin)
-            Qt.callLater(function() {
-                dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
-            })
+            dockWindow.resetDockChromeLayout()
         }
         function onRowsInserted() {
             dockWindow.publishDropGeometry()
         }
         function onRowsRemoved() {
-            dockWindow.publishDropGeometry()
+            dockWindow.resetDockChromeLayout()
         }
     }
 
@@ -943,9 +969,7 @@ Window {
         id: dockBg
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
-        anchors.horizontalCenter: dockWindow.externalPinLayout ? undefined : parent.horizontalCenter
-        anchors.left: dockWindow.externalPinLayout ? parent.left : undefined
-        anchors.leftMargin: dockWindow.externalPinLayout ? dockWindow.tooltipWing : 0
+        anchors.horizontalCenter: parent.horizontalCenter
         width: dockWindow.dockPillWidth
         height: taskbarController.dockIconSize + 38
         radius: 22
@@ -1024,7 +1048,8 @@ Window {
     // Only the dock row — not the airspace/wings above/side (those must pass clicks through).
     Flickable {
         id: flickable
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.left: dockBg.left
+        anchors.leftMargin: dockWindow.dockEndCap
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
         width: dockRowHost.width
@@ -1079,14 +1104,7 @@ Window {
                 id: dockRepeater
                 model: dockModel
 
-                onCountChanged: {
-                    // Force geometry update when repeater count changes (e.g. after unpin)
-                    dockWindow.publishDropGeometry()
-                    // Force width recalculation after model changes
-                    Qt.callLater(function() {
-                        dockWindow.width = Math.min(dockWindow.dockPillWidth + 2 * dockWindow.tooltipWing, dockWindow.Screen.width - 40)
-                    })
-                }
+                onCountChanged: dockWindow.resetDockChromeLayout()
 
                 delegate: Item {
                     id: dockItemRoot

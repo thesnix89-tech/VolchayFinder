@@ -575,6 +575,9 @@ void WindowEffects::setDockDropHover(QWindow* window, bool active)
         leaveTimer->setInterval(200);
         QObject::connect(leaveTimer, &QTimer::timeout, this, [this, window]() {
             applyDockDropHover(window, false);
+            if (m_dropCaptureActive.value(window, false)) {
+                setDockExternalDragPath(window, QString());
+            }
         });
     }
 

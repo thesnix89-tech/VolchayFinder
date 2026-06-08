@@ -491,10 +491,8 @@ void DockModel::pinPathAt(const QString& path, int index)
     // For the final pin we must still force one model refresh so the newly
     // created shortcut enters m_entries; otherwise the next ordinary refresh
     // discovers it later and applyCustomOrder appends it to the right edge.
-    const bool restoreReorderActive = m_reorderActive;
     m_reorderActive = false;
     refresh();
-    m_reorderActive = restoreReorderActive;
 
     int foundIndex = -1;
     for (int i = 0; i < m_entries.size(); ++i) {
