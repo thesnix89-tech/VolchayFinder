@@ -159,32 +159,87 @@ void mergeTaskbarFavoriteIndex(TaskbarFavoriteIndex* target, const TaskbarFavori
             || !target->executablePaths.isEmpty();
 }
 
-void appendShortcutNamesFromWideBlob(const QByteArray& favorites, TaskbarFavoriteIndex* index)
+bool isAsciiUtf16LeChar(ushort code)
 {
-    if (!index || favorites.isEmpty()) {
+    return code >= 0x20 && code <= 0x7E;
+}
+
+void appendRegistryAsciiUtf16String(TaskbarFavoriteIndex* index, const QString& value)
+{
+    if (!index) {
         return;
     }
 
-    QString current;
-    auto flush = [&]() {
-        appendFavoriteLnkName(&index->shortcutFileNames, current);
-        current.clear();
+    const QString trimmed = value.trimmed();
+    if (trimmed.isEmpty()) {
+        return;
+    }
+
+    if (trimmed.endsWith(QStringLiteral(".lnk"), Qt::CaseInsensitive)) {
+        appendFavoriteLnkName(&index->shortcutFileNames, trimmed);
+        if (looksLikePinnedShortcutPath(trimmed)) {
+            appendUnique(&index->fullShortcutPaths,
+                          QDir::toNativeSeparators(QDir::fromNativeSeparators(trimmed)));
+        }
+        return;
+    }
+
+    if (trimmed.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)) {
+        appendUnique(&index->executablePaths,
+                      QDir::toNativeSeparators(QFileInfo(trimmed).absoluteFilePath()));
+        return;
+    }
+
+    if (looksLikeAppUserModelId(trimmed)) {
+        appendUnique(&index->appUserModelIds, trimmed);
+    }
+}
+
+void appendStringsFromUtf16LeAsciiScan(const QByteArray& favorites, TaskbarFavoriteIndex* index)
+{
+    if (!index || favorites.size() < 4) {
+        return;
+    }
+
+    const auto readCode = [&favorites](int offset) -> ushort {
+        return static_cast<ushort>(
+            static_cast<uchar>(favorites.at(offset))
+            | (static_cast<ushort>(static_cast<uchar>(favorites.at(offset + 1))) << 8));
     };
 
-    for (int i = 0; i + 1 < favorites.size(); i += 2) {
-        const auto byte0 = static_cast<uchar>(favorites.at(i));
-        const auto byte1 = static_cast<uchar>(favorites.at(i + 1));
-        const ushort code = static_cast<ushort>(byte0 | (static_cast<ushort>(byte1) << 8));
-        const QChar ch(code);
-        if (ch.isLetterOrNumber() || ch == QLatin1Char(' ') || ch == QLatin1Char('.')
-            || ch == QLatin1Char('-') || ch == QLatin1Char('_') || ch == QLatin1Char('(')
-            || ch == QLatin1Char(')') || ch == QLatin1Char('~')) {
-            current.append(ch);
-        } else {
-            flush();
+    for (int align = 0; align <= 1; ++align) {
+        int i = align;
+        while (i + 1 < favorites.size()) {
+            const ushort lead = readCode(i);
+            if (!isAsciiUtf16LeChar(lead)) {
+                i += 2;
+                continue;
+            }
+
+            QString current;
+            current.append(QChar(lead));
+            i += 2;
+            bool terminated = false;
+            while (i + 1 < favorites.size()) {
+                const ushort code = readCode(i);
+                if (code == 0) {
+                    terminated = true;
+                    i += 2;
+                    break;
+                }
+                if (!isAsciiUtf16LeChar(code)) {
+                    current.clear();
+                    break;
+                }
+                current.append(QChar(code));
+                i += 2;
+            }
+
+            if (terminated && !current.isEmpty()) {
+                appendRegistryAsciiUtf16String(index, current);
+            }
         }
     }
-    flush();
 }
 
 void appendLnkNamesFromWideTextScan(const QByteArray& favorites, TaskbarFavoriteIndex* index)
@@ -217,8 +272,8 @@ void appendLnkNamesFromWideTextScan(const QByteArray& favorites, TaskbarFavorite
 TaskbarFavoriteIndex buildTaskbarFavoriteIndex(const QByteArray& favorites)
 {
     TaskbarFavoriteIndex index;
+    appendStringsFromUtf16LeAsciiScan(favorites, &index);
     appendLnkNamesFromWideTextScan(favorites, &index);
-    appendShortcutNamesFromWideBlob(favorites, &index);
     for (const QString& string : extractUtf16Strings(favorites)) {
         const QString trimmed = string.trimmed();
         if (trimmed.isEmpty()) {
@@ -638,47 +693,12 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
     return filtered;
 }
 
-bool isNumberedDuplicateLnk(const QString& fileName)
-{
-    static const QRegularExpression numbered(
-        QStringLiteral(" \\(\\d+\\)\\.lnk$"),
-        QRegularExpression::CaseInsensitiveOption);
-    return numbered.match(fileName).hasMatch();
-}
-
 QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcutsForDockSync() const
 {
-    QList<PinnedShortcutEntry> merged = resolvePinnedShortcuts();
-    QSet<QString> seenPaths;
-    seenPaths.reserve(merged.size());
-    for (const PinnedShortcutEntry& entry : merged) {
-        seenPaths.insert(normalizePathKey(entry.shortcutPath));
-    }
-
-    // Some Windows pins (e.g. Spotify) exist as TaskBar .lnk files but are missing from
-    // the Taskband registry blob — include canonical TaskBar shortcuts on manual sync.
-    for (const PinnedShortcutEntry& entry : collectFolderShortcuts()) {
-        if (!entry.shortcutPath.contains(QStringLiteral("TaskBar"), Qt::CaseInsensitive)) {
-            continue;
-        }
-
-        const QString pathKey = normalizePathKey(entry.shortcutPath);
-        if (seenPaths.contains(pathKey)) {
-            continue;
-        }
-
-        const QString fileName = QFileInfo(entry.shortcutPath).fileName();
-        if (isNumberedDuplicateLnk(fileName)) {
-            continue;
-        }
-
-        merged.push_back(entry);
-        seenPaths.insert(pathKey);
-    }
-
-    emit logMessage(QStringLiteral("Taskbar sync scan: %1 pins (registry + TaskBar folder).")
-                        .arg(merged.size()));
-    return merged;
+    const QList<PinnedShortcutEntry> pins = resolvePinnedShortcuts();
+    emit logMessage(QStringLiteral("Taskbar sync scan: %1 pins from Windows taskbar registry.")
+                        .arg(pins.size()));
+    return pins;
 }
 
 QString PinnedTaskbarResolver::uniqueShortcutPath(const QString& destDir, const QString& baseName) const

@@ -915,7 +915,7 @@ void DockModel::syncFromWindowsTaskbarPins()
         }
     }
 
-    m_dockHiddenPins.clear();
+    const int preservedExplicitPins = m_dockExplicitPins.size();
 
     for (const PinnedShortcutEntry& shortcut : activeShortcuts) {
         if (shortcut.shortcutPath.isEmpty()) {
@@ -943,9 +943,10 @@ void DockModel::syncFromWindowsTaskbarPins()
     }
 
     saveOrder();
-    emit logMessage(QStringLiteral("Synced dock with Windows taskbar pins: %1 active, %2 hidden from dock.")
+    emit logMessage(QStringLiteral("Synced dock with Windows taskbar pins: %1 from taskbar, %2 folder shortcuts hidden, %3 user dock pins kept.")
                         .arg(activeShortcuts.size())
-                        .arg(hiddenCount));
+                        .arg(hiddenCount)
+                        .arg(preservedExplicitPins));
 }
 
 void DockModel::loadPinnedApps()
