@@ -3,12 +3,162 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QDirIterator>
+#include <QSettings>
 
 #include <windows.h>
 #include <shobjidl.h>
 #include <propkey.h>
 #include <propvarutil.h>
 #include <objbase.h>
+
+namespace {
+
+QString normalizePathKey(const QString& path)
+{
+    return QDir::fromNativeSeparators(path).toLower();
+}
+
+QStringList extractUtf16Strings(const QByteArray& data)
+{
+    QStringList strings;
+    QString current;
+    auto flush = [&]() {
+        const QString trimmed = current.trimmed();
+        if (!trimmed.isEmpty()) {
+            strings.append(trimmed);
+        }
+        current.clear();
+    };
+
+    for (int i = 0; i + 1 < data.size(); i += 2) {
+        const auto byte0 = static_cast<uchar>(data.at(i));
+        const auto byte1 = static_cast<uchar>(data.at(i + 1));
+        const ushort code = static_cast<ushort>(byte0 | (static_cast<ushort>(byte1) << 8));
+        if (code == 0) {
+            flush();
+            continue;
+        }
+        if (code < 0x20 && code != '\t') {
+            flush();
+            continue;
+        }
+        current.append(QChar(code));
+    }
+    flush();
+    return strings;
+}
+
+bool looksLikePinnedShortcutPath(const QString& value)
+{
+    const QString lower = value.toLower();
+    return lower.endsWith(QStringLiteral(".lnk"))
+        && (lower.contains(QStringLiteral("user pinned\\taskbar"))
+            || lower.contains(QStringLiteral("user pinned/implicitappshortcuts"))
+            || lower.contains(QStringLiteral("implicitappshortcuts")));
+}
+
+bool looksLikeAppUserModelId(const QString& value)
+{
+    if (value.size() < 3 || value.size() > 180) {
+        return false;
+    }
+    if (value.contains(QLatin1Char('\\')) || value.contains(QLatin1Char('/'))) {
+        return false;
+    }
+    if (value.endsWith(QStringLiteral(".dll"), Qt::CaseInsensitive)
+        || value.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)
+        || value.endsWith(QStringLiteral(".lnk"), Qt::CaseInsensitive)) {
+        return false;
+    }
+    if (value == QStringLiteral("Chrome")) {
+        return true;
+    }
+    return value.contains(QLatin1Char('.'));
+}
+
+struct TaskbarFavoriteIndex
+{
+    QStringList fullShortcutPaths;
+    QStringList shortcutFileNames;
+    QStringList appUserModelIds;
+    QStringList executablePaths;
+    bool valid = false;
+};
+
+void appendUnique(QStringList* list, const QString& value)
+{
+    if (!list || value.isEmpty()) {
+        return;
+    }
+    for (const QString& existing : *list) {
+        if (existing.compare(value, Qt::CaseInsensitive) == 0) {
+            return;
+        }
+    }
+    list->append(value);
+}
+
+TaskbarFavoriteIndex buildTaskbarFavoriteIndex(const QByteArray& favorites)
+{
+    TaskbarFavoriteIndex index;
+    for (const QString& string : extractUtf16Strings(favorites)) {
+        const QString trimmed = string.trimmed();
+        if (trimmed.isEmpty()) {
+            continue;
+        }
+
+        if (trimmed.endsWith(QStringLiteral(".lnk"), Qt::CaseInsensitive)) {
+            appendUnique(&index.shortcutFileNames, trimmed);
+            if (looksLikePinnedShortcutPath(trimmed)) {
+                appendUnique(&index.fullShortcutPaths,
+                              QDir::toNativeSeparators(QDir::fromNativeSeparators(trimmed)));
+            }
+            continue;
+        }
+
+        if (trimmed.endsWith(QStringLiteral(".exe"), Qt::CaseInsensitive)) {
+            appendUnique(&index.executablePaths,
+                          QDir::toNativeSeparators(QFileInfo(trimmed).absoluteFilePath()));
+            continue;
+        }
+
+        if (trimmed == QStringLiteral("Chrome")) {
+            appendUnique(&index.appUserModelIds, trimmed);
+            appendUnique(&index.shortcutFileNames, QStringLiteral("Google Chrome.lnk"));
+            continue;
+        }
+
+        if (looksLikeAppUserModelId(trimmed)) {
+            appendUnique(&index.appUserModelIds, trimmed);
+        }
+    }
+
+    index.valid = !index.shortcutFileNames.isEmpty()
+            || !index.fullShortcutPaths.isEmpty()
+            || !index.appUserModelIds.isEmpty()
+            || !index.executablePaths.isEmpty();
+    return index;
+}
+
+TaskbarFavoriteIndex readTaskbarFavoriteIndex()
+{
+    QSettings taskband(QStringLiteral("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Taskband"),
+                       QSettings::NativeFormat);
+    QByteArray favorites = taskband.value(QStringLiteral("FavoritesResolve")).toByteArray();
+    if (favorites.isEmpty()) {
+        favorites = taskband.value(QStringLiteral("Favorites")).toByteArray();
+    }
+
+    TaskbarFavoriteIndex primary = buildTaskbarFavoriteIndex(favorites);
+    if (primary.valid) {
+        return primary;
+    }
+
+    const QByteArray fallback = taskband.value(QStringLiteral("Favorites")).toByteArray();
+    return buildTaskbarFavoriteIndex(fallback);
+}
+
+} // namespace
 
 PinnedTaskbarResolver::PinnedTaskbarResolver(QObject* parent)
     : QObject(parent)
@@ -112,7 +262,48 @@ PinnedShortcutEntry PinnedTaskbarResolver::resolveShortcut(const QString& shortc
     return entry;
 }
 
-QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
+bool matchesTaskbarFavorite(const PinnedShortcutEntry& entry, const TaskbarFavoriteIndex& favorites)
+{
+    if (!favorites.valid) {
+        return true;
+    }
+
+    const QString shortcutPath = QDir::toNativeSeparators(QFileInfo(entry.shortcutPath).absoluteFilePath());
+    const QString shortcutKey = normalizePathKey(shortcutPath);
+    const QString shortcutFile = QFileInfo(shortcutPath).fileName();
+
+    for (const QString& favoritePath : favorites.fullShortcutPaths) {
+        if (normalizePathKey(favoritePath) == shortcutKey) {
+            return true;
+        }
+    }
+
+    for (const QString& favoriteFile : favorites.shortcutFileNames) {
+        if (favoriteFile.compare(shortcutFile, Qt::CaseInsensitive) == 0) {
+            return true;
+        }
+    }
+
+    if (!entry.appUserModelId.isEmpty()) {
+        for (const QString& favoriteId : favorites.appUserModelIds) {
+            if (entry.appUserModelId.compare(favoriteId, Qt::CaseInsensitive) == 0) {
+                return true;
+            }
+        }
+    }
+
+    const QString targetPath = QDir::toNativeSeparators(QFileInfo(entry.targetPath).absoluteFilePath());
+    const QString targetKey = normalizePathKey(targetPath);
+    for (const QString& favoriteExe : favorites.executablePaths) {
+        if (normalizePathKey(favoriteExe) == targetKey) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+QList<PinnedShortcutEntry> PinnedTaskbarResolver::collectFolderShortcuts() const
 {
     QList<PinnedShortcutEntry> results;
     const QString appData = qEnvironmentVariable("APPDATA");
@@ -136,8 +327,6 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
                 return;
             }
         }
-        // Keep every pinned shortcut, including special shell links like
-        // "File Explorer" whose GetPath() resolves to an empty target.
         results.push_back(resolveShortcut(filePath));
     };
 
@@ -148,8 +337,6 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
 
         const QFileInfo dirInfo(dirPath);
         if (dirInfo.fileName().compare(QStringLiteral("TaskBar"), Qt::CaseInsensitive) == 0) {
-            // QDir::entryList is more reliable than QDirIterator for the flat TaskBar
-            // folder (QDirIterator was skipping "File Explorer.lnk" on some systems).
             const QDir taskBarDir(dirPath);
             const QStringList lnkFiles = taskBarDir.entryList(QStringList() << QStringLiteral("*.lnk"),
                                                                 QDir::Files,
@@ -157,8 +344,6 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
             for (const QString& fileName : lnkFiles) {
                 appendShortcut(taskBarDir.absoluteFilePath(fileName));
             }
-            // Qt's directory listing can miss the special "File Explorer" shell pin on
-            // some systems, so always probe the known shortcut path directly.
             appendShortcut(taskBarDir.absoluteFilePath(QStringLiteral("File Explorer.lnk")));
             continue;
         }
@@ -171,6 +356,41 @@ QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
     }
 
     return results;
+}
+
+QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolveAllFolderShortcuts() const
+{
+    return collectFolderShortcuts();
+}
+
+QList<PinnedShortcutEntry> PinnedTaskbarResolver::resolvePinnedShortcuts() const
+{
+    const QList<PinnedShortcutEntry> folderShortcuts = collectFolderShortcuts();
+    const TaskbarFavoriteIndex favoriteIndex = readTaskbarFavoriteIndex();
+    if (!favoriteIndex.valid) {
+        emit logMessage(QStringLiteral("Taskband Favorites unavailable; falling back to TaskBar folder scan."));
+        QList<PinnedShortcutEntry> taskBarOnly;
+        taskBarOnly.reserve(folderShortcuts.size());
+        for (const PinnedShortcutEntry& entry : folderShortcuts) {
+            if (entry.shortcutPath.contains(QStringLiteral("TaskBar"), Qt::CaseInsensitive)) {
+                taskBarOnly.push_back(entry);
+            }
+        }
+        return taskBarOnly;
+    }
+
+    QList<PinnedShortcutEntry> filtered;
+    filtered.reserve(folderShortcuts.size());
+    for (const PinnedShortcutEntry& entry : folderShortcuts) {
+        if (matchesTaskbarFavorite(entry, favoriteIndex)) {
+            filtered.push_back(entry);
+        }
+    }
+
+    emit logMessage(QStringLiteral("Taskbar pins resolved: %1 active of %2 folder shortcuts.")
+                        .arg(filtered.size())
+                        .arg(folderShortcuts.size()));
+    return filtered;
 }
 
 QString PinnedTaskbarResolver::uniqueShortcutPath(const QString& destDir, const QString& baseName) const

@@ -23,6 +23,7 @@ public:
 
     QStringList resolvePinnedExecutablePaths() const;
     QList<PinnedShortcutEntry> resolvePinnedShortcuts() const;
+    QList<PinnedShortcutEntry> resolveAllFolderShortcuts() const;
     QString createPinFromPath(const QString& sourcePath) const;
 
 signals:
@@ -30,6 +31,7 @@ signals:
 
 private:
     QString pinnedTaskbarDir() const;
+    QList<PinnedShortcutEntry> collectFolderShortcuts() const;
     PinnedShortcutEntry resolveShortcut(const QString& shortcutPath) const;
     QString createShortcutForExecutable(const QString& exePath, const QString& destDir) const;
     QString copyShortcutToTaskbar(const QString& shortcutPath, const QString& destDir) const;

@@ -258,15 +258,88 @@ Window {
                 anchors.left: parent.left
             }
 
+            component ExplorerIconCard : Rectangle {
+                id: card
+                signal clicked()
+
+                property alias previewSource: previewImage.source
+                property string title
+                property string subtitle
+                property bool selected
+
+                width: 148
+                height: 164
+                radius: 10
+                clip: true
+                color: "#FAFAFA"
+                border.width: selected ? 2 : 1
+                border.color: selected ? "#007AFF" : "#E5E5E5"
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Item {
+                        width: 64
+                        height: 64
+                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        Image {
+                            id: previewImage
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            mipmap: true
+                        }
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: card.title
+                        color: "#1D1D1F"
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: card.subtitle
+                        color: "#86868B"
+                        font.pixelSize: 10
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: card.clicked()
+                }
+            }
+
+            ScrollView {
+                id: settingsScroll
+                anchors.top: mainTitle.bottom
+                anchors.topMargin: 16
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 52
+                clip: true
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                }
+
+                Column {
+                    width: settingsScroll.availableWidth
+                    spacing: 0
+
             // Setting Rounded Box Group (macOS style grouped items)
             Rectangle {
                 id: settingsGroup
                 visible: settingsPage === 0
                 height: settingsPage === 0 ? innerLayout.implicitHeight + 24 : 0
-                anchors.top: mainTitle.bottom
-                anchors.topMargin: 16
-                anchors.left: parent.left
-                anchors.right: parent.right
+                width: parent.width
                 radius: 10
                 color: "#FFFFFF"
                 border.width: 1
@@ -352,6 +425,47 @@ Window {
                             checked: taskbarController.keepTaskbarAutoHideOnExit
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: keepTaskbarAutoHideOnExitToggle.checked = !keepTaskbarAutoHideOnExitToggle.checked
+                        }
+                    }
+
+                    // Separator 1b
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 1c: Sync dock with Windows taskbar pins on startup
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "При запуске прикреплять приложения с панели задач Windows"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Сканирует закреплённые на панели задач Windows приложения и добавляет их в док"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: syncTaskbarPinsToggle
+                            checked: taskbarController.syncDockWithWindowsTaskbarOnStartup
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: syncTaskbarPinsToggle.checked = !syncTaskbarPinsToggle.checked
                         }
                     }
 
@@ -533,6 +647,47 @@ Window {
                         color: "#F0F0F0"
                     }
 
+                    // Option 4b: Drag fade
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Делать иконки прозрачными во время перетаскивания"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Через секунду удержания иконка становится полупрозрачной, как на macOS"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: dragFadeToggle
+                            checked: taskbarController.dockDragFadeEnabled
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: dragFadeToggle.checked = !dragFadeToggle.checked
+                        }
+                    }
+
+                    // Separator 4b
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
                     // Option 5: Dark Theme
                     RowLayout {
                         Layout.fillWidth: true
@@ -651,72 +806,11 @@ Window {
                 }
             }
 
-            component ExplorerIconCard : Rectangle {
-                id: card
-                signal clicked()
-
-                property alias previewSource: previewImage.source
-                property string title
-                property string subtitle
-                property bool selected
-
-                width: 148
-                height: 164
-                radius: 10
-                clip: true
-                color: "#FAFAFA"
-                border.width: selected ? 2 : 1
-                border.color: selected ? "#007AFF" : "#E5E5E5"
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 8
-
-                    Item {
-                        width: 64
-                        height: 64
-                        anchors.horizontalCenter: parent.horizontalCenter
-
-                        Image {
-                            id: previewImage
-                            anchors.fill: parent
-                            fillMode: Image.PreserveAspectFit
-                            smooth: true
-                            mipmap: true
-                        }
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: card.title
-                        color: "#1D1D1F"
-                        font.pixelSize: 12
-                        font.weight: Font.Medium
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: card.subtitle
-                        color: "#86868B"
-                        font.pixelSize: 10
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: card.clicked()
-                }
-            }
-
             Rectangle {
                 id: explorerSettingsGroup
                 visible: settingsPage === 1
-                anchors.top: mainTitle.bottom
-                anchors.topMargin: 16
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 248
+                width: parent.width
+                height: settingsPage === 1 ? explorerInner.implicitHeight + 24 : 0
                 radius: 10
                 color: "#FFFFFF"
                 border.width: 1
@@ -724,7 +818,10 @@ Window {
                 clip: true
 
                 Column {
-                    anchors.fill: parent
+                    id: explorerInner
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
                     anchors.margins: 12
                     spacing: 14
 
@@ -762,6 +859,9 @@ Window {
                             onClicked: settingsWindow.explorerIconStyle = "macos"
                         }
                     }
+                }
+            }
+
                 }
             }
 
@@ -821,7 +921,10 @@ Window {
                     }
 
                     onClicked: {
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, syncTaskbarPinsToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle);
+                        if (syncTaskbarPinsToggle.checked)
+                            dockModel.syncFromWindowsTaskbarPins()
+                        dockModel.refresh()
                     }
                 }
             }

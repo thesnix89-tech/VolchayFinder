@@ -296,6 +296,9 @@ DockModel::DockModel(QObject* parent)
         m_explorerIconStyle = QStringLiteral("default");
     }
     loadOrder();
+    if (settings.value(QStringLiteral("shell/syncDockWithWindowsTaskbarOnStartup"), false).toBool()) {
+        syncFromWindowsTaskbarPins();
+    }
     refresh();
 }
 
@@ -859,6 +862,47 @@ void DockModel::revealIndex(int index)
                   SW_SHOWNORMAL);
     m_actionInProgress = false;
     emit logMessage(QStringLiteral("Reveal in Explorer: %1").arg(nativePath));
+}
+
+void DockModel::syncFromWindowsTaskbarPins()
+{
+    if (!m_pinnedResolver) {
+        return;
+    }
+
+    const QList<PinnedShortcutEntry> activeShortcuts = m_pinnedResolver->resolvePinnedShortcuts();
+    QSet<QString> activeShortcutPaths;
+    int restoredCount = 0;
+    for (const PinnedShortcutEntry& shortcut : activeShortcuts) {
+        if (shortcut.targetPath.isEmpty() && shortcut.shortcutPath.isEmpty()) {
+            continue;
+        }
+
+        activeShortcutPaths.insert(lowerPath(shortcut.shortcutPath));
+        DockItemEntry entry = makePinnedEntry(shortcut);
+        const int hiddenBefore = m_dockHiddenPins.size();
+        restoreEntryToDock(entry);
+        if (m_dockHiddenPins.size() < hiddenBefore) {
+            ++restoredCount;
+        }
+    }
+
+    int hiddenCount = 0;
+    for (const PinnedShortcutEntry& shortcut : m_pinnedResolver->resolveAllFolderShortcuts()) {
+        if (activeShortcutPaths.contains(lowerPath(shortcut.shortcutPath))) {
+            continue;
+        }
+        const int hiddenBefore = m_dockHiddenPins.size();
+        hideEntryFromDock(makePinnedEntry(shortcut));
+        if (m_dockHiddenPins.size() > hiddenBefore) {
+            ++hiddenCount;
+        }
+    }
+
+    saveOrder();
+    emit logMessage(QStringLiteral("Synced dock with Windows taskbar pins: %1 restored, %2 hidden.")
+                        .arg(restoredCount)
+                        .arg(hiddenCount));
 }
 
 void DockModel::loadPinnedApps()

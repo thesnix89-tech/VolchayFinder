@@ -18,7 +18,9 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool showTopBar READ showTopBar WRITE setShowTopBar NOTIFY showTopBarChanged)
     Q_PROPERTY(bool autoHideWindowsTaskbar READ autoHideWindowsTaskbar WRITE setAutoHideWindowsTaskbar NOTIFY autoHideWindowsTaskbarChanged)
     Q_PROPERTY(bool keepTaskbarAutoHideOnExit READ keepTaskbarAutoHideOnExit WRITE setKeepTaskbarAutoHideOnExit NOTIFY keepTaskbarAutoHideOnExitChanged)
+    Q_PROPERTY(bool syncDockWithWindowsTaskbarOnStartup READ syncDockWithWindowsTaskbarOnStartup WRITE setSyncDockWithWindowsTaskbarOnStartup NOTIFY syncDockWithWindowsTaskbarOnStartupChanged)
     Q_PROPERTY(bool dockHoverBounce READ dockHoverBounce WRITE setDockHoverBounce NOTIFY dockHoverBounceChanged)
+    Q_PROPERTY(bool dockDragFadeEnabled READ dockDragFadeEnabled WRITE setDockDragFadeEnabled NOTIFY dockDragFadeEnabledChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
     Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
@@ -34,7 +36,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool syncDockWithWindowsTaskbarOnStartup, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle);
     Q_INVOKABLE void tryAutostartShell();
     Q_INVOKABLE void enforceTaskbarHidden();
 
@@ -52,8 +54,12 @@ public:
     void setAutoHideWindowsTaskbar(bool autoHide);
     bool keepTaskbarAutoHideOnExit() const;
     void setKeepTaskbarAutoHideOnExit(bool keep);
+    bool syncDockWithWindowsTaskbarOnStartup() const;
+    void setSyncDockWithWindowsTaskbarOnStartup(bool enabled);
     bool dockHoverBounce() const;
     void setDockHoverBounce(bool enabled);
+    bool dockDragFadeEnabled() const;
+    void setDockDragFadeEnabled(bool enabled);
     bool dockStaticIcons() const;
     void setDockStaticIcons(bool enabled);
     bool darkTheme() const;
@@ -75,7 +81,9 @@ signals:
     void showTopBarChanged();
     void autoHideWindowsTaskbarChanged();
     void keepTaskbarAutoHideOnExitChanged();
+    void syncDockWithWindowsTaskbarOnStartupChanged();
     void dockHoverBounceChanged();
+    void dockDragFadeEnabledChanged();
     void dockStaticIconsChanged();
     void darkThemeChanged();
     void startWithWindowsChanged();
@@ -112,7 +120,9 @@ private:
     bool m_showTopBar = true;
     bool m_autoHideWindowsTaskbar = true;
     bool m_keepTaskbarAutoHideOnExit = false;
+    bool m_syncDockWithWindowsTaskbarOnStartup = false;
     bool m_dockHoverBounce = true;
+    bool m_dockDragFadeEnabled = true;
     bool m_dockStaticIcons = false;
     bool m_darkTheme = false;
     bool m_startWithWindows = false;

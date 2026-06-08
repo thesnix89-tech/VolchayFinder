@@ -69,6 +69,7 @@ public:
     Q_INVOKABLE void unpinIndex(int index);
     Q_INVOKABLE void setReorderActive(bool active);
     Q_INVOKABLE void setExplorerIconStyle(const QString& style);
+    Q_INVOKABLE void syncFromWindowsTaskbarPins();
 
     QString explorerIconStyle() const;
     Q_INVOKABLE QString explorerDefaultIconUrl() const;
