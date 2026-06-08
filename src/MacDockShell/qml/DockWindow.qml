@@ -32,6 +32,7 @@ Window {
     property bool externalPinSettling: false
     property bool externalPinRetracting: false
     property bool externalPinGhostVisible: false
+    property real externalPinGhostLiftY: 0
     property string externalPinPath: ""
     property string externalPinIconUrl: ""
     property int prevLayoutExternalPinTo: -1
@@ -53,6 +54,8 @@ Window {
     readonly property int dockPackAnimMs: 220
     readonly property int externalPinMorphMs: 320
     readonly property int externalPinSettleMs: 260
+    readonly property int externalPinRestY: 19
+    readonly property int externalPinGhostLiftMs: 280
     // macOS: insertion gap opens only when the icon is lowered back into the dock row.
     readonly property int dockZoneEnterY: -12
     readonly property int dockZoneLeaveY: -28
@@ -143,11 +146,38 @@ Window {
         return externalPinInsertSlotX(externalPinMorphSlot)
     }
 
+    function externalPinGhostLiftTarget(centerGlobalX, centerGlobalY) {
+        var rowLocal = dockRowHost.mapFromGlobal(centerGlobalX, centerGlobalY)
+        var iconSize = taskbarController.dockIconSize
+        var restTopY = externalPinRestY
+        var liftedTopY = rowLocal.y - iconSize / 2
+        var rowCenterY = restTopY + iconSize / 2
+        // Track the dragged icon vertically; ease into the dock row as it lowers.
+        var enterBand = 56
+        var seatedDy = -4
+        var dy = rowLocal.y - rowCenterY
+        if (dy >= seatedDy)
+            return 0
+        var floatLift = liftedTopY - restTopY
+        if (dy <= -enterBand)
+            return floatLift
+        var t = (dy + enterBand) / (enterBand - seatedDy)
+        t = Math.max(0, Math.min(1, t))
+        t = t * t * (3 - 2 * t)
+        return floatLift * (1 - t)
+    }
+
+    function syncExternalPinGhostLift(centerGlobalX, centerGlobalY) {
+        externalPinGhostLiftAnim.stop()
+        externalPinGhostLiftY = externalPinGhostLiftTarget(centerGlobalX, centerGlobalY)
+    }
+
     function showExternalPinGhostIfReady() {
         if (!externalPinPreview || !hasDropPointer || externalPinIconUrl.length === 0)
             return
         externalPinSlotAnim.stop()
         externalPinMorphSlot = externalPinTo
+        syncExternalPinGhostLift(lastDropIconCenterGlobalX, lastDropIconCenterGlobalY)
         externalPinGhostVisible = true
     }
 
@@ -411,6 +441,8 @@ Window {
 
         if (!externalPinSlotSnapped)
             snapExternalPinMorphSlot()
+        else if (externalPinGhostVisible)
+            syncExternalPinGhostLift(centerGlobalX, centerGlobalY)
     }
 
     function setExternalPinPath(path) {
@@ -451,6 +483,7 @@ Window {
             return
         externalPinRetracting = true
         externalPinGhostVisible = false
+        externalPinGhostLiftAnim.stop()
         externalPinSlotAnim.stop()
         externalPinDropSettleAnim.stop()
         externalPinSettlePauseTimer.stop()
@@ -482,6 +515,8 @@ Window {
         externalPinDropping = false
         externalPinSettling = false
         externalPinGhostVisible = false
+        externalPinGhostLiftY = 0
+        externalPinGhostLiftAnim.stop()
         externalPinMorphSlot = 0
         externalPinSlotSnapped = false
         externalPinSlotAnim.stop()
@@ -504,6 +539,10 @@ Window {
         externalPinSlotAnim.stop()
         externalPinSettling = true
         externalPinGhostVisible = true
+        externalPinGhostLiftAnim.stop()
+        externalPinGhostLiftAnim.from = externalPinGhostLiftY
+        externalPinGhostLiftAnim.to = 0
+        externalPinGhostLiftAnim.start()
         if (Math.abs(externalPinMorphSlot - index) < 0.01) {
             externalPinMorphSlot = index
             externalPinSettlePauseTimer.restart()
@@ -555,6 +594,14 @@ Window {
         property: "externalPinMorphSlot"
         duration: dockWindow.externalPinMorphMs
         easing.type: Easing.InOutCubic
+    }
+
+    NumberAnimation {
+        id: externalPinGhostLiftAnim
+        target: dockWindow
+        property: "externalPinGhostLiftY"
+        duration: dockWindow.externalPinGhostLiftMs
+        easing.type: Easing.OutCubic
     }
 
     NumberAnimation {
@@ -1007,7 +1054,7 @@ Window {
                 visible: dockWindow.externalPinPreview && dockWindow.dragFrom < 0
                         && dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
-                y: 19
+                y: dockWindow.externalPinRestY + dockWindow.externalPinGhostLiftY
                 width: taskbarController.dockIconSize
                 height: taskbarController.dockIconSize
                 radius: 18
