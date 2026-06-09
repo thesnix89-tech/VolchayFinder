@@ -558,8 +558,14 @@ Window {
     readonly property real dockWindowX: {
         if (unpinAnchorCenterX >= 0)
             return Math.round(unpinAnchorCenterX - dockWindowWidth / 2)
-        if (externalPinPreview && externalPinFrozenCenterX >= 0)
+        if (externalPinPreview && externalPinFrozenCenterX >= 0) {
+            var pinCount = dockRepeater.count
+            if (externalPinTo <= 0 && externalPinAnchorRightX >= 0)
+                return Math.round(externalPinAnchorRightX - dockWindowWidth)
+            if (externalPinTo >= pinCount && externalPinAnchorLeftX >= 0)
+                return Math.round(externalPinAnchorLeftX)
             return Math.round(externalPinFrozenCenterX - dockWindowWidth / 2)
+        }
         if (externalPinRestEdge !== 0 && externalPinRestAnchorLeftX >= 0) {
             if (externalPinRestEdge < 0)
                 return Math.round(externalPinRestAnchorRightX - dockWindowWidth)
