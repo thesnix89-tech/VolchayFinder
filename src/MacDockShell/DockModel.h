@@ -1,0 +1,165 @@
+#pragma once
+
+#include <QObject>
+#include <QString>
+#include <QAbstractListModel>
+#include <QVector>
+#include <QPixmap>
+#include <QHash>
+#include <QSet>
+#include <QList>
+
+#include "PinnedTaskbarResolver.h"
+
+class PinnedTaskbarResolver;
+class QFileSystemWatcher;
+
+struct DockItemEntry
+{
+    QString appId;
+    QString label;
+    QString windowTitle;
+    QString exePath;
+    QString launchPath;
+    QString launchArguments;
+    QString workingDirectory;
+    QString appUserModelId;
+    QString iconHint;
+    QString iconUrl;
+    // "app" for regular dock apps; "downloads"/"trash" for the macOS-style trailing
+    // shell items that sit after the separator and are excluded from reorder/unpin.
+    QString kind = QStringLiteral("app");
+    qint64 hwndValue = 0;
+    bool running = false;
+    bool active = false;
+    bool pinned = false;
+    bool minimized = false;
+    bool pinnedOnly = false;
+};
+
+class DockModel : public QAbstractListModel
+{
+    Q_OBJECT
+
+public:
+    enum Roles {
+        AppIdRole = Qt::UserRole + 1,
+        LabelRole,
+        WindowTitleRole,
+        ExePathRole,
+        IconHintRole,
+        IconUrlRole,
+        RunningRole,
+        ActiveRole,
+        PinnedRole,
+        MinimizedRole,
+        ClickableRole,
+        KindRole
+    };
+
+    explicit DockModel(QObject* parent = nullptr);
+    ~DockModel() override;
+
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+    Q_INVOKABLE void refresh();
+    Q_INVOKABLE void activateIndex(int index);
+    Q_INVOKABLE void minimizeIndex(int index);
+    Q_INVOKABLE void toggleIndex(int index);
+    Q_INVOKABLE void launchIndex(int index);
+    Q_INVOKABLE void closeIndex(int index);
+    Q_INVOKABLE void revealIndex(int index);
+    Q_INVOKABLE void moveItem(int from, int to);
+    Q_INVOKABLE void pinPathAt(const QString& path, int index = -1);
+    Q_INVOKABLE QString externalIconUrlForPath(const QString& path) const;
+    Q_INVOKABLE void unpinIndex(int index);
+    Q_INVOKABLE bool canUnpinIndex(int index) const;
+    Q_INVOKABLE void setReorderActive(bool active);
+    Q_INVOKABLE void setExplorerIconStyle(const QString& style);
+    Q_INVOKABLE void setTrashIconStyle(const QString& style);
+    Q_INVOKABLE void syncFromWindowsTaskbarPins();
+    Q_INVOKABLE int appItemCount() const;
+    Q_INVOKABLE QString trashWindowsIconUrl() const;
+    Q_INVOKABLE QString trashMacIconUrl() const;
+
+    QString explorerIconStyle() const;
+    Q_INVOKABLE QString explorerDefaultIconUrl() const;
+    Q_INVOKABLE QString explorerMacIconUrl() const;
+
+signals:
+    void logMessage(const QString& message);
+    void activeAppWindowChanged(const QString& title, const QString& appLabel, bool active);
+    void explorerIconStyleChanged();
+
+private:
+    void loadPinnedApps();
+    void invalidatePinnedCache();
+    void scanWindows();
+    void applyCustomOrder();
+    void appendTrailingShellItems();
+    QString downloadsFolderPath() const;
+    QString ensureStockIconFile(const QString& cacheKey, int stockIconId) const;
+    bool recycleBinHasItems() const;
+    void ensureExplorerPin();
+    QString entryOrderKey(const DockItemEntry& entry) const;
+    QStringList hiddenPinKeysForEntry(const DockItemEntry& entry) const;
+    bool isHiddenFromDock(const DockItemEntry& entry) const;
+    void hideEntryFromDock(const DockItemEntry& entry);
+    void restoreEntryToDock(const DockItemEntry& entry);
+    void markExplicitDockPin(const DockItemEntry& entry);
+    void clearExplicitDockPin(const DockItemEntry& entry);
+    bool isExplicitDockPin(const DockItemEntry& entry) const;
+    void restorePathsToDock(const QString& sourcePath, const QString& shortcutPath);
+    void loadOrder();
+    void saveOrder();
+    void ensureExplorerLeadingInOrder();
+    DockItemEntry makePinnedEntry(const PinnedShortcutEntry& shortcut) const;
+    QString normalizeAppId(const QString& path) const;
+    QString labelFromPath(const QString& path) const;
+    void upsertEntry(const DockItemEntry& entry);
+    void applyExplorerPresentation(DockItemEntry& entry) const;
+    QString explorerDisplayLabel() const;
+    QString resolveExplorerIconUrl(const DockItemEntry& entry) const;
+    void scheduleRunningStateRefresh();
+    QPixmap extractFileIcon(const QString& exePath) const;
+    QString ensureIconFile(const QString& appId, const QString& exePath) const;
+    void emitActiveWindowState();
+
+    QVector<DockItemEntry> m_entries;
+    QStringList m_pinnedPaths;
+    QString m_iconCacheDir;
+    QHash<QString, QString> m_existingIconUrls;
+    PinnedTaskbarResolver* m_pinnedResolver = nullptr;
+    QString m_lastActiveWindowTitle;
+    QString m_lastActiveAppLabel;
+    bool m_lastActiveState = false;
+    QStringList m_lastPinnedShortcutSnapshot;
+    // Set while launching/activating/minimizing. Those Win32 calls pump a nested
+    // message loop; this guard stops the refresh timer from resetting the model
+    // (and destroying delegates) reentrantly during that loop.
+    bool m_actionInProgress = false;
+    // User-defined dock order (stable keys). Keeps icons from reshuffling on app
+    // switches and persists drag-and-drop customization across sessions.
+    QStringList m_customOrder;
+    // Apps removed from the dock only — Windows taskbar pins stay untouched.
+    QStringList m_dockHiddenPins;
+    // Apps pinned via the dock that may not yet appear in the Windows taskbar registry.
+    QStringList m_dockExplicitPins;
+    // Set while the user is dragging an icon; suspends refresh so the drag is not
+    // interrupted by the periodic model reset.
+    bool m_reorderActive = false;
+    QString m_explorerIconStyle = QStringLiteral("default");
+    QString m_trashIconStyle = QStringLiteral("windows");
+    // Resolving Windows taskbar pins walks the pin folders (~hundreds of ms) and the
+    // set almost never changes. Cache the resolved shortcuts and only re-resolve when
+    // a pin/unpin mutates the dock or after a long safety interval, so the 1 s refresh
+    // timer (which exists to update running/active window state) stays cheap.
+    QList<PinnedShortcutEntry> m_cachedPinnedShortcuts;
+    bool m_pinnedShortcutsCacheValid = false;
+    int m_refreshesSincePinScan = 0;
+    // Watches the Windows pin folders so external pin/unpin changes invalidate the
+    // cache immediately instead of relying on the slow periodic safety rescan.
+    QFileSystemWatcher* m_pinFolderWatcher = nullptr;
+};

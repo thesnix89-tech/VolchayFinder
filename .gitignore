@@ -1,0 +1,14 @@
+# Build output
+/build/
+build/
+
+# Generated icon cache
+iconcache/
+
+# Logs
+*.log
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.user
