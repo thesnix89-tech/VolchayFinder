@@ -86,7 +86,8 @@ Window {
     property real lastDropGlobalY: 0
     property real lastDropIconCenterGlobalX: 0
     property real lastDropIconCenterGlobalY: 0
-    readonly property int dockSpacing: 18
+    readonly property int dockAppSpacing: 22
+    readonly property int dockShellSpacing: 18
     // Dock chrome (pill height, spacing) vs app icon drawing size are separate.
     readonly property int dockSlotSize: taskbarController.dockIconSize
     readonly property int dockIconVisualSize: Math.round(dockSlotSize * 1.2)
@@ -94,7 +95,8 @@ Window {
     readonly property int dockBarHeight: dockSlotSize + dockBarPad * 2
     // macOS dock: rounded rect, not a full stadium pill (~38% of bar height).
     readonly property int dockPillRadius: Math.round(dockBarHeight * 0.38)
-    readonly property int dockStride: dockSlotSize + dockSpacing
+    readonly property int dockAppStride: dockSlotSize + dockAppSpacing
+    readonly property int dockShellStride: dockSlotSize + dockShellSpacing
     // Trailing macOS-style shell items (Downloads + Trash) live after the separator
     // and are excluded from drag-reorder and external-pin insertion.
     readonly property int trailingShellCount: 2
@@ -149,8 +151,28 @@ Window {
                 && index < dockWindow.appReorderSlotCount
     }
 
+    function rowContentWidth(count) {
+        var apps = Math.min(count, appSlotCount)
+        var shells = Math.max(0, count - apps)
+        var w = 0
+        if (apps > 0)
+            w = apps * dockSlotSize + Math.max(0, apps - 1) * dockAppSpacing
+        if (shells > 0) {
+            if (apps > 0)
+                w += dockShellSpacing
+            w += shells * dockSlotSize + Math.max(0, shells - 1) * dockShellSpacing
+        }
+        return w
+    }
+
+    function spacingAtBoundary(boundaryIndex) {
+        if (boundaryIndex > 0 && boundaryIndex < appSlotCount)
+            return dockAppSpacing
+        return dockShellSpacing
+    }
+
     function pillWidthForAppCount(appCount) {
-        return appCount * dockStride + 2 * hoverBleed + 2 * dockEndCap
+        return rowContentWidth(appCount) + 2 * hoverBleed + 2 * dockEndCap
     }
 
     function isCrossSectionReorder(from, to) {
@@ -216,7 +238,19 @@ Window {
     }
 
     function slotLeftForIndex(index) {
-        return hoverBleed + index * dockStride
+        if (index <= 0)
+            return hoverBleed
+        if (index < appSlotCount)
+            return hoverBleed + index * dockAppStride
+
+        var apps = appSlotCount
+        var appExtent = apps > 0
+                ? apps * dockSlotSize + Math.max(0, apps - 1) * dockAppSpacing
+                : 0
+        var shellIndex = index - apps
+        if (shellIndex <= 0)
+            return hoverBleed + appExtent + (apps > 0 ? dockShellSpacing : 0)
+        return hoverBleed + appExtent + dockShellSpacing + shellIndex * dockShellStride
     }
 
     // Full-width preview: one empty slot at `to` while the dragged icon hovers.
@@ -314,7 +348,7 @@ Window {
     }
 
     function separatorXForBoundary(boundaryIndex) {
-        var halfGap = Math.round(dockSpacing / 2)
+        var halfGap = Math.round(spacingAtBoundary(boundaryIndex) / 2)
         if (externalPinPreview && dragFrom < 0)
             return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - halfGap
         if (dragFrom < 0 || !reordering)
@@ -599,7 +633,7 @@ Window {
         // Pre-shrink animated pill width so dockRowHost and flickable stay aligned
         // when the model drops one item (avoids a one-frame slide to the right).
         var newCount = Math.max(0, dockRepeater.count - 1)
-        var newRowWidth = newCount * dockStride + 2 * hoverBleed
+        var newRowWidth = rowContentWidth(newCount) + 2 * hoverBleed
         var newPillWidth = newRowWidth + 2 * dockEndCap
         unpinCommitting = true
         animatedPillWidth = newPillWidth
@@ -690,10 +724,11 @@ Window {
             return dockRepeater.count
         return dockRepeater.count + 1
     }
-    readonly property real dockRowFullWidth: layoutDockCount * dockStride + 2 * hoverBleed
+    readonly property real dockRowFullWidth: rowContentWidth(layoutDockCount) + 2 * hoverBleed
     readonly property real dockRowCompactWidth: (externalPinPreview || externalPinCommitting)
-            ? Math.max(0, layoutDockCount - 1) * dockStride + 2 * hoverBleed
-            : (reordering ? Math.max(0, dockRepeater.count - 1) : dockRepeater.count) * dockStride + 2 * hoverBleed
+            ? rowContentWidth(Math.max(0, layoutDockCount - 1)) + 2 * hoverBleed
+            : (reordering ? rowContentWidth(Math.max(0, dockRepeater.count - 1))
+                           : rowContentWidth(dockRepeater.count)) + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
@@ -1250,7 +1285,7 @@ Window {
         windowEffects.updateDockDropLayout(
                     dockWindow,
                     pillPt.x + hoverBleed,
-                    dockStride,
+                    dockAppStride,
                     dockSlotSize,
                     dockRepeater.count)
     }
