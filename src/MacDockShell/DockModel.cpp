@@ -350,8 +350,9 @@ QVariant DockModel::data(const QModelIndex& index, int role) const
     case ActiveRole: return item.active;
     case PinnedRole: return item.pinned;
     case MinimizedRole: return item.minimized;
-    case ClickableRole: return item.running || item.pinned;
+    case ClickableRole: return item.running || item.pinned || isRightSectionPin(item);
     case KindRole: return item.kind;
+    case RightSectionPinRole: return isRightSectionPin(item);
     default: return {};
     }
 }
@@ -370,7 +371,8 @@ QHash<int, QByteArray> DockModel::roleNames() const
         { PinnedRole, "pinned" },
         { MinimizedRole, "minimized" },
         { ClickableRole, "clickable" },
-        { KindRole, "kind" }
+        { KindRole, "kind" },
+        { RightSectionPinRole, "rightSectionPinned" }
     };
 }
 
@@ -390,6 +392,7 @@ void DockModel::refresh()
     m_entries.clear();
     loadPinnedApps();
     scanWindows();
+    appendRightSectionPins();
     applyCustomOrder();
     // Trailing macOS-style shell items (Downloads stack + Trash) are appended last,
     // after custom ordering, so the user's drag order never affects them.
@@ -614,9 +617,9 @@ void DockModel::applySeparateCustomOrder()
         if (entry.kind != QLatin1String("app")) {
             continue;
         }
-        if (entry.pinned) {
+        if (isLeftSectionEntry(entry)) {
             pinned.push_back(entry);
-        } else if (entry.running) {
+        } else if (isRightSectionEntry(entry)) {
             transient.push_back(entry);
         }
     }
@@ -635,10 +638,18 @@ void DockModel::applySeparateCustomOrder()
 
     for (const auto& entry : transient) {
         const QString key = entryOrderKey(entry);
-        if (!m_transientOrder.contains(key)) {
-            m_transientOrder.append(key);
+        if (isRightSectionPin(entry) || entry.running) {
+            bool orderChanged = false;
+            if (!m_transientOrder.contains(key)) {
+                m_transientOrder.append(key);
+                orderChanged = true;
+            }
+            m_customOrder.removeAll(key);
+            if (orderChanged) {
+                QSettings settings;
+                settings.setValue(QStringLiteral("dock/transientOrder"), m_transientOrder);
+            }
         }
-        m_customOrder.removeAll(key);
     }
 
     QStringList pinnedAlive;
@@ -663,7 +674,7 @@ void DockModel::applySeparateCustomOrder()
         }
     }
     for (auto it = m_transientOrder.begin(); it != m_transientOrder.end(); ) {
-        if (!transientAlive.contains(*it)) {
+        if (!transientAlive.contains(*it) && !m_rightSectionPinCache.contains(*it)) {
             it = m_transientOrder.erase(it);
         } else {
             ++it;
@@ -697,9 +708,9 @@ void DockModel::updateLayoutCounts()
         if (entry.kind != QLatin1String("app")) {
             continue;
         }
-        if (entry.pinned) {
+        if (isLeftSectionEntry(entry)) {
             ++pinned;
-        } else if (m_separateTransientApps && entry.running && !entry.pinned) {
+        } else if (m_separateTransientApps && isRightSectionEntry(entry)) {
             ++transient;
         }
     }
@@ -767,27 +778,237 @@ void DockModel::ensureExplorerLeadingInOrder()
     saveOrder();
 }
 
-void DockModel::pinPathAt(const QString& path, int index)
+bool DockModel::isRightSectionPin(const DockItemEntry& entry) const
+{
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        if (m_transientOrder.contains(key)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool DockModel::isLeftSectionEntry(const DockItemEntry& entry) const
+{
+    if (entry.kind != QLatin1String("app")) {
+        return false;
+    }
+    if (isRightSectionPin(entry)) {
+        return false;
+    }
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        if (m_customOrder.contains(key)) {
+            return true;
+        }
+    }
+    return entry.pinned;
+}
+
+bool DockModel::isRightSectionEntry(const DockItemEntry& entry) const
+{
+    if (entry.kind != QLatin1String("app")) {
+        return false;
+    }
+    if (isRightSectionPin(entry)) {
+        return true;
+    }
+    if (isLeftSectionEntry(entry)) {
+        return false;
+    }
+    return entry.running;
+}
+
+void DockModel::insertKeyAtIndex(QStringList& order, const QString& key, int index)
+{
+    order.removeAll(key);
+    index = qBound(0, index, order.size());
+    order.insert(index, key);
+}
+
+void DockModel::insertPinnedKeyAtSlot(const QString& orderKey, int pinnedSlot)
+{
+    m_customOrder.removeAll(orderKey);
+    m_transientOrder.removeAll(orderKey);
+    m_rightSectionPinCache.remove(orderKey);
+    insertKeyAtIndex(m_customOrder, orderKey, pinnedSlot);
+    ensureExplorerLeadingInOrder();
+}
+
+bool DockModel::ensurePinnedShortcut(const QString& path, QString* shortcutPathOut)
 {
     if (path.isEmpty() || !m_pinnedResolver) {
-        return;
+        return false;
     }
 
     const QString shortcutPath = m_pinnedResolver->createPinFromPath(path);
     if (shortcutPath.isEmpty()) {
-        return;
+        return false;
     }
 
-    const QString shortcutKey = lowerPath(shortcutPath);
-    const QString sourceKey = lowerPath(path);
-
-    // A prior dock-unpin only hid the app — clear that before reloading entries.
     restorePathsToDock(path, shortcutPath);
 
     DockItemEntry explicitEntry;
     explicitEntry.exePath = path;
     explicitEntry.launchPath = shortcutPath;
     markExplicitDockPin(explicitEntry);
+    invalidatePinnedCache();
+
+    if (shortcutPathOut) {
+        *shortcutPathOut = shortcutPath;
+    }
+    return true;
+}
+
+void DockModel::transferToLeftSection(int from, int to)
+{
+    if (from < 0 || from >= m_entries.size()) {
+        return;
+    }
+
+    const DockItemEntry& entry = m_entries.at(from);
+    if (entry.kind != QLatin1String("app")) {
+        return;
+    }
+
+    const QString path = entry.exePath.isEmpty() ? entry.launchPath : entry.exePath;
+    if (path.isEmpty()) {
+        return;
+    }
+
+    const QString orderKey = entryOrderKey(entry);
+
+    QString shortcutPath;
+    if (!ensurePinnedShortcut(path, &shortcutPath)) {
+        emit logMessage(QStringLiteral("transferToLeftSection: failed to pin %1").arg(path));
+        return;
+    }
+
+    m_reorderActive = false;
+    refresh();
+
+    const QString shortcutKey = lowerPath(shortcutPath);
+    const QString sourceKey = lowerPath(path);
+
+    QString resolvedKey = orderKey;
+    for (int i = 0; i < m_entries.size(); ++i) {
+        const DockItemEntry& pinnedEntry = m_entries.at(i);
+        if (!pinnedEntry.pinned) {
+            continue;
+        }
+        const QString entryLaunch = lowerPath(pinnedEntry.launchPath);
+        const QString entryExe = lowerPath(pinnedEntry.exePath);
+        if (entryLaunch == shortcutKey || entryLaunch == sourceKey
+            || (!entryExe.isEmpty() && (entryExe == sourceKey || entryExe == shortcutKey))
+            || (!sourceKey.isEmpty() && !entryExe.isEmpty()
+                && fileNameKey(entryExe) == fileNameKey(sourceKey))) {
+            resolvedKey = entryOrderKey(pinnedEntry);
+            break;
+        }
+    }
+
+    const int pinnedSlot = qBound(0, to, qMax(0, m_pinnedAppCount - 1));
+    clearRightSectionPin(entry);
+    insertPinnedKeyAtSlot(resolvedKey, pinnedSlot);
+    saveOrder();
+
+    m_reorderActive = false;
+    refresh();
+    emit logMessage(QStringLiteral("Transferred to left section: %1 at slot %2").arg(path).arg(pinnedSlot));
+}
+
+void DockModel::transferPinnedToRightSection(int from, int to)
+{
+    if (from < 0 || from >= m_entries.size()) {
+        return;
+    }
+
+    if (!canUnpinIndex(from)) {
+        return;
+    }
+
+    const DockItemEntry entry = m_entries.at(from);
+    const QString key = entryOrderKey(entry);
+    const int pinnedCount = m_pinnedAppCount;
+    const int transientSlot = qBound(0, to - pinnedCount, qMax(0, m_transientAppCount));
+
+    m_customOrder.removeAll(key);
+    for (const QString& alias : hiddenPinKeysForEntry(entry)) {
+        m_customOrder.removeAll(alias);
+    }
+    insertKeyAtIndex(m_transientOrder, key, transientSlot);
+    rememberRightSectionEntry(entry);
+
+    saveOrder();
+    m_reorderActive = false;
+    invalidatePinnedCache();
+    refresh();
+    emit logMessage(QStringLiteral("Transferred to right section: %1 at transient slot %2")
+                        .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath)
+                        .arg(transientSlot));
+}
+
+void DockModel::appendRightSectionPins()
+{
+    if (!m_separateTransientApps || m_transientOrder.isEmpty()) {
+        return;
+    }
+
+    // Reuse the pin list already resolved in loadPinnedApps() for this refresh.
+    // Calling resolveDockPinnedShortcuts() here walked the pin folders every second
+    // whenever m_transientOrder was non-empty (right-section pins).
+    const QList<PinnedShortcutEntry>& shortcuts = m_cachedPinnedShortcuts;
+
+    for (const QString& rightKey : m_transientOrder) {
+        bool alreadyPresent = false;
+        for (const auto& entry : m_entries) {
+            if (entry.kind != QLatin1String("app")) {
+                continue;
+            }
+            if (entryOrderKey(entry) == rightKey || hiddenPinKeysForEntry(entry).contains(rightKey)) {
+                alreadyPresent = true;
+                break;
+            }
+        }
+        if (alreadyPresent) {
+            continue;
+        }
+
+        if (m_rightSectionPinCache.contains(rightKey)) {
+            DockItemEntry cached = m_rightSectionPinCache.value(rightKey);
+            cached.pinned = false;
+            cached.running = false;
+            cached.pinnedOnly = false;
+            upsertEntry(cached);
+            continue;
+        }
+
+        for (const PinnedShortcutEntry& shortcut : shortcuts) {
+            DockItemEntry candidate = makePinnedEntry(shortcut);
+            if (entryOrderKey(candidate) != rightKey
+                && !hiddenPinKeysForEntry(candidate).contains(rightKey)) {
+                continue;
+            }
+
+            candidate.pinned = false;
+            candidate.running = false;
+            candidate.pinnedOnly = false;
+            upsertEntry(candidate);
+            break;
+        }
+    }
+}
+
+void DockModel::pinPathAt(const QString& path, int index)
+{
+    if (path.isEmpty() || !m_pinnedResolver) {
+        return;
+    }
+
+    QString shortcutPath;
+    if (!ensurePinnedShortcut(path, &shortcutPath)) {
+        return;
+    }
+
     saveOrder();
 
     // QML keeps reorderActive=true while the external drop preview is open.
@@ -797,27 +1018,27 @@ void DockModel::pinPathAt(const QString& path, int index)
     m_reorderActive = false;
     refresh();
 
-    auto findPinnedIndex = [&](const QString& launchKey, const QString& exeKey) -> int {
-        for (int i = 0; i < m_entries.size(); ++i) {
-            const DockItemEntry& entry = m_entries.at(i);
-            if (!entry.pinned) {
-                continue;
-            }
-            const QString entryLaunch = lowerPath(entry.launchPath);
-            const QString entryExe = lowerPath(entry.exePath);
-            if (entryLaunch == launchKey || entryLaunch == exeKey
-                || (!entryExe.isEmpty() && (entryExe == exeKey || entryExe == launchKey))
-                || (!exeKey.isEmpty() && !entryExe.isEmpty()
-                    && fileNameKey(entryExe) == fileNameKey(exeKey))) {
-                return i;
-            }
+    const QString shortcutKey = lowerPath(shortcutPath);
+    const QString sourceKey = lowerPath(path);
+
+    QString orderKey;
+    for (int i = 0; i < m_entries.size(); ++i) {
+        const DockItemEntry& entry = m_entries.at(i);
+        if (!entry.pinned) {
+            continue;
         }
-        return -1;
-    };
+        const QString entryLaunch = lowerPath(entry.launchPath);
+        const QString entryExe = lowerPath(entry.exePath);
+        if (entryLaunch == shortcutKey || entryLaunch == sourceKey
+            || (!entryExe.isEmpty() && (entryExe == sourceKey || entryExe == shortcutKey))
+            || (!sourceKey.isEmpty() && !entryExe.isEmpty()
+                && fileNameKey(entryExe) == fileNameKey(sourceKey))) {
+            orderKey = entryOrderKey(entry);
+            break;
+        }
+    }
 
-    int foundIndex = findPinnedIndex(shortcutKey, sourceKey);
-
-    if (foundIndex < 0 && !shortcutPath.isEmpty() && m_pinnedResolver) {
+    if (orderKey.isEmpty()) {
         const QList<PinnedShortcutEntry> shortcuts = m_pinnedResolver->resolveAllFolderShortcuts();
         for (const PinnedShortcutEntry& shortcut : shortcuts) {
             if (lowerPath(shortcut.shortcutPath) != shortcutKey
@@ -826,32 +1047,25 @@ void DockModel::pinPathAt(const QString& path, int index)
             }
             DockItemEntry entry = makePinnedEntry(shortcut);
             restoreEntryToDock(entry);
-            saveOrder();
-            upsertEntry(entry);
-            applyCustomOrder();
-            beginResetModel();
-            endResetModel();
-            foundIndex = findPinnedIndex(shortcutKey, sourceKey);
-            if (foundIndex < 0) {
-                foundIndex = findPinnedIndex(lowerPath(entry.launchPath), lowerPath(entry.exePath));
-            }
+            orderKey = entryOrderKey(entry);
             break;
         }
     }
 
-    m_reorderActive = false;
-
-    if (foundIndex < 0) {
+    if (orderKey.isEmpty()) {
         emit logMessage(QStringLiteral("Pinned shortcut created but dock entry missing: %1").arg(shortcutPath));
         return;
     }
 
-    int targetIndex = index < 0 ? (m_entries.size() - 1) : qBound(0, index, m_entries.size() - 1);
-    if (foundIndex != targetIndex) {
-        moveItem(foundIndex, targetIndex);
-    }
+    const int pinnedSlot = index < 0
+            ? qMax(0, m_pinnedAppCount - 1)
+            : qBound(0, index, qMax(0, m_pinnedAppCount - 1));
+    insertPinnedKeyAtSlot(orderKey, pinnedSlot);
+    saveOrder();
+    m_reorderActive = false;
+    refresh();
 
-    emit logMessage(QStringLiteral("Pinned to dock: %1 at slot %2").arg(shortcutPath).arg(targetIndex));
+    emit logMessage(QStringLiteral("Pinned to dock: %1 at slot %2").arg(shortcutPath).arg(pinnedSlot));
 }
 
 bool DockModel::canUnpinIndex(int index) const
@@ -861,7 +1075,8 @@ bool DockModel::canUnpinIndex(int index) const
     }
 
     const DockItemEntry& entry = m_entries.at(index);
-    return entry.pinned && entry.kind == QLatin1String("app") && !isExplorerEntry(entry);
+    return entry.kind == QLatin1String("app") && !isExplorerEntry(entry)
+            && (entry.pinned || isRightSectionPin(entry));
 }
 
 void DockModel::unpinIndex(int index)
@@ -870,10 +1085,7 @@ void DockModel::unpinIndex(int index)
         return;
     }
 
-    auto& entry = m_entries[index];
-    if (!entry.pinned) {
-        return;
-    }
+    const DockItemEntry entry = m_entries.at(index);
 
     if (!canUnpinIndex(index)) {
         if (isExplorerEntry(entry)) {
@@ -883,17 +1095,32 @@ void DockModel::unpinIndex(int index)
         return;
     }
 
-    const bool staysOnDockWhileRunning = entry.running;
-    hideEntryFromDock(entry);
-    clearExplicitDockPin(entry);
-    m_customOrder.removeOne(entryOrderKey(entry));
+    if (isRightSectionPin(entry) && !entry.pinned) {
+        clearRightSectionPin(entry);
+        saveOrder();
+        m_reorderActive = false;
+        refresh();
+        emit logMessage(QStringLiteral("unpinIndex: right-section pin removed: %1")
+                            .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+        return;
+    }
+
+    if (!entry.pinned) {
+        return;
+    }
+
+    auto& mutableEntry = m_entries[index];
+    const bool staysOnDockWhileRunning = mutableEntry.running;
+    hideEntryFromDock(mutableEntry);
+    clearExplicitDockPin(mutableEntry);
+    m_customOrder.removeOne(entryOrderKey(mutableEntry));
     saveOrder();
     if (staysOnDockWhileRunning) {
         emit logMessage(QStringLiteral("unpinIndex: dock pin removed; icon stays while running: %1")
-                            .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+                            .arg(mutableEntry.exePath.isEmpty() ? mutableEntry.label : mutableEntry.exePath));
     } else {
         emit logMessage(QStringLiteral("unpinIndex: hidden from dock only (taskbar pin kept): %1")
-                            .arg(entry.exePath.isEmpty() ? entry.label : entry.exePath));
+                            .arg(mutableEntry.exePath.isEmpty() ? mutableEntry.label : mutableEntry.exePath));
     }
     m_reorderActive = false;
     refresh();
@@ -925,16 +1152,12 @@ void DockModel::moveItem(int from, int to)
         const bool fromTransient = !fromPinned && from < pinnedCount + m_transientAppCount;
 
         if (fromTransient && to < pinnedCount) {
-            const DockItemEntry& entry = m_entries.at(from);
-            const QString path = entry.exePath.isEmpty() ? entry.launchPath : entry.exePath;
-            if (!path.isEmpty()) {
-                pinPathAt(path, to);
-            }
+            transferToLeftSection(from, to);
             return;
         }
 
         if (fromPinned && to >= pinnedCount) {
-            unpinIndex(from);
+            transferPinnedToRightSection(from, to);
             return;
         }
     }
@@ -950,9 +1173,9 @@ void DockModel::moveItem(int from, int to)
                 continue;
             }
             const QString key = entryOrderKey(entry);
-            if (entry.pinned) {
+            if (isLeftSectionEntry(entry)) {
                 pinnedKeys.append(key);
-            } else if (entry.running) {
+            } else if (isRightSectionEntry(entry)) {
                 transientKeys.append(key);
             }
         }
@@ -1015,6 +1238,7 @@ void DockModel::loadOrder()
     m_dockHiddenPins = settings.value(QStringLiteral("dock/hiddenPins")).toStringList();
     m_dockExplicitPins = settings.value(QStringLiteral("dock/explicitPins")).toStringList();
     ensureExplorerLeadingInOrder();
+    loadRightSectionCache();
 }
 
 void DockModel::saveOrder()
@@ -1024,6 +1248,98 @@ void DockModel::saveOrder()
     settings.setValue(QStringLiteral("dock/transientOrder"), m_transientOrder);
     settings.setValue(QStringLiteral("dock/hiddenPins"), m_dockHiddenPins);
     settings.setValue(QStringLiteral("dock/explicitPins"), m_dockExplicitPins);
+    saveRightSectionCache();
+}
+
+void DockModel::rememberRightSectionEntry(const DockItemEntry& entry)
+{
+    DockItemEntry cached = entry;
+    cached.hwndValue = 0;
+    cached.running = false;
+    cached.active = false;
+    cached.minimized = false;
+    cached.pinned = false;
+    cached.pinnedOnly = false;
+    cached.windowTitle.clear();
+
+    bool changed = false;
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        const auto it = m_rightSectionPinCache.constFind(key);
+        if (it == m_rightSectionPinCache.constEnd() || it.value().label != cached.label
+            || it.value().exePath != cached.exePath || it.value().launchPath != cached.launchPath
+            || it.value().appId != cached.appId || it.value().iconUrl != cached.iconUrl
+            || it.value().appUserModelId != cached.appUserModelId) {
+            m_rightSectionPinCache.insert(key, cached);
+            changed = true;
+        }
+    }
+    if (changed) {
+        saveRightSectionCache();
+    }
+}
+
+void DockModel::clearRightSectionPin(const DockItemEntry& entry)
+{
+    for (const QString& key : hiddenPinKeysForEntry(entry)) {
+        m_transientOrder.removeAll(key);
+        m_rightSectionPinCache.remove(key);
+    }
+}
+
+void DockModel::loadRightSectionCache()
+{
+    m_rightSectionPinCache.clear();
+    QSettings settings;
+    const QVariantList items = settings.value(QStringLiteral("dock/rightSectionCache")).toList();
+    for (const QVariant& var : items) {
+        const QVariantMap map = var.toMap();
+        const QString key = map.value(QStringLiteral("key")).toString();
+        if (key.isEmpty()) {
+            continue;
+        }
+
+        DockItemEntry entry;
+        entry.appId = map.value(QStringLiteral("appId")).toString();
+        entry.label = map.value(QStringLiteral("label")).toString();
+        entry.exePath = map.value(QStringLiteral("exePath")).toString();
+        entry.launchPath = map.value(QStringLiteral("launchPath")).toString();
+        entry.appUserModelId = map.value(QStringLiteral("appUserModelId")).toString();
+        entry.iconHint = map.value(QStringLiteral("iconHint")).toString();
+        entry.iconUrl = map.value(QStringLiteral("iconUrl")).toString();
+
+        m_rightSectionPinCache.insert(key, entry);
+        for (const QString& alias : hiddenPinKeysForEntry(entry)) {
+            m_rightSectionPinCache.insert(alias, entry);
+        }
+    }
+}
+
+void DockModel::saveRightSectionCache()
+{
+    QSet<QString> savedKeys;
+    QVariantList items;
+    for (auto it = m_rightSectionPinCache.constBegin(); it != m_rightSectionPinCache.constEnd(); ++it) {
+        const QString canonicalKey = entryOrderKey(it.value());
+        if (savedKeys.contains(canonicalKey)) {
+            continue;
+        }
+        savedKeys.insert(canonicalKey);
+
+        const DockItemEntry& entry = it.value();
+        QVariantMap map;
+        map.insert(QStringLiteral("key"), canonicalKey);
+        map.insert(QStringLiteral("appId"), entry.appId);
+        map.insert(QStringLiteral("label"), entry.label);
+        map.insert(QStringLiteral("exePath"), entry.exePath);
+        map.insert(QStringLiteral("launchPath"), entry.launchPath);
+        map.insert(QStringLiteral("appUserModelId"), entry.appUserModelId);
+        map.insert(QStringLiteral("iconHint"), entry.iconHint);
+        map.insert(QStringLiteral("iconUrl"), entry.iconUrl);
+        items.append(map);
+    }
+
+    QSettings settings;
+    settings.setValue(QStringLiteral("dock/rightSectionCache"), items);
 }
 
 void DockModel::activateIndex(int index)
@@ -1276,7 +1592,7 @@ void DockModel::loadPinnedApps()
         }
 
         DockItemEntry entry = makePinnedEntry(shortcut);
-        if (isHiddenFromDock(entry)) {
+        if (isHiddenFromDock(entry) || isRightSectionPin(entry)) {
             continue;
         }
         if (!entry.exePath.isEmpty()) {

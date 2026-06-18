@@ -56,7 +56,8 @@ public:
         PinnedRole,
         MinimizedRole,
         ClickableRole,
-        KindRole
+        KindRole,
+        RightSectionPinRole
     };
 
     explicit DockModel(QObject* parent = nullptr);
@@ -137,6 +138,19 @@ private:
     QPixmap extractFileIcon(const QString& exePath) const;
     QString ensureIconFile(const QString& appId, const QString& exePath) const;
     void emitActiveWindowState();
+    bool ensurePinnedShortcut(const QString& path, QString* shortcutPathOut = nullptr);
+    void insertKeyAtIndex(QStringList& order, const QString& key, int index);
+    bool isRightSectionPin(const DockItemEntry& entry) const;
+    bool isLeftSectionEntry(const DockItemEntry& entry) const;
+    bool isRightSectionEntry(const DockItemEntry& entry) const;
+    void transferToLeftSection(int from, int to);
+    void transferPinnedToRightSection(int from, int to);
+    void appendRightSectionPins();
+    void insertPinnedKeyAtSlot(const QString& orderKey, int pinnedSlot);
+    void rememberRightSectionEntry(const DockItemEntry& entry);
+    void clearRightSectionPin(const DockItemEntry& entry);
+    void loadRightSectionCache();
+    void saveRightSectionCache();
 
     QVector<DockItemEntry> m_entries;
     QStringList m_pinnedPaths;
@@ -162,6 +176,7 @@ private:
     QStringList m_dockHiddenPins;
     // Apps pinned via the dock that may not yet appear in the Windows taskbar registry.
     QStringList m_dockExplicitPins;
+    QHash<QString, DockItemEntry> m_rightSectionPinCache;
     // Set while the user is dragging an icon; suspends refresh so the drag is not
     // interrupted by the periodic model reset.
     bool m_reorderActive = false;

@@ -50,6 +50,8 @@ Window {
     property bool unpinCommitting: false
     // Screen center held while the model shrinks — prevents one-frame dock slide on unpin.
     property real unpinAnchorCenterX: -1
+    // Screen center held while cross-section pin transfers reflow the dock.
+    property real sectionChangeAnchorCenterX: -1
     // Screen center frozen for external-pin preview — slot changes must not retarget window x.
     property real externalPinFrozenCenterX: -1
     // Frozen expanded slot count/width during model handoff — prevents one-frame pill shrink.
@@ -92,6 +94,7 @@ Window {
     // and are excluded from drag-reorder and external-pin insertion.
     readonly property int trailingShellCount: 2
     readonly property int appSlotCount: Math.max(0, dockRepeater.count - trailingShellCount)
+    readonly property int appReorderSlotCount: dockWindow.pinnedAppCount + dockWindow.transientAppCount
     readonly property int pinnedAppCount: dockModel.pinnedAppCount
     readonly property int transientAppCount: dockModel.transientAppCount
     readonly property bool showTransientSeparator:
@@ -130,6 +133,71 @@ Window {
 
     function isAllowedPinSlot(slot, appCount) {
         return slot >= minAllowedPinSlot(appCount) && slot <= maxAllowedPinSlot(appCount)
+    }
+
+    function isPinnedSlot(index) {
+        return index >= 0 && index < dockWindow.pinnedAppCount
+    }
+
+    function isTransientSlot(index) {
+        return index >= dockWindow.pinnedAppCount
+                && index < dockWindow.appReorderSlotCount
+    }
+
+    function pillWidthForAppCount(appCount) {
+        return appCount * dockStride + 2 * hoverBleed + 2 * dockEndCap
+    }
+
+    function isCrossSectionReorder(from, to) {
+        if (!taskbarController.dockSeparateTransientApps || from < 0 || to < 0 || from === to)
+            return false
+        return (from < pinnedAppCount && to >= pinnedAppCount)
+                || (from >= pinnedAppCount && to < pinnedAppCount)
+    }
+
+    function beginSectionChangeLayout(from, to) {
+        if (!isCrossSectionReorder(from, to))
+            return false
+        sectionChangeAnchorCenterX = dockWindow.x + dockWindow.width / 2
+        reorderFrozenWindowX = -1
+        return true
+    }
+
+    function finishSectionChangeLayout() {
+        Qt.callLater(function() {
+            dockWindow.sectionChangeAnchorCenterX = -1
+            dockWindow.syncAnimatedPillWidth(true)
+            dockWindow.publishDropGeometry()
+            Qt.callLater(dockWindow.refreshClickHitRegions)
+        })
+    }
+
+    function separatorCenterX() {
+        if (!dockWindow.showTransientSeparator)
+            return -1
+        return dockWindow.separatorXForBoundary(dockWindow.pinnedAppCount) + 0.5
+    }
+
+    function snapReorderSlotForSeparator(candidate, fromIndex, dragCenterX) {
+        if (!taskbarController.dockSeparateTransientApps || !dockWindow.showTransientSeparator)
+            return candidate
+        var pinnedEnd = dockWindow.pinnedAppCount
+        var appEnd = dockWindow.appReorderSlotCount
+        if (appEnd <= 0 || pinnedEnd <= 0 || pinnedEnd >= appEnd)
+            return candidate
+
+        var sepX = separatorCenterX()
+        if (sepX < 0)
+            return candidate
+
+        if (fromIndex < pinnedEnd) {
+            if (candidate >= pinnedEnd && dragCenterX < sepX)
+                return Math.max(0, pinnedEnd - 1)
+        } else if (fromIndex < appEnd) {
+            if (candidate < pinnedEnd && dragCenterX >= sepX)
+                return pinnedEnd
+        }
+        return candidate
     }
 
     function clampReorderSlot(candidate, fromIndex, count) {
@@ -403,8 +471,12 @@ Window {
 
         var iconSize = taskbarController.dockIconSize
         var dragCenter = leftX + iconSize / 2
-        var candidate = candidateSlotForCenter(dragCenter, count)
-        candidate = clampReorderSlot(candidate, fromIndex, count)
+        var appCount = taskbarController.dockSeparateTransientApps
+                ? dockWindow.appReorderSlotCount
+                : dockWindow.appSlotCount
+        var candidate = candidateSlotForCenter(dragCenter, appCount)
+        candidate = clampReorderSlot(candidate, fromIndex, appCount)
+        candidate = snapReorderSlotForSeparator(candidate, fromIndex, dragCenter)
 
         if (dragTo < 0) {
             dragTo = fromIndex
@@ -570,6 +642,7 @@ Window {
 
         var from = dragFrom
         var to = dragTo
+        var crossSection = isCrossSectionReorder(from, to)
         reorderSettling = false
         dragFrom = -1
         dragTo = -1
@@ -592,8 +665,13 @@ Window {
         _settleDoneX = true
         _settleDoneY = true
         dockModel.setReorderActive(false)
-        if (from >= 0 && to >= 0 && from !== to)
+        if (from >= 0 && to >= 0 && from !== to) {
+            if (crossSection)
+                beginSectionChangeLayout(from, to)
             dockModel.moveItem(from, to)
+            if (crossSection)
+                finishSectionChangeLayout()
+        }
     }
     // macOS layout: a centered pill for icons plus transparent side wings so edge
     // tooltips and hover magnify stay centered on the icon instead of being clamped.
@@ -623,6 +701,8 @@ Window {
     readonly property real dockWindowX: {
         if (unpinAnchorCenterX >= 0)
             return Math.round(unpinAnchorCenterX - dockWindowWidth / 2)
+        if (sectionChangeAnchorCenterX >= 0)
+            return Math.round(sectionChangeAnchorCenterX - dockWindowWidth / 2)
         if (externalPinPreview && externalPinFrozenCenterX >= 0)
             return Math.round(externalPinFrozenCenterX - dockWindowWidth / 2)
         if (externalPinRestEdge !== 0 && externalPinRestAnchorLeftX >= 0) {
@@ -647,6 +727,7 @@ Window {
             return
         }
         if (immediate || externalPinPreview || externalPinCommitting || unpinCommitting
+                || sectionChangeAnchorCenterX >= 0
                 || dockPackAnim.running) {
             dockChromeWidthAnim.stop()
             animatedPillWidth = dockPillWidth
@@ -1695,6 +1776,7 @@ Window {
                     required property bool running
                     required property bool active
                     required property bool pinned
+                    required property bool rightSectionPinned
                     required property bool minimized
                     required property bool clickable
                     required property string kind
@@ -1864,7 +1946,7 @@ Window {
 
                     opacity: dockItemRoot.dragging ? 0
                             : (dockItemRoot.reorderLifted ? 0.92
-                               : (dockItemRoot.running || dockItemRoot.pinned ? 1.0 : 0.55))
+                               : (dockItemRoot.running || dockItemRoot.pinned || dockItemRoot.rightSectionPinned ? 1.0 : 0.55))
                     z: dockItemRoot.reorderLifted ? 100 : (dockItemRoot.magnifyHover ? 10 : 0)
 
                     Behavior on opacity {
@@ -2056,7 +2138,9 @@ Window {
                             Text {
                                 id: tooltipText
                                 anchors.centerIn: parent
-                                text: dockItemRoot.pinned ? dockItemRoot.label : dockItemRoot.label + " (не закреплено)"
+                                text: dockItemRoot.pinned || dockItemRoot.rightSectionPinned
+                                      ? dockItemRoot.label
+                                      : dockItemRoot.label + " (не закреплено)"
                                 color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -2536,13 +2620,13 @@ Window {
                                 dockWindow.syncDockPackState()
                             }
                             dockItemRoot.syncGripFromPointer()
-                            dockItemRoot.unpinDragPreview = dockItemRoot.pinned
+                            dockItemRoot.unpinDragPreview = (dockItemRoot.pinned || dockItemRoot.rightSectionPinned)
                                     && dockItemRoot.gripY < dockWindow.unpinThreshold
                                     && dockModel.canUnpinIndex(dockItemRoot.index)
                             dockWindow.updateDragTarget(
                                 dockWindow.dragLeftX,
                                 dockItemRoot.gripY,
-                                dockRepeater.count,
+                                dockWindow.appReorderSlotCount,
                                 dockWindow.dragFrom)
                         }
 
@@ -2560,7 +2644,8 @@ Window {
                             dockWindow.reorderDragOverlayActive = false
                             dockItemRoot.suppressClick = true
 
-                            if (dockItemRoot.unpinDragPreview && dockItemRoot.pinned) {
+                            if (dockItemRoot.unpinDragPreview
+                                    && (dockItemRoot.pinned || dockItemRoot.rightSectionPinned)) {
                                 dockItemRoot.unpinDragPreview = false
                                 dockWindow.finishUnpin(from)
                                 return
@@ -2586,7 +2671,8 @@ Window {
                             dockItemRoot.dragging = false
                             dockWindow.reorderDragOverlayActive = false
                             dockItemRoot.suppressClick = true
-                            if (dockItemRoot.unpinDragPreview && from >= 0 && dockItemRoot.pinned) {
+                            if (dockItemRoot.unpinDragPreview && from >= 0
+                                    && (dockItemRoot.pinned || dockItemRoot.rightSectionPinned)) {
                                 dockItemRoot.unpinDragPreview = false
                                 dockWindow.finishUnpin(from)
                                 return
