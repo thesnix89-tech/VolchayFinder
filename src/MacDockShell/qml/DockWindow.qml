@@ -89,6 +89,8 @@ Window {
     readonly property int dockSpacing: 14
     readonly property int dockBarPad: 22
     readonly property int dockBarHeight: taskbarController.dockIconSize + dockBarPad * 2
+    // macOS dock: rounded rect, not a full stadium pill (~38% of bar height).
+    readonly property int dockPillRadius: Math.round(dockBarHeight * 0.38)
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     // Trailing macOS-style shell items (Downloads + Trash) live after the separator
     // and are excluded from drag-reorder and external-pin insertion.
@@ -1503,7 +1505,7 @@ Window {
         anchors.horizontalCenter: parent.horizontalCenter
         width: dockWindow.animatedPillWidth
         height: dockWindow.dockBarHeight
-        radius: 20
+        radius: dockWindow.dockPillRadius
         onWidthChanged: {
             if (!dockWindow.externalPinPreview)
                 clickThroughWarmupTimer.restart()
