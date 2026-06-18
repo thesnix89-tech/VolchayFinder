@@ -479,9 +479,7 @@ Window {
     function showTransientSeparatorDuringLayout() {
         if (!taskbarController.dockSeparateTransientApps)
             return false
-        if (reordering && dragFrom >= 0 && dragFrom < appSlotCount)
-            return packedTransientCount(dragFrom) > 0 && packedPinnedCount(dragFrom) > 0
-        return transientAppCount > 0
+        return transientAppCount > 0 && pinnedAppCount > 0
     }
 
     function transientSectionStartForPacked(packedPinned) {
