@@ -358,7 +358,9 @@ Window {
                 var inset = Math.max(0, (zoneWidth - blockWidth) / 2)
                 return sectionStart + inset + local * dockAppStride
             }
-            return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
+            if (slot < 0)
+                return slotLeftForIndex(itemIndex)
+            return slotLeftForIndex(slot)
         }
 
         var shellExpansion = pinnedToTransientExpansion(from, toSlot)
@@ -380,10 +382,16 @@ Window {
             if (slot === appSlotCount && itemIndex < appSlotCount)
                 return transStart + transInset + transientAppCount * dockAppStride
 
-            return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
+            if (slot < pinnedAppCount)
+                return linearSlotLeftForIndex(slot)
+            if (slot < 0)
+                return slotLeftForIndex(itemIndex)
+            return slotLeftForIndex(slot)
         }
 
-        return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
+        if (slot < 0)
+            return slotLeftForIndex(itemIndex)
+        return slotLeftForIndex(slot)
     }
 
     function separatorCenterX() {
@@ -695,10 +703,10 @@ Window {
         var slotFloor = Math.floor(slotReal)
         var slotCeil = Math.ceil(slotReal)
         var xAtSlot = function(s) {
-            var slot = previewModelSlotForIndex(itemIndex, from, s)
-            if (slot < 0)
+            var previewSlot = previewModelSlotForIndex(itemIndex, from, s)
+            if (previewSlot < 0)
                 return slotLeftForIndex(itemIndex)
-            return previewSlotLeftForIndex(slot, from, s, itemIndex)
+            return previewSlotLeftForIndex(previewSlot, from, s, itemIndex)
         }
         if (slotFloor === slotCeil)
             return xAtSlot(slotFloor)
