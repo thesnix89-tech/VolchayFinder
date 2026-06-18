@@ -294,13 +294,13 @@ Window {
     }
 
     function separatorCenterX() {
-        if (!dockWindow.showTransientSeparator)
+        if (!dockWindow.showTransientSeparatorDuringLayout())
             return -1
         return dockWindow.separatorXForBoundary(dockWindow.pinnedAppCount) + 0.5
     }
 
     function snapReorderSlotForSeparator(candidate, fromIndex, dragCenterX) {
-        if (!taskbarController.dockSeparateTransientApps || !dockWindow.showTransientSeparator)
+        if (!taskbarController.dockSeparateTransientApps || !dockWindow.showTransientSeparatorDuringLayout())
             return candidate
         var pinnedEnd = dockWindow.pinnedAppCount
         var appEnd = dockWindow.appReorderSlotCount
@@ -406,6 +406,72 @@ Window {
         return i
     }
 
+    function packedAppSlotCount(from) {
+        if (from >= 0 && from < appSlotCount)
+            return appSlotCount - 1
+        return appSlotCount
+    }
+
+    function packedPinnedCount(from) {
+        if (from >= 0 && from < pinnedAppCount)
+            return pinnedAppCount - 1
+        return pinnedAppCount
+    }
+
+    function packedTransientCount(from) {
+        if (!taskbarController.dockSeparateTransientApps)
+            return 0
+        var count = transientAppCount
+        if (from >= pinnedAppCount && from < appSlotCount)
+            count--
+        return Math.max(0, count)
+    }
+
+    function effectiveAppShellGapForPack(from) {
+        if (taskbarController.dockSeparateTransientApps && packedTransientCount(from) > 0)
+            return dockAppShellGapWithTransient
+        return dockAppShellGapCompact
+    }
+
+    function appShellSeparatorXForPack(from) {
+        var packedApps = packedAppSlotCount(from)
+        return hoverBleed + appIconsExtentForCount(packedApps) + effectiveAppShellGapForPack(from)
+    }
+
+    function shellSlotLeftForIndex(modelIndex, from) {
+        var packedApps = packedAppSlotCount(from)
+        var shellIndex = modelIndex - appSlotCount
+        var appExtent = appIconsExtentForCount(packedApps)
+        var bridge = packedApps > 0 ? (effectiveAppShellGapForPack(from) + 1 + dockShellSpacing) : 0
+        if (shellIndex <= 0)
+            return hoverBleed + appExtent + bridge
+        return hoverBleed + appExtent + bridge + shellIndex * dockShellStride
+    }
+
+    function rowContentWidthForPack(from) {
+        if (from < 0 || from >= appSlotCount)
+            return rowContentWidth(dockRepeater.count)
+        var packedApps = packedAppSlotCount(from)
+        var shells = trailingShellCount
+        var w = 0
+        if (packedApps > 0)
+            w = appIconsExtentForCount(packedApps)
+        if (shells > 0) {
+            if (packedApps > 0)
+                w += effectiveAppShellGapForPack(from) + 1 + dockShellSpacing
+            w += shells * dockSlotSize + Math.max(0, shells - 1) * dockShellSpacing
+        }
+        return w
+    }
+
+    function showTransientSeparatorDuringLayout() {
+        if (!taskbarController.dockSeparateTransientApps)
+            return false
+        if (reordering && dragFrom >= 0 && dragFrom < appSlotCount)
+            return packedTransientCount(dragFrom) > 0 && packedPinnedCount(dragFrom) > 0
+        return transientAppCount > 0
+    }
+
     function gapCenterForSlot(slot) {
         return slotLeftForIndex(slot) + dockSlotSize / 2
     }
@@ -451,7 +517,11 @@ Window {
             var shellLeadIn = 1 + dockShellSpacing
             if (externalPinPreview && dragFrom < 0)
                 return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - shellLeadIn
-            return appShellSeparatorXForAppCount(appSlotCount)
+            if (dragFrom < 0 || !reordering || dragFrom >= appSlotCount)
+                return appShellSeparatorXForAppCount(appSlotCount)
+            var fullSep = appShellSeparatorXForAppCount(appSlotCount)
+            var packedSep = appShellSeparatorXForPack(dragFrom)
+            return packedSep + (1 - dockPackT) * (fullSep - packedSep)
         }
 
         var halfGap = Math.round(spacingAtBoundary(boundaryIndex) / 2)
@@ -833,7 +903,7 @@ Window {
     readonly property real dockRowFullWidth: rowContentWidth(layoutDockCount) + 2 * hoverBleed
     readonly property real dockRowCompactWidth: (externalPinPreview || externalPinCommitting)
             ? rowContentWidth(Math.max(0, layoutDockCount - 1)) + 2 * hoverBleed
-            : (reordering ? rowContentWidth(Math.max(0, dockRepeater.count - 1))
+            : (reordering ? rowContentWidthForPack(dragFrom) + 2 * hoverBleed
                            : rowContentWidth(dockRepeater.count)) + 2 * hoverBleed
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
@@ -1861,7 +1931,7 @@ Window {
             // macOS-style separator between pinned apps and transient running apps.
             Rectangle {
                 id: dockTransientSeparator
-                visible: dockWindow.showTransientSeparator
+                visible: dockWindow.showTransientSeparatorDuringLayout()
                 x: dockWindow.separatorXForBoundary(dockWindow.pinnedAppCount)
                 y: Math.round((dockWindow.dockBarHeight - height) / 2)
                 width: 1
@@ -2009,6 +2079,9 @@ Window {
                             || (dockWindow.reorderSettling && dockItemRoot.index === dockWindow.dragFrom)
                     readonly property real fullRestX: dockWindow.slotLeftForIndex(dockItemRoot.index)
                     readonly property real compactRestX: {
+                        if (dockItemRoot.isSpecial)
+                            return dockWindow.shellSlotLeftForIndex(
+                                dockItemRoot.index, dockWindow.dragFrom)
                         var packed = dockWindow.packedSlotForIndex(
                             dockItemRoot.index, dockWindow.dragFrom)
                         return packed < 0
@@ -2063,6 +2136,11 @@ Window {
                                      * (dockItemRoot.morphedInsertPreviewX - dockItemRoot.fullRestX)
                         if (dockWindow.dragFrom < 0)
                             return dockItemRoot.fullRestX
+                        if (dockItemRoot.isSpecial) {
+                            return dockItemRoot.compactRestX
+                                   + (1 - dockWindow.dockPackT)
+                                     * (dockItemRoot.fullRestX - dockItemRoot.compactRestX)
+                        }
                         if (!dockWindow.neighborsPacked && dockWindow.dockPackT < 0.02)
                             return dockItemRoot.fullRestX
                         return dockItemRoot.compactRestX
