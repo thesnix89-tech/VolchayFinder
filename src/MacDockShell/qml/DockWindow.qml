@@ -1533,6 +1533,7 @@ Window {
     property real dockSlideY: dockRestY
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
     readonly property bool darkTheme: taskbarController.darkTheme
+    readonly property color dockPillColor: darkTheme ? "#5E5E5E" : "#F3F3F3"
     readonly property int themeAnimMs: 320
     y: dockSlideY
 
@@ -1963,8 +1964,12 @@ Window {
                 clickThroughWarmupTimer.restart()
         }
 
-        color: "#5E5E5E"
+        color: dockWindow.dockPillColor
         border.width: 0
+
+        Behavior on color {
+            ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+        }
 
         MouseArea {
             anchors.fill: parent
