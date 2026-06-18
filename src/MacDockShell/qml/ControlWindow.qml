@@ -12,11 +12,17 @@ Window {
     property int settingsPage: 0
     property string explorerIconStyle: taskbarController.explorerIconStyle
     property string trashIconStyle: taskbarController.trashIconStyle
+    property string menuBarIconStyle: taskbarController.menuBarIconStyle
     property bool pinFromTaskbarRequested: false
 
     onVisibleChanged: {
-        if (!visible)
+        if (!visible) {
             pinFromTaskbarRequested = false
+            return
+        }
+        explorerIconStyle = taskbarController.explorerIconStyle
+        trashIconStyle = taskbarController.trashIconStyle
+        menuBarIconStyle = taskbarController.menuBarIconStyle
     }
 
     x: Math.round((Screen.width - width) / 2)
@@ -298,6 +304,16 @@ Window {
                             fillMode: Image.PreserveAspectFit
                             smooth: true
                             mipmap: true
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "+"
+                            color: "#86868B"
+                            font.pixelSize: 28
+                            font.weight: Font.Medium
+                            visible: previewImage.source.toString().length === 0
+                                    || previewImage.status !== Image.Ready
                         }
                     }
 
@@ -876,6 +892,79 @@ Window {
                     spacing: 14
 
                     Text {
+                        text: "Иконка меню"
+                        color: "#1D1D1F"
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "Иконка слева в верхней панели"
+                        color: "#86868B"
+                        font.pixelSize: 10
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Row {
+                        spacing: 16
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.menuBarIconStyle === "apple"
+                            previewSource: taskbarController.menuBarIconPreviewUrl("apple")
+                            title: "Apple"
+                            subtitle: "Как на Mac"
+                            onClicked: settingsWindow.menuBarIconStyle = "apple"
+                        }
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.menuBarIconStyle === "star"
+                            previewSource: taskbarController.menuBarIconPreviewUrl("star")
+                            title: "Megushell"
+                            subtitle: "Звёздочка"
+                            onClicked: settingsWindow.menuBarIconStyle = "star"
+                        }
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.menuBarIconStyle === "windows"
+                            previewSource: taskbarController.menuBarIconPreviewUrl("windows")
+                            title: "Windows"
+                            subtitle: "Сетка"
+                            onClicked: settingsWindow.menuBarIconStyle = "windows"
+                        }
+
+                        ExplorerIconCard {
+                            selected: settingsWindow.menuBarIconStyle === "custom"
+                            previewSource: taskbarController.menuBarIconPreviewUrl("custom")
+                            title: "Своя"
+                            subtitle: "Из файла"
+                            onClicked: settingsWindow.menuBarIconStyle = "custom"
+                        }
+                    }
+
+                    Button {
+                        text: "Загрузить…"
+                        implicitHeight: 30
+                        onClicked: {
+                            if (taskbarController.importCustomMenuBarIcon())
+                                settingsWindow.menuBarIconStyle = "custom"
+                        }
+
+                        background: Rectangle {
+                            radius: 6
+                            color: parent.down ? "#ECECEC" : (parent.hovered ? "#F5F5F7" : "#FFFFFF")
+                            border.width: 1
+                            border.color: "#D1D1D6"
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: "#ECECEC"
+                    }
+
+                    Text {
                         text: "Иконка проводника"
                         color: "#1D1D1F"
                         font.pixelSize: 12
@@ -1013,7 +1102,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false

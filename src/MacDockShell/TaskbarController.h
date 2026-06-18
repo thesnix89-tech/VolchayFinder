@@ -27,6 +27,8 @@ class TaskbarController : public QObject
     Q_PROPERTY(QStringList menuBarItems READ menuBarItems NOTIFY menuBarItemsChanged)
     Q_PROPERTY(QString explorerIconStyle READ explorerIconStyle WRITE setExplorerIconStyle NOTIFY explorerIconStyleChanged)
     Q_PROPERTY(QString trashIconStyle READ trashIconStyle WRITE setTrashIconStyle NOTIFY trashIconStyleChanged)
+    Q_PROPERTY(QString menuBarIconStyle READ menuBarIconStyle WRITE setMenuBarIconStyle NOTIFY menuBarIconStyleChanged)
+    Q_PROPERTY(QString menuBarCustomIconPath READ menuBarCustomIconPath NOTIFY menuBarCustomIconPathChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -36,7 +38,10 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle);
+    Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
+    Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style) const;
+    Q_INVOKABLE bool importCustomMenuBarIcon();
     Q_INVOKABLE void tryAutostartShell();
     Q_INVOKABLE void enforceTaskbarHidden();
 
@@ -70,6 +75,9 @@ public:
     void setExplorerIconStyle(const QString& style);
     QString trashIconStyle() const;
     void setTrashIconStyle(const QString& style);
+    QString menuBarIconStyle() const;
+    void setMenuBarIconStyle(const QString& style);
+    QString menuBarCustomIconPath() const;
 
 signals:
     void taskbarHiddenChanged();
@@ -90,9 +98,14 @@ signals:
     void menuBarItemsChanged();
     void explorerIconStyleChanged();
     void trashIconStyleChanged();
+    void menuBarIconStyleChanged();
+    void menuBarCustomIconPathChanged();
     void shellLayoutRestoreNeeded();
 
 private:
+    QString normalizeMenuBarIconStyle(const QString& style) const;
+    QString bundledMenuBarIconResource(const QString& style, bool darkTheme) const;
+    QString menuBarIconsDirectory() const;
     void loadSettings();
     void saveSettings();
     bool setTaskbarVisible(bool visible);
@@ -121,7 +134,7 @@ private:
     bool m_autoHideWindowsTaskbar = true;
     bool m_keepTaskbarAutoHideOnExit = false;
     bool m_dockHoverBounce = true;
-    bool m_dockDragFadeEnabled = true;
+    bool m_dockDragFadeEnabled = false;
     bool m_dockStaticIcons = false;
     bool m_darkTheme = false;
     bool m_startWithWindows = false;
@@ -131,5 +144,7 @@ private:
     QStringList m_menuBarItems;
     QString m_explorerIconStyle = QStringLiteral("default");
     QString m_trashIconStyle = QStringLiteral("windows");
+    QString m_menuBarIconStyle = QStringLiteral("apple");
+    QString m_menuBarCustomIconPath;
     QTimer* m_fullscreenTimer = nullptr;
 };

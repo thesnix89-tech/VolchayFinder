@@ -7,11 +7,15 @@
 #include <QProcess>
 #include <QTimer>
 #include <QFileInfo>
+#include <QFile>
+#include <QStandardPaths>
+#include <QUrl>
 
 #include <algorithm>
 #include <string>
 
 #include <windows.h>
+#include <commdlg.h>
 #include <shellapi.h>
 
 namespace {
@@ -346,6 +350,23 @@ bool setWindowsRunAtStartup(bool enabled)
                                              static_cast<DWORD>((nativeCommand.size() + 1) * sizeof(wchar_t)));
     RegCloseKey(runKey);
     return setStatus == ERROR_SUCCESS;
+}
+
+QString pickMenuBarIconFile()
+{
+    wchar_t buffer[MAX_PATH] = {};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.lpstrFilter = L"Images\0*.png;*.svg;*.ico;*.jpg;*.jpeg;*.bmp;*.webp\0All Files\0*.*\0\0";
+    ofn.lpstrFile = buffer;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+    ofn.lpstrTitle = L"Choose menu bar icon";
+
+    if (!GetOpenFileNameW(&ofn)) {
+        return {};
+    }
+    return QString::fromWCharArray(buffer);
 }
 
 } // namespace
@@ -1040,6 +1061,120 @@ void TaskbarController::setTrashIconStyle(const QString& style)
     emit trashIconStyleChanged();
 }
 
+QString TaskbarController::normalizeMenuBarIconStyle(const QString& style) const
+{
+    if (style == QStringLiteral("star")
+        || style == QStringLiteral("windows")
+        || style == QStringLiteral("custom")) {
+        return style;
+    }
+    return QStringLiteral("apple");
+}
+
+QString TaskbarController::menuBarIconsDirectory() const
+{
+    const QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    const QString dirPath = base + QStringLiteral("/icons");
+    QDir().mkpath(dirPath);
+    return dirPath;
+}
+
+QString TaskbarController::bundledMenuBarIconResource(const QString& style, bool darkTheme) const
+{
+    if (style == QStringLiteral("star")) {
+        return darkTheme
+                ? QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_star_white.png")
+                : QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_star.png");
+    }
+    if (style == QStringLiteral("windows")) {
+        return darkTheme
+                ? QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows_white.png")
+                : QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows.png");
+    }
+    return darkTheme
+            ? QStringLiteral("qrc:/src/MacDockShell/qml/apple_logo_white.svg")
+            : QStringLiteral("qrc:/src/MacDockShell/qml/apple_logo.svg");
+}
+
+QString TaskbarController::menuBarIconStyle() const
+{
+    return m_menuBarIconStyle;
+}
+
+QString TaskbarController::menuBarCustomIconPath() const
+{
+    return m_menuBarCustomIconPath;
+}
+
+void TaskbarController::setMenuBarIconStyle(const QString& style)
+{
+    const QString normalized = normalizeMenuBarIconStyle(style);
+    if (m_menuBarIconStyle == normalized) {
+        return;
+    }
+    m_menuBarIconStyle = normalized;
+    emit menuBarIconStyleChanged();
+}
+
+QString TaskbarController::menuBarIconUrl(bool darkTheme) const
+{
+    if (m_menuBarIconStyle == QStringLiteral("custom")) {
+        if (!m_menuBarCustomIconPath.isEmpty()) {
+            const QFileInfo info(m_menuBarCustomIconPath);
+            if (info.exists() && info.isFile()) {
+                return QUrl::fromLocalFile(info.absoluteFilePath()).toString();
+            }
+        }
+        return bundledMenuBarIconResource(QStringLiteral("apple"), darkTheme);
+    }
+    return bundledMenuBarIconResource(m_menuBarIconStyle, darkTheme);
+}
+
+QString TaskbarController::menuBarIconPreviewUrl(const QString& style) const
+{
+    const QString normalized = normalizeMenuBarIconStyle(style);
+    if (normalized == QStringLiteral("custom")) {
+        if (!m_menuBarCustomIconPath.isEmpty()) {
+            const QFileInfo info(m_menuBarCustomIconPath);
+            if (info.exists() && info.isFile()) {
+                return QUrl::fromLocalFile(info.absoluteFilePath()).toString();
+            }
+        }
+        return QString();
+    }
+    return bundledMenuBarIconResource(normalized, false);
+}
+
+bool TaskbarController::importCustomMenuBarIcon()
+{
+    const QString sourcePath = pickMenuBarIconFile();
+    if (sourcePath.isEmpty()) {
+        return false;
+    }
+
+    const QFileInfo sourceInfo(sourcePath);
+    const QString suffix = sourceInfo.suffix().isEmpty()
+            ? QStringLiteral("png")
+            : sourceInfo.suffix().toLower();
+    const QString destPath = menuBarIconsDirectory()
+            + QStringLiteral("/menu_bar_custom.") + suffix;
+
+    if (QFile::exists(destPath)) {
+        QFile::remove(destPath);
+    }
+    if (!QFile::copy(sourcePath, destPath)) {
+        emit shellActionLogged(QStringLiteral("Failed to import custom menu bar icon: %1").arg(sourcePath));
+        return false;
+    }
+
+    m_menuBarCustomIconPath = destPath;
+    emit menuBarCustomIconPathChanged();
+    setMenuBarIconStyle(QStringLiteral("custom"));
+    saveSettings();
+    emit shellActionLogged(QStringLiteral("Imported custom menu bar icon: %1").arg(destPath));
+    return true;
+}
+
 void TaskbarController::loadSettings()
 {
     QSettings settings;
@@ -1048,12 +1183,14 @@ void TaskbarController::loadSettings()
     m_showTopBar = settings.value(QStringLiteral("shell/showTopBar"), true).toBool();
     m_dockIconSize = settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt();
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
-    m_dockDragFadeEnabled = settings.value(QStringLiteral("shell/dockDragFadeEnabled"), true).toBool();
+    m_dockDragFadeEnabled = settings.value(QStringLiteral("shell/dockDragFadeEnabled"), false).toBool();
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
     m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
     m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
     setExplorerIconStyle(settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString());
     setTrashIconStyle(settings.value(QStringLiteral("shell/trashIconStyle"), QStringLiteral("windows")).toString());
+    setMenuBarIconStyle(settings.value(QStringLiteral("shell/menuBarIconStyle"), QStringLiteral("apple")).toString());
+    m_menuBarCustomIconPath = settings.value(QStringLiteral("shell/menuBarCustomIconPath")).toString();
     reconcileWindowsStartup();
 }
 
@@ -1071,6 +1208,8 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
     settings.setValue(QStringLiteral("shell/explorerIconStyle"), m_explorerIconStyle);
     settings.setValue(QStringLiteral("shell/trashIconStyle"), m_trashIconStyle);
+    settings.setValue(QStringLiteral("shell/menuBarIconStyle"), m_menuBarIconStyle);
+    settings.setValue(QStringLiteral("shell/menuBarCustomIconPath"), m_menuBarCustomIconPath);
 }
 
 void TaskbarController::updateTaskbarVisibility()
@@ -1082,7 +1221,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1095,6 +1234,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setStartWithWindows(startWithWindows);
     setExplorerIconStyle(explorerIconStyle);
     setTrashIconStyle(trashIconStyle);
+    setMenuBarIconStyle(menuBarIconStyle);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);

@@ -30,6 +30,10 @@ Window {
     // Lifted icon: opaque in the dock row, semi-transparent when dragged outside it.
     readonly property real reorderDragOpacity: (!taskbarController.dockDragFadeEnabled || dragInDockZone)
             ? 1.0 : 0.45
+    readonly property bool reorderRemoveLabelVisible: reorderDragOverlayActive
+            && !dragInDockZone
+            && dragFrom >= 0
+            && dockModel.canUnpinIndex(dragFrom)
     property bool dockZoneEverEntered: false
     // 0 = full dock, 1 = compact (lifted icon slot removed) — single driver for pill width.
     property real dockPackT: 0
@@ -102,6 +106,23 @@ Window {
     readonly property int reorderOverlayPad: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
     // Drag upward past this gripY threshold to enter unpin-preview state.
     readonly property int unpinThreshold: -80
+
+    // External pin: slot 0 (before Finder) and slot appCount (after last app) are forbidden.
+    function minAllowedPinSlot(appCount) {
+        return appCount <= 0 ? 0 : 1
+    }
+
+    function maxAllowedPinSlot(appCount) {
+        if (appCount <= 0)
+            return 0
+        if (appCount === 1)
+            return 1
+        return appCount - 1
+    }
+
+    function isAllowedPinSlot(slot, appCount) {
+        return slot >= minAllowedPinSlot(appCount) && slot <= maxAllowedPinSlot(appCount)
+    }
 
     function slotLeftForIndex(index) {
         return hoverBleed + index * dockStride
@@ -811,6 +832,10 @@ Window {
     function finishExternalPinDrop(path, index) {
         if (externalPinSettling)
             return
+        if (!isAllowedPinSlot(index, appSlotCount)) {
+            cancelExternalPinPreview()
+            return
+        }
         externalPinDropping = true
         externalDropActive = false
         externalPinTo = index
@@ -838,27 +863,17 @@ Window {
     function commitExternalPinDrop() {
         var path = externalPinPath
         var index = externalPinTo
+        if (!isAllowedPinSlot(index, appSlotCount))
+            return
         var itemCount = dockRepeater.count
-        var anchorLeft = externalPinAnchorLeftX
-        var anchorRight = externalPinAnchorRightX
         // Keep preview width (N+1 slots) while the model catches up — no shrink/grow flicker.
         externalPinHandoffIndex = index
         externalPinCommitLayoutCount = itemCount + 1
         externalPinFrozenPillWidth = animatedPillWidth
         externalPinCommitting = true
         externalPinGhostVisible = false
+        clearExternalPinRestAnchor()
         dockModel.pinPathAt(path, index)
-        if (index <= 0 && anchorLeft >= 0) {
-            externalPinRestEdge = -1
-            externalPinRestAnchorLeftX = anchorLeft
-            externalPinRestAnchorRightX = anchorRight
-        } else if (index >= itemCount && anchorLeft >= 0) {
-            externalPinRestEdge = 1
-            externalPinRestAnchorLeftX = anchorLeft
-            externalPinRestAnchorRightX = anchorRight
-        } else {
-            clearExternalPinRestAnchor()
-        }
         externalPinPreview = false
         externalPinDropping = false
         externalPinSettling = false
@@ -1537,6 +1552,72 @@ Window {
                             font.pixelSize: dockWindow.reorderDragLiftMagnified ? 24 : 20
                             font.weight: Font.DemiBold
                             visible: reorderDragImage.status !== Image.Ready
+                        }
+                    }
+                }
+
+                // macOS-style "Remove" bubble when the icon is dragged outside the dock row.
+                Item {
+                    id: reorderRemoveHint
+                    anchors.horizontalCenter: reorderDragBubble.horizontalCenter
+                    anchors.bottom: reorderDragBubble.top
+                    anchors.bottomMargin: 8
+                    width: reorderRemoveBg.width
+                    height: reorderRemoveBg.height + reorderRemoveTail.height
+                    opacity: dockWindow.reorderRemoveLabelVisible ? 1 : 0
+                    visible: opacity > 0.01
+                    z: 10
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                    }
+
+                    Rectangle {
+                        id: reorderRemoveBg
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: parent.top
+                        width: Math.max(58, reorderRemoveText.implicitWidth + 18)
+                        height: reorderRemoveText.implicitHeight + 10
+                        radius: 6
+                        color: dockWindow.darkTheme ? "#2A2A2CF0" : "#F7F7F7F2"
+                        border.width: 1
+                        border.color: dockWindow.darkTheme ? "#4A4A4E" : "#C8C8C8"
+
+                        Text {
+                            id: reorderRemoveText
+                            anchors.centerIn: parent
+                            text: "Remove"
+                            color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+
+                    Canvas {
+                        id: reorderRemoveTail
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: reorderRemoveBg.bottom
+                        anchors.topMargin: -1
+                        width: 14
+                        height: 7
+                        onPaint: {
+                            var ctx = getContext("2d")
+                            ctx.reset()
+                            ctx.beginPath()
+                            ctx.moveTo(width / 2, height)
+                            ctx.lineTo(0, 0)
+                            ctx.lineTo(width, 0)
+                            ctx.closePath()
+                            ctx.fillStyle = dockWindow.darkTheme ? "#2A2A2C" : "#F7F7F7"
+                            ctx.fill()
+                            ctx.strokeStyle = dockWindow.darkTheme ? "#4A4A4E" : "#C8C8C8"
+                            ctx.lineWidth = 1
+                            ctx.stroke()
+                        }
+                        Connections {
+                            target: dockWindow
+                            function onDarkThemeChanged() { reorderRemoveTail.requestPaint() }
                         }
                     }
                 }

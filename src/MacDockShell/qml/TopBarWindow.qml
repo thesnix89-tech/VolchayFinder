@@ -19,6 +19,11 @@ Window {
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
     readonly property bool darkTheme: taskbarController.darkTheme
+    readonly property string menuBarIconSource: {
+        const _style = taskbarController.menuBarIconStyle
+        const _custom = taskbarController.menuBarCustomIconPath
+        return taskbarController.menuBarIconUrl(topBarWindow.darkTheme)
+    }
     readonly property color menuTextColor: darkTheme ? "#FFFFFF" : "#1B1F27"
     readonly property color menuAccentTextColor: darkTheme ? "#FFFFFF" : "#1B1F27"
     readonly property int themeAnimMs: 320
@@ -71,9 +76,7 @@ Window {
                         Image {
                             id: appleLogo
                             anchors.fill: parent
-                            source: topBarWindow.darkTheme
-                                    ? "qrc:/src/MacDockShell/qml/apple_logo_white.svg"
-                                    : "qrc:/src/MacDockShell/qml/apple_logo.svg"
+                            source: topBarWindow.menuBarIconSource
                             sourceSize: Qt.size(parent.raster, parent.raster)
                             fillMode: Image.PreserveAspectFit
                             mipmap: false
