@@ -305,6 +305,44 @@ Window {
         })
     }
 
+    // transient → pinned: expand pinned zone by sliding the section divider right.
+    // Blend follows live toSlot so the divider reverses if the user drags back without release.
+    function transientToPinnedExpansion(from, toSlot) {
+        if (!taskbarController.dockSeparateTransientApps || transientAppCount <= 0)
+            return 0
+        if (from < pinnedAppCount || from >= appSlotCount)
+            return 0
+        if (!neighborsPacked || !dragInDockZone)
+            return 0
+        if (toSlot < 0)
+            return 0
+        var blend = Math.max(0, Math.min(1, pinnedAppCount - toSlot))
+        return blend * (1 - dockPackT) * dockAppStride
+    }
+
+    function isTransientToPinnedCrossPreview(from, toSlot) {
+        return transientToPinnedExpansion(from, toSlot) > 0.001
+    }
+
+    function previewSlotLeftForIndex(slot, from, toSlot) {
+        var expansion = transientToPinnedExpansion(from, toSlot)
+        if (expansion <= 0.001)
+            return slotLeftForIndex(slot)
+        if (slot <= pinnedAppCount)
+            return linearSlotLeftForIndex(slot)
+        if (slot < appSlotCount) {
+            var local = slot - pinnedAppCount
+            var sectionStart = linearSeparatorXForBoundary(pinnedAppCount) + 1 + expansion
+            var sectionEnd = appShellSeparatorXForAppCount(appSlotCount)
+            var packedTransient = packedTransientCount(from)
+            var zoneWidth = sectionEnd - sectionStart
+            var blockWidth = appIconsExtentForCount(packedTransient)
+            var inset = Math.max(0, (zoneWidth - blockWidth) / 2)
+            return sectionStart + inset + local * dockAppStride
+        }
+        return slotLeftForIndex(slot)
+    }
+
     function separatorCenterX() {
         if (!dockWindow.showTransientSeparatorDuringLayout())
             return -1
@@ -615,7 +653,7 @@ Window {
             var slot = previewModelSlotForIndex(itemIndex, from, s)
             if (slot < 0)
                 return slotLeftForIndex(itemIndex)
-            return slotLeftForIndex(slot)
+            return previewSlotLeftForIndex(slot, from, s)
         }
         if (slotFloor === slotCeil)
             return xAtSlot(slotFloor)
@@ -644,6 +682,10 @@ Window {
 
         if (isTransientSectionBoundary(boundaryIndex)) {
             var fullTransientSep = linearSeparatorXForBoundary(pinnedAppCount)
+            var morphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
+            var crossExpansion = transientToPinnedExpansion(dragFrom, morphTarget)
+            if (crossExpansion > 0.001)
+                return fullTransientSep + crossExpansion
             var packedTransientSep = transientSeparatorXForPack(dragFrom)
             // Lifted icon shrinks pinned block — keep divider on packed boundary even
             // after neighborsPacked flips true during lift-lower-relift without release.
@@ -2225,7 +2267,8 @@ Window {
                             dockItemRoot.index, dockWindow.dragFrom, dockItemRoot.layoutDragTo)
                         return slot < 0
                                 ? dockItemRoot.fullRestX
-                                : dockWindow.slotLeftForIndex(slot)
+                                : dockWindow.previewSlotLeftForIndex(
+                                    slot, dockWindow.dragFrom, dockItemRoot.layoutDragTo)
                     }
                     readonly property real morphedPreviewRestX: {
                         if (dockWindow.reorderMorphSlot < 0 || dockWindow.dragFrom < 0)
