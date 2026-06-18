@@ -88,6 +88,8 @@ Window {
     property real lastDropIconCenterGlobalY: 0
     readonly property int dockAppSpacing: 22
     readonly property int dockShellSpacing: 18
+    readonly property int dockAppShellGapWithTransient: 53
+    readonly property int dockAppShellGapCompact: 36
     // Dock chrome (pill height, spacing) vs app icon drawing size are separate.
     readonly property int dockSlotSize: taskbarController.dockIconSize
     readonly property int dockIconVisualSize: Math.round(dockSlotSize * 1.2)
@@ -151,6 +153,96 @@ Window {
                 && index < dockWindow.appReorderSlotCount
     }
 
+    function appIconsExtentForCount(apps) {
+        return apps > 0 ? apps * dockSlotSize + Math.max(0, apps - 1) * dockAppSpacing : 0
+    }
+
+    function effectiveAppShellGap() {
+        if (taskbarController.dockSeparateTransientApps && transientAppCount > 0)
+            return dockAppShellGapWithTransient
+        return dockAppShellGapCompact
+    }
+
+    function appShellBridgeWidth() {
+        return effectiveAppShellGap() + 1 + dockShellSpacing
+    }
+
+    function appShellSeparatorXForAppCount(apps) {
+        return hoverBleed + appIconsExtentForCount(apps) + effectiveAppShellGap()
+    }
+
+    function isAppShellBoundary(boundaryIndex) {
+        return boundaryIndex === appSlotCount && appSlotCount > 0
+    }
+
+    function linearSlotLeftForIndex(index) {
+        if (index <= 0)
+            return hoverBleed
+        if (index < appSlotCount)
+            return hoverBleed + index * dockAppStride
+
+        var apps = appSlotCount
+        var appExtent = appIconsExtentForCount(apps)
+        var shellIndex = index - apps
+        if (shellIndex <= 0)
+            return hoverBleed + appExtent + (apps > 0 ? appShellBridgeWidth() : 0)
+        return hoverBleed + appExtent + appShellBridgeWidth() + shellIndex * dockShellStride
+    }
+
+    function linearSeparatorXForBoundary(boundaryIndex) {
+        var halfGap = Math.round(spacingAtBoundary(boundaryIndex) / 2)
+        return linearSlotLeftForIndex(boundaryIndex) - halfGap
+    }
+
+    function transientSectionStartX() {
+        if (pinnedAppCount <= 0)
+            return hoverBleed
+        return linearSeparatorXForBoundary(pinnedAppCount) + 1
+    }
+
+    function transientSectionEndX() {
+        return appShellSeparatorXForAppCount(appSlotCount)
+    }
+
+    function transientSectionCenterInset() {
+        if (!taskbarController.dockSeparateTransientApps || transientAppCount <= 0)
+            return 0
+        var zoneWidth = transientSectionEndX() - transientSectionStartX()
+        var blockWidth = appIconsExtentForCount(transientAppCount)
+        return Math.max(0, (zoneWidth - blockWidth) / 2)
+    }
+
+    function transientSlotLeftForIndex(index) {
+        var local = index - pinnedAppCount
+        return transientSectionStartX() + transientSectionCenterInset() + local * dockAppStride
+    }
+
+    function linearReorderPreviewXForItem(itemIndex, from, slotReal) {
+        var slotFloor = Math.floor(slotReal)
+        var slotCeil = Math.ceil(slotReal)
+        var xAtSlot = function(s) {
+            var slot = previewSlotForIndex(itemIndex, from, s)
+            if (slot < 0)
+                return linearSlotLeftForIndex(itemIndex)
+            return linearSlotLeftForIndex(slot)
+        }
+        if (slotFloor === slotCeil)
+            return xAtSlot(slotFloor)
+        var xFloor = xAtSlot(slotFloor)
+        var xCeil = xAtSlot(slotCeil)
+        return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
+    }
+
+    function insertLinearSlotXForItem(itemIndex, slotReal) {
+        var slotFloor = Math.floor(slotReal)
+        var slotCeil = Math.ceil(slotReal)
+        if (slotFloor === slotCeil)
+            return linearSlotLeftForIndex(previewSlotForInsert(itemIndex, slotFloor))
+        var xFloor = linearSlotLeftForIndex(previewSlotForInsert(itemIndex, slotFloor))
+        var xCeil = linearSlotLeftForIndex(previewSlotForInsert(itemIndex, slotCeil))
+        return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
+    }
+
     function rowContentWidth(count) {
         var apps = Math.min(count, appSlotCount)
         var shells = Math.max(0, count - apps)
@@ -159,7 +251,7 @@ Window {
             w = apps * dockSlotSize + Math.max(0, apps - 1) * dockAppSpacing
         if (shells > 0) {
             if (apps > 0)
-                w += dockShellSpacing
+                w += appShellBridgeWidth()
             w += shells * dockSlotSize + Math.max(0, shells - 1) * dockShellSpacing
         }
         return w
@@ -168,6 +260,8 @@ Window {
     function spacingAtBoundary(boundaryIndex) {
         if (boundaryIndex > 0 && boundaryIndex < appSlotCount)
             return dockAppSpacing
+        if (boundaryIndex === appSlotCount)
+            return effectiveAppShellGap()
         return dockShellSpacing
     }
 
@@ -240,17 +334,22 @@ Window {
     function slotLeftForIndex(index) {
         if (index <= 0)
             return hoverBleed
+        if (index < pinnedAppCount)
+            return linearSlotLeftForIndex(index)
+        if (taskbarController.dockSeparateTransientApps
+                && transientAppCount > 0
+                && index < appSlotCount) {
+            return transientSlotLeftForIndex(index)
+        }
         if (index < appSlotCount)
-            return hoverBleed + index * dockAppStride
+            return linearSlotLeftForIndex(index)
 
         var apps = appSlotCount
-        var appExtent = apps > 0
-                ? apps * dockSlotSize + Math.max(0, apps - 1) * dockAppSpacing
-                : 0
+        var appExtent = appIconsExtentForCount(apps)
         var shellIndex = index - apps
         if (shellIndex <= 0)
-            return hoverBleed + appExtent + (apps > 0 ? dockShellSpacing : 0)
-        return hoverBleed + appExtent + dockShellSpacing + shellIndex * dockShellStride
+            return hoverBleed + appExtent + (apps > 0 ? appShellBridgeWidth() : 0)
+        return hoverBleed + appExtent + appShellBridgeWidth() + shellIndex * dockShellStride
     }
 
     // Full-width preview: one empty slot at `to` while the dragged icon hovers.
@@ -348,24 +447,44 @@ Window {
     }
 
     function separatorXForBoundary(boundaryIndex) {
+        if (isAppShellBoundary(boundaryIndex)) {
+            var shellLeadIn = 1 + dockShellSpacing
+            if (externalPinPreview && dragFrom < 0)
+                return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - shellLeadIn
+            if (dragFrom < 0 || !reordering)
+                return appShellSeparatorXForAppCount(appSlotCount)
+            if (!neighborsPacked) {
+                var fullSep = appShellSeparatorXForAppCount(appSlotCount)
+                if (dragFrom < appSlotCount) {
+                    var packedSep = appShellSeparatorXForAppCount(appSlotCount - 1)
+                    return packedSep + (1 - dockPackT) * (fullSep - packedSep)
+                }
+                return fullSep
+            }
+            var morphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
+            if (dragFrom < appSlotCount && morphTarget < appSlotCount)
+                return appShellSeparatorXForAppCount(appSlotCount - 1)
+            return appShellSeparatorXForAppCount(appSlotCount)
+        }
+
         var halfGap = Math.round(spacingAtBoundary(boundaryIndex) / 2)
         if (externalPinPreview && dragFrom < 0)
-            return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - halfGap
+            return insertLinearSlotXForItem(boundaryIndex, externalPinMorphSlot) - halfGap
         if (dragFrom < 0 || !reordering)
-            return slotLeftForIndex(boundaryIndex) - halfGap
+            return linearSlotLeftForIndex(boundaryIndex) - halfGap
         if (!neighborsPacked) {
-            var fullX = slotLeftForIndex(boundaryIndex) - halfGap
+            var fullX = linearSlotLeftForIndex(boundaryIndex) - halfGap
             var packed = packedSlotForIndex(boundaryIndex, dragFrom)
             if (packed < 0) {
                 packed = packedSlotForIndex(boundaryIndex + 1, dragFrom)
                 if (packed < 0)
                     return fullX
             }
-            var packedX = slotLeftForIndex(packed) - halfGap
+            var packedX = linearSlotLeftForIndex(packed) - halfGap
             return packedX + (1 - dockPackT) * (fullX - packedX)
         }
         var morphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
-        return reorderPreviewXForItem(boundaryIndex, dragFrom, morphTarget) - halfGap
+        return linearReorderPreviewXForItem(boundaryIndex, dragFrom, morphTarget) - halfGap
     }
 
     function animateReorderMorphSlot(targetSlot) {
