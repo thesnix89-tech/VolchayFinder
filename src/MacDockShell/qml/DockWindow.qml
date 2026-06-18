@@ -175,6 +175,18 @@ Window {
         return boundaryIndex === appSlotCount && appSlotCount > 0
     }
 
+    function isTransientSectionBoundary(boundaryIndex) {
+        return taskbarController.dockSeparateTransientApps
+                && transientAppCount > 0
+                && boundaryIndex === pinnedAppCount
+    }
+
+    function transientSeparatorXForPack(from) {
+        if (from < 0 || from >= pinnedAppCount)
+            return linearSeparatorXForBoundary(pinnedAppCount)
+        return linearSeparatorXForBoundary(packedPinnedCount(from))
+    }
+
     function linearSlotLeftForIndex(index) {
         if (index <= 0)
             return hoverBleed
@@ -221,7 +233,7 @@ Window {
         var slotFloor = Math.floor(slotReal)
         var slotCeil = Math.ceil(slotReal)
         var xAtSlot = function(s) {
-            var slot = previewSlotForIndex(itemIndex, from, s)
+            var slot = previewModelSlotForIndex(itemIndex, from, s)
             if (slot < 0)
                 return linearSlotLeftForIndex(itemIndex)
             return linearSlotLeftForIndex(slot)
@@ -472,6 +484,97 @@ Window {
         return transientAppCount > 0
     }
 
+    function transientSectionStartForPacked(packedPinned) {
+        if (packedPinned <= 0)
+            return hoverBleed
+        var halfGap = Math.round(dockAppSpacing / 2)
+        return linearSlotLeftForIndex(packedPinned) - halfGap + 1
+    }
+
+    function transientSlotLeftForPackedCounts(localIndex, packedPinned, packedTransient, from) {
+        if (packedTransient <= 0 || localIndex < 0)
+            return hoverBleed
+        var sectionStart = transientSectionStartForPacked(packedPinned)
+        var sectionEnd = appShellSeparatorXForPack(from)
+        var zoneWidth = sectionEnd - sectionStart
+        var blockWidth = appIconsExtentForCount(packedTransient)
+        var inset = Math.max(0, (zoneWidth - blockWidth) / 2)
+        return sectionStart + inset + localIndex * dockAppStride
+    }
+
+    function slotLeftForPackedModelIndex(modelIndex, from) {
+        if (from < 0 || from >= appSlotCount)
+            return slotLeftForIndex(modelIndex)
+        if (modelIndex >= appSlotCount)
+            return shellSlotLeftForIndex(modelIndex, from)
+        if (modelIndex === from)
+            return slotLeftForIndex(modelIndex)
+
+        if (!taskbarController.dockSeparateTransientApps || transientAppCount <= 0) {
+            var packed = packedSlotForIndex(modelIndex, from)
+            return packed < 0 ? slotLeftForIndex(modelIndex) : slotLeftForIndex(packed)
+        }
+
+        var packedPinned = packedPinnedCount(from)
+        var packedTransient = packedTransientCount(from)
+
+        if (modelIndex < pinnedAppCount) {
+            if (from >= pinnedAppCount)
+                return slotLeftForIndex(modelIndex)
+            var packedPinnedIndex = packedSlotForIndex(modelIndex, from)
+            return packedPinnedIndex < 0
+                    ? slotLeftForIndex(modelIndex)
+                    : linearSlotLeftForIndex(packedPinnedIndex)
+        }
+
+        var localIndex = modelIndex - pinnedAppCount
+        if (from < pinnedAppCount)
+            return transientSlotLeftForPackedCounts(localIndex, packedPinned, packedTransient, from)
+
+        var packedModelIndex = packedSlotForIndex(modelIndex, from)
+        if (packedModelIndex < pinnedAppCount)
+            return slotLeftForIndex(modelIndex)
+        var packedLocalIndex = packedModelIndex - packedPinned
+        return transientSlotLeftForPackedCounts(packedLocalIndex, packedPinned, packedTransient, from)
+    }
+
+    function previewModelSlotForIndex(modelIndex, from, to) {
+        if (modelIndex === from)
+            return -1
+
+        if (!taskbarController.dockSeparateTransientApps || transientAppCount <= 0)
+            return previewSlotForIndex(modelIndex, from, to)
+
+        var fromPinned = from < pinnedAppCount
+        var modelPinned = modelIndex < pinnedAppCount
+        var modelTransient = modelIndex >= pinnedAppCount && modelIndex < appSlotCount
+
+        if (fromPinned && modelTransient)
+            return modelIndex
+
+        if (!fromPinned && from < appSlotCount && modelPinned)
+            return modelIndex
+
+        if (fromPinned && modelPinned) {
+            var pinnedTo = Math.max(0, Math.min(to, pinnedAppCount - 1))
+            var compactPinned = modelIndex > from ? modelIndex - 1 : modelIndex
+            if (compactPinned >= pinnedTo)
+                return compactPinned + 1
+            return compactPinned
+        }
+
+        if (!fromPinned && modelTransient && from < appSlotCount) {
+            var transientEnd = pinnedAppCount + transientAppCount - 1
+            var transientTo = Math.max(pinnedAppCount, Math.min(to, transientEnd))
+            var compactTransient = modelIndex > from ? modelIndex - 1 : modelIndex
+            if (compactTransient >= transientTo)
+                return compactTransient + 1
+            return compactTransient
+        }
+
+        return previewSlotForIndex(modelIndex, from, to)
+    }
+
     function gapCenterForSlot(slot) {
         return slotLeftForIndex(slot) + dockSlotSize / 2
     }
@@ -500,7 +603,7 @@ Window {
         var slotFloor = Math.floor(slotReal)
         var slotCeil = Math.ceil(slotReal)
         var xAtSlot = function(s) {
-            var slot = previewSlotForIndex(itemIndex, from, s)
+            var slot = previewModelSlotForIndex(itemIndex, from, s)
             if (slot < 0)
                 return slotLeftForIndex(itemIndex)
             return slotLeftForIndex(slot)
@@ -529,6 +632,18 @@ Window {
             return insertLinearSlotXForItem(boundaryIndex, externalPinMorphSlot) - halfGap
         if (dragFrom < 0 || !reordering)
             return linearSlotLeftForIndex(boundaryIndex) - halfGap
+
+        if (isTransientSectionBoundary(boundaryIndex)) {
+            var fullTransientSep = linearSeparatorXForBoundary(pinnedAppCount)
+            var packedTransientSep = transientSeparatorXForPack(dragFrom)
+            // Lifted icon shrinks pinned block — keep divider on packed boundary even
+            // after neighborsPacked flips true during lift-lower-relift without release.
+            if (dockPackT > 0.02 || !dragInDockZone)
+                return packedTransientSep + (1 - dockPackT) * (fullTransientSep - packedTransientSep)
+            // Seated horizontal reorder — section divider stays at pinned/transient boundary.
+            return fullTransientSep
+        }
+
         if (!neighborsPacked) {
             var fullX = linearSlotLeftForIndex(boundaryIndex) - halfGap
             var packed = packedSlotForIndex(boundaryIndex, dragFrom)
@@ -668,8 +783,18 @@ Window {
             dragInDockZone = true
             dockZoneEverEntered = true
         }
-        if (wasInZone !== dragInDockZone)
+        if (wasInZone !== dragInDockZone) {
+            if (dragFrom >= 0 && !neighborsPacked) {
+                if (wasInZone && !dragInDockZone) {
+                    dragTo = dragFrom
+                    reorderMorphSlot = dragFrom
+                } else if (!wasInZone && dragInDockZone) {
+                    dragTo = dragFrom
+                    reorderMorphSlot = dragFrom
+                }
+            }
             syncDockPackState()
+        }
     }
 
     // Boundaries between slots (pointer, not magnetized x) — avoids left-slot bias.
@@ -2082,15 +2207,12 @@ Window {
                         if (dockItemRoot.isSpecial)
                             return dockWindow.shellSlotLeftForIndex(
                                 dockItemRoot.index, dockWindow.dragFrom)
-                        var packed = dockWindow.packedSlotForIndex(
+                        return dockWindow.slotLeftForPackedModelIndex(
                             dockItemRoot.index, dockWindow.dragFrom)
-                        return packed < 0
-                                ? dockItemRoot.fullRestX
-                                : dockWindow.slotLeftForIndex(packed)
                     }
                     readonly property int layoutDragTo: dockWindow.dragTo
                     readonly property real previewRestX: {
-                        var slot = dockWindow.previewSlotForIndex(
+                        var slot = dockWindow.previewModelSlotForIndex(
                             dockItemRoot.index, dockWindow.dragFrom, dockItemRoot.layoutDragTo)
                         return slot < 0
                                 ? dockItemRoot.fullRestX
