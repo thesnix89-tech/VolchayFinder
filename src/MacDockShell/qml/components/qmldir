@@ -8,3 +8,4 @@ MenuBarHit 1.0 MenuBarHit.qml
 StatusArea 1.0 StatusArea.qml
 ControlCenterPanel 1.0 ControlCenterPanel.qml
 MacToggle 1.0 MacToggle.qml
+MacScrollBar 1.0 MacScrollBar.qml

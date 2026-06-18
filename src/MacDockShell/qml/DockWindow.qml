@@ -85,6 +85,8 @@ Window {
     property real lastDropIconCenterGlobalX: 0
     property real lastDropIconCenterGlobalY: 0
     readonly property int dockSpacing: 14
+    readonly property int dockBarPad: 22
+    readonly property int dockBarHeight: taskbarController.dockIconSize + dockBarPad * 2
     readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
     // Trailing macOS-style shell items (Downloads + Trash) live after the separator
     // and are excluded from drag-reorder and external-pin insertion.
@@ -1238,16 +1240,6 @@ Window {
         }
     }
 
-    Connections {
-        target: taskbarController
-        function onDockIconSizeChanged() { dockWindow.publishDropGeometry() }
-        function onDockAutoHiddenChanged() { dockWindow.animateDockSlide() }
-        function onShellActiveChanged() {
-            if (!dockSlideAnim.running)
-                dockWindow.dockSlideY = dockWindow.dockSlideTargetY()
-        }
-    }
-
     onVisibleChanged: {
         if (visible)
             Qt.callLater(dockWindow.armClickThrough)
@@ -1257,7 +1249,11 @@ Window {
 
     Connections {
         target: taskbarController
+        function onDockIconSizeChanged() { dockWindow.publishDropGeometry() }
+        function onDockAutoHiddenChanged() { dockWindow.animateDockSlide() }
         function onShellActiveChanged() {
+            if (!dockSlideAnim.running)
+                dockWindow.dockSlideY = dockWindow.dockSlideTargetY()
             if (taskbarController.shellActive)
                 Qt.callLater(dockWindow.armClickThrough)
             else
@@ -1360,7 +1356,7 @@ Window {
         }
     }
 
-    // Soft shadow under the dock pill.
+    // Soft shadow under the macOS-style dock strip.
     Rectangle {
         id: dockShadow
         anchors.horizontalCenter: dockBg.horizontalCenter
@@ -1374,9 +1370,9 @@ Window {
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: "#3A000000"
-            shadowBlur: 0.65
-            shadowVerticalOffset: 5
+            shadowColor: "#40000000"
+            shadowBlur: 0.9
+            shadowVerticalOffset: 6
             autoPaddingEnabled: true
         }
     }
@@ -1387,70 +1383,15 @@ Window {
         anchors.bottomMargin: dockWindow.dockBottomGap
         anchors.horizontalCenter: parent.horizontalCenter
         width: dockWindow.animatedPillWidth
-        height: taskbarController.dockIconSize + 38
-        radius: 22
+        height: dockWindow.dockBarHeight
+        radius: 20
         onWidthChanged: {
             if (!dockWindow.externalPinPreview)
                 clickThroughWarmupTimer.restart()
         }
 
-        // macOS Monterey 12 dock — opaque tints (no see-through).
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: dockWindow.darkTheme ? "#323234" : "#D6DAE2"
-                Behavior on color {
-                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                }
-            }
-            GradientStop {
-                position: 0.48
-                color: dockWindow.darkTheme ? "#2C2C2E" : "#CCD1D9"
-                Behavior on color {
-                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                }
-            }
-            GradientStop {
-                position: 1.0
-                color: dockWindow.darkTheme ? "#252527" : "#C4CAD3"
-                Behavior on color {
-                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-                }
-            }
-        }
-        border.width: 1
-        border.color: dockWindow.darkTheme ? "#48484A" : "#E8ECF2"
-        Behavior on border.color {
-            ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-        }
-
-        // Subtle top sheen — Monterey rim.
-        Rectangle {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.topMargin: 1
-            anchors.leftMargin: 18
-            anchors.rightMargin: 18
-            height: 1
-            radius: 1
-            color: dockWindow.darkTheme ? "#5A5A5E" : "#F4F6F9"
-            Behavior on color {
-                ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-            }
-        }
-
-        // Thin inner hairline for crisp definition.
-        Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.width: 1
-            border.color: dockWindow.darkTheme ? "#1E1E20" : "#B8BEC8"
-            Behavior on border.color {
-                ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
-            }
-        }
+        color: "#5E5E5E"
+        border.width: 0
 
         MouseArea {
             anchors.fill: parent
@@ -1469,7 +1410,7 @@ Window {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: dockWindow.dockBottomGap
         width: dockWindow.animatedDockRowWidth
-        height: taskbarController.dockIconSize + 38
+        height: dockWindow.dockBarHeight
         contentWidth: Math.max(width, dockRowHost.width)
         contentHeight: height
         // Clip only while the pill width animates (taskbar sync); lifting/reorder needs headroom above the row.
@@ -1479,7 +1420,7 @@ Window {
         Item {
             id: dockRowHost
             width: dockWindow.dockRowWidth
-            height: taskbarController.dockIconSize + 38
+            height: dockWindow.dockBarHeight
             x: dockRowHost.width > parent.width
                     ? 0
                     : Math.round((parent.width - dockRowHost.width) / 2)
@@ -1500,7 +1441,7 @@ Window {
                 y: dockWindow.dragGripY - dockWindow.reorderOverlayPad
                 z: 200
                 width: taskbarController.dockIconSize + 2 * dockWindow.reorderOverlayPad
-                height: taskbarController.dockIconSize + 38 + 2 * dockWindow.reorderOverlayPad
+                height: dockWindow.dockBarHeight + 2 * dockWindow.reorderOverlayPad
 
                 Item {
                     id: reorderDragBubble
@@ -1652,8 +1593,7 @@ Window {
                 }
             }
 
-            // macOS-style vertical separator between the apps and the trailing
-            // Downloads/Trash shell items.
+            // macOS-style vertical separator between apps and Trash/Downloads.
             Rectangle {
                 id: dockSeparator
                 visible: dockWindow.appSlotCount > 0
@@ -1661,12 +1601,12 @@ Window {
                          && !dockWindow.reordering
                          && !dockWindow.externalPinPreview
                 x: dockWindow.slotLeftForIndex(dockWindow.appSlotCount) - Math.round(dockWindow.dockSpacing / 2)
-                y: Math.round((taskbarController.dockIconSize + 38 - height) / 2)
+                y: Math.round((dockWindow.dockBarHeight - height) / 2)
                 width: 1
-                height: Math.round(taskbarController.dockIconSize * 0.74)
-                radius: 1
-                color: dockWindow.darkTheme ? "#5A5A5E" : "#9AA0AA"
-                opacity: 0.55
+                height: Math.round(dockWindow.dockBarHeight * 0.52)
+                radius: 0.5
+                color: "#000000"
+                opacity: 0.35
                 z: 5
             }
 
@@ -1852,7 +1792,7 @@ Window {
                             : 0
 
                     width: taskbarController.dockIconSize
-                    height: taskbarController.dockIconSize + 38
+                    height: dockWindow.dockBarHeight
 
                     opacity: dockItemRoot.dragging ? 0
                             : (dockItemRoot.reorderLifted ? 0.92
@@ -2630,7 +2570,7 @@ Window {
                 visible: dockWindow.externalPinPreview && !dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
                 width: taskbarController.dockIconSize
-                height: taskbarController.dockIconSize + 38
+                height: dockWindow.dockBarHeight
                 z: 49
                 opacity: dockWindow.externalPinPreview ? 0.85 * (1 - dockWindow.dockPackT) : 0
 

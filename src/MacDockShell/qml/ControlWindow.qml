@@ -350,9 +350,7 @@ Window {
                 anchors.bottomMargin: 52
                 clip: true
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
+                ScrollBar.vertical: MacScrollBar { }
 
                 Column {
                     width: settingsScroll.availableWidth

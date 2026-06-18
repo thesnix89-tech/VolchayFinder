@@ -41,6 +41,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/StatusArea.qml
         src/MacDockShell/qml/components/ControlCenterPanel.qml
         src/MacDockShell/qml/components/MacToggle.qml
+        src/MacDockShell/qml/components/MacScrollBar.qml
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
