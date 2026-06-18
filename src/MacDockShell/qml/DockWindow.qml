@@ -547,11 +547,22 @@ Window {
         var modelPinned = modelIndex < pinnedAppCount
         var modelTransient = modelIndex >= pinnedAppCount && modelIndex < appSlotCount
 
-        if (fromPinned && modelTransient)
+        if (fromPinned && modelTransient) {
+            if (to < pinnedAppCount)
+                return modelIndex
+            var transientEndCross = pinnedAppCount + transientAppCount - 1
+            var transientToCross = Math.max(pinnedAppCount, Math.min(to, transientEndCross))
+            if (modelIndex >= transientToCross)
+                return modelIndex + 1
             return modelIndex
+        }
 
-        if (!fromPinned && from < appSlotCount && modelPinned)
+        if (!fromPinned && from < appSlotCount && modelPinned) {
+            var pinnedToCross = Math.max(0, Math.min(to, pinnedAppCount - 1))
+            if (modelIndex >= pinnedToCross)
+                return modelIndex + 1
             return modelIndex
+        }
 
         if (fromPinned && modelPinned) {
             var pinnedTo = Math.max(0, Math.min(to, pinnedAppCount - 1))
