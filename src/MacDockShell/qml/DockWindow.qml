@@ -596,6 +596,8 @@ Window {
         }
 
         if (!fromPinned && from < appSlotCount && modelPinned) {
+            if (to >= pinnedAppCount)
+                return modelIndex
             var pinnedToCross = Math.max(0, Math.min(to, pinnedAppCount - 1))
             if (modelIndex >= pinnedToCross)
                 return modelIndex + 1
