@@ -86,12 +86,15 @@ Window {
     property real lastDropGlobalY: 0
     property real lastDropIconCenterGlobalX: 0
     property real lastDropIconCenterGlobalY: 0
-    readonly property int dockSpacing: 14
+    readonly property int dockSpacing: 18
+    // Dock chrome (pill height, spacing) vs app icon drawing size are separate.
+    readonly property int dockSlotSize: taskbarController.dockIconSize
+    readonly property int dockIconVisualSize: Math.round(dockSlotSize * 1.2)
     readonly property int dockBarPad: 22
-    readonly property int dockBarHeight: taskbarController.dockIconSize + dockBarPad * 2
+    readonly property int dockBarHeight: dockSlotSize + dockBarPad * 2
     // macOS dock: rounded rect, not a full stadium pill (~38% of bar height).
     readonly property int dockPillRadius: Math.round(dockBarHeight * 0.38)
-    readonly property int dockStride: taskbarController.dockIconSize + dockSpacing
+    readonly property int dockStride: dockSlotSize + dockSpacing
     // Trailing macOS-style shell items (Downloads + Trash) live after the separator
     // and are excluded from drag-reorder and external-pin insertion.
     readonly property int trailingShellCount: 2
@@ -116,7 +119,7 @@ Window {
     // Extra headroom so a dragged icon can float above the dock pill (macOS-style).
     readonly property int dockTopAirspace: 128
     // Room for 1.18× magnify on the drag overlay — layer/offscreen bounds must not clip sides.
-    readonly property int reorderOverlayPad: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
+    readonly property int reorderOverlayPad: Math.max(8, Math.ceil(dockSlotSize * 0.12))
     // Drag upward past this gripY threshold to enter unpin-preview state.
     readonly property int unpinThreshold: -80
 
@@ -271,7 +274,7 @@ Window {
     }
 
     function gapCenterForSlot(slot) {
-        return slotLeftForIndex(slot) + taskbarController.dockIconSize / 2
+        return slotLeftForIndex(slot) + dockSlotSize / 2
     }
 
     // Midpoint between two neighboring slots — cursor past it picks the right slot.
@@ -369,7 +372,7 @@ Window {
 
     function externalPinGhostLiftTarget(centerGlobalX, centerGlobalY) {
         var rowLocal = dockRowHost.mapFromGlobal(centerGlobalX, centerGlobalY)
-        var iconSize = taskbarController.dockIconSize
+        var iconSize = dockSlotSize
         var restTopY = externalPinRestY
         var liftedTopY = rowLocal.y - iconSize / 2
         var rowCenterY = restTopY + iconSize / 2
@@ -471,7 +474,7 @@ Window {
         if (!neighborsPacked)
             return
 
-        var iconSize = taskbarController.dockIconSize
+        var iconSize = dockSlotSize
         var dragCenter = leftX + iconSize / 2
         var appCount = taskbarController.dockSeparateTransientApps
                 ? dockWindow.appReorderSlotCount
@@ -678,7 +681,7 @@ Window {
     // macOS layout: a centered pill for icons plus transparent side wings so edge
     // tooltips and hover magnify stay centered on the icon instead of being clamped.
     readonly property int dockEndCap: 18
-    readonly property int hoverBleed: Math.max(8, Math.ceil(taskbarController.dockIconSize * 0.12))
+    readonly property int hoverBleed: Math.max(8, Math.ceil(dockSlotSize * 0.12))
     readonly property int tooltipWing: 128
     readonly property int layoutDockCount: {
         if (externalPinCommitting && externalPinCommitLayoutCount >= 0)
@@ -719,7 +722,7 @@ Window {
     width: reordering && reorderFrozenWindowWidth > 0
             ? reorderFrozenWindowWidth
             : dockWindowWidth
-    height: taskbarController.dockIconSize + dockTopAirspace + dockBottomGap
+    height: dockSlotSize + dockTopAirspace + dockBottomGap
     x: dockWindowX
 
     function syncAnimatedPillWidth(immediate) {
@@ -802,7 +805,7 @@ Window {
     }
 
     function iconCenterGlobalFromDrag(drag, localX, localY) {
-        var iconSize = taskbarController.dockIconSize
+        var iconSize = dockSlotSize
         var hotSpotX = drag.hotSpot !== undefined ? drag.hotSpot.x : iconSize / 2
         var hotSpotY = drag.hotSpot !== undefined ? drag.hotSpot.y : iconSize / 2
         return dockDropArea.mapToGlobal(localX - hotSpotX + iconSize / 2,
@@ -1248,7 +1251,7 @@ Window {
                     dockWindow,
                     pillPt.x + hoverBleed,
                     dockStride,
-                    taskbarController.dockIconSize,
+                    dockSlotSize,
                     dockRepeater.count)
     }
 
@@ -1561,7 +1564,7 @@ Window {
                 x: dockWindow.dragLeftX - dockWindow.reorderOverlayPad
                 y: dockWindow.dragGripY - dockWindow.reorderOverlayPad
                 z: 200
-                width: taskbarController.dockIconSize + 2 * dockWindow.reorderOverlayPad
+                width: dockSlotSize + 2 * dockWindow.reorderOverlayPad
                 height: dockWindow.dockBarHeight + 2 * dockWindow.reorderOverlayPad
 
                 Item {
@@ -1570,8 +1573,8 @@ Window {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.verticalCenterOffset: (dockWindow.reorderDragLiftMagnified
                                                    && taskbarController.dockHoverBounce) ? -8 : 0
-                    width: taskbarController.dockIconSize
-                    height: taskbarController.dockIconSize
+                    width: dockWindow.dockIconVisualSize
+                    height: dockWindow.dockIconVisualSize
                     scale: dockWindow.reorderDragLiftMagnified ? 1.18 : 1.0
                     opacity: dockWindow.reorderDragOpacity
                     transformOrigin: Item.Center
@@ -1582,7 +1585,7 @@ Window {
 
                     Item {
                         anchors.centerIn: parent
-                        width: Math.round(taskbarController.dockIconSize * 0.96)
+                        width: dockWindow.dockIconVisualSize
                         height: width
 
                         Image {
@@ -1691,8 +1694,8 @@ Window {
                         && dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
                 y: dockWindow.externalPinRestY + dockWindow.externalPinGhostLiftY
-                width: taskbarController.dockIconSize
-                height: taskbarController.dockIconSize
+                width: dockWindow.dockIconVisualSize
+                height: dockWindow.dockIconVisualSize
                 radius: 18
                 z: 50
                 color: "transparent"
@@ -1943,7 +1946,7 @@ Window {
                             ? dockItemRoot.runningDotBase
                             : 0
 
-                    width: taskbarController.dockIconSize
+                    width: dockWindow.dockSlotSize
                     height: dockWindow.dockBarHeight
 
                     opacity: dockItemRoot.dragging ? 0
@@ -1988,8 +1991,8 @@ Window {
 
                     Rectangle {
                         id: iconBubble
-                        width: taskbarController.dockIconSize
-                        height: taskbarController.dockIconSize
+                        width: dockWindow.dockIconVisualSize
+                        height: width
                         radius: 18
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
@@ -2040,7 +2043,7 @@ Window {
                         Item {
                             id: iconContainer
                             anchors.centerIn: parent
-                            width: Math.round(taskbarController.dockIconSize * 0.96)
+                            width: dockWindow.dockIconVisualSize
                             height: width
 
                             Image {
@@ -2725,7 +2728,7 @@ Window {
                 id: externalPinGhost
                 visible: dockWindow.externalPinPreview && !dockWindow.externalPinGhostVisible
                 x: dockWindow.externalPinGhostX()
-                width: taskbarController.dockIconSize
+                width: dockWindow.dockSlotSize
                 height: dockWindow.dockBarHeight
                 z: 49
                 opacity: dockWindow.externalPinPreview ? 0.85 * (1 - dockWindow.dockPackT) : 0
@@ -2733,8 +2736,8 @@ Window {
                 Rectangle {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
-                    width: taskbarController.dockIconSize
-                    height: taskbarController.dockIconSize
+                    width: dockWindow.dockIconVisualSize
+                    height: dockWindow.dockIconVisualSize
                     radius: 18
                     color: dockWindow.darkTheme ? "#FFFFFF14" : "#0000000C"
                     border.width: 2

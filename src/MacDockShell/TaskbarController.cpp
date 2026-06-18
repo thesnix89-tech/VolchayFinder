@@ -870,6 +870,7 @@ int TaskbarController::dockIconSize() const
 
 void TaskbarController::setDockIconSize(int size)
 {
+    size = qBound(36, size, 64);
     if (m_dockIconSize == size)
         return;
     m_dockIconSize = size;
@@ -1194,7 +1195,11 @@ void TaskbarController::loadSettings()
     m_autoHideWindowsTaskbar = settings.value(QStringLiteral("shell/autoHideTaskbar"), true).toBool();
     m_keepTaskbarAutoHideOnExit = settings.value(QStringLiteral("shell/keepTaskbarAutoHideOnExit"), false).toBool();
     m_showTopBar = settings.value(QStringLiteral("shell/showTopBar"), true).toBool();
-    m_dockIconSize = settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt();
+    m_dockIconSize = qBound(36, settings.value(QStringLiteral("shell/dockIconSize"), 54).toInt(), 64);
+    if (m_dockIconSize > 54) {
+        m_dockIconSize = 54;
+        settings.setValue(QStringLiteral("shell/dockIconSize"), m_dockIconSize);
+    }
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
     m_dockDragFadeEnabled = settings.value(QStringLiteral("shell/dockDragFadeEnabled"), false).toBool();
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
