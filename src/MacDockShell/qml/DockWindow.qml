@@ -240,6 +240,27 @@ Window {
         return xFloor + (slotReal - slotFloor) * (xCeil - xFloor)
     }
 
+    function separatorXForBoundary(boundaryIndex) {
+        var halfGap = Math.round(dockSpacing / 2)
+        if (externalPinPreview && dragFrom < 0)
+            return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - halfGap
+        if (dragFrom < 0 || !reordering)
+            return slotLeftForIndex(boundaryIndex) - halfGap
+        if (!neighborsPacked) {
+            var fullX = slotLeftForIndex(boundaryIndex) - halfGap
+            var packed = packedSlotForIndex(boundaryIndex, dragFrom)
+            if (packed < 0) {
+                packed = packedSlotForIndex(boundaryIndex + 1, dragFrom)
+                if (packed < 0)
+                    return fullX
+            }
+            var packedX = slotLeftForIndex(packed) - halfGap
+            return packedX + (1 - dockPackT) * (fullX - packedX)
+        }
+        var morphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
+        return reorderPreviewXForItem(boundaryIndex, dragFrom, morphTarget) - halfGap
+    }
+
     function animateReorderMorphSlot(targetSlot) {
         if (Math.abs(reorderMorphSlot - targetSlot) < 0.001) {
             reorderMorphSlot = targetSlot
@@ -343,7 +364,7 @@ Window {
             return
         if (dragInDockZone)
             animateDockPack(0)
-        else if (neighborsPacked)
+        else
             animateDockPack(1)
     }
 
@@ -1614,9 +1635,7 @@ Window {
             Rectangle {
                 id: dockTransientSeparator
                 visible: dockWindow.showTransientSeparator
-                         && !dockWindow.reordering
-                         && !dockWindow.externalPinPreview
-                x: dockWindow.slotLeftForIndex(dockWindow.pinnedAppCount) - Math.round(dockWindow.dockSpacing / 2)
+                x: dockWindow.separatorXForBoundary(dockWindow.pinnedAppCount)
                 y: Math.round((dockWindow.dockBarHeight - height) / 2)
                 width: 1
                 height: Math.round(dockWindow.dockBarHeight * 0.72)
@@ -1624,6 +1643,14 @@ Window {
                 color: "#000000"
                 opacity: 0.58
                 z: 5
+
+                Behavior on x {
+                    enabled: !dockPackAnim.running && !dockChromeWidthAnim.running && !reorderSlotAnim.running
+                    NumberAnimation {
+                        duration: dockWindow.reorderAnimMs
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
 
             // macOS-style vertical separator between apps and Trash/Downloads.
@@ -1631,9 +1658,7 @@ Window {
                 id: dockSeparator
                 visible: dockWindow.appSlotCount > 0
                          && dockRepeater.count > dockWindow.appSlotCount
-                         && !dockWindow.reordering
-                         && !dockWindow.externalPinPreview
-                x: dockWindow.slotLeftForIndex(dockWindow.appSlotCount) - Math.round(dockWindow.dockSpacing / 2)
+                x: dockWindow.separatorXForBoundary(dockWindow.appSlotCount)
                 y: Math.round((dockWindow.dockBarHeight - height) / 2)
                 width: 1
                 height: Math.round(dockWindow.dockBarHeight * 0.72)
@@ -1641,6 +1666,14 @@ Window {
                 color: "#000000"
                 opacity: 0.58
                 z: 5
+
+                Behavior on x {
+                    enabled: !dockPackAnim.running && !dockChromeWidthAnim.running && !reorderSlotAnim.running
+                    NumberAnimation {
+                        duration: dockWindow.reorderAnimMs
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
 
             Repeater {
@@ -1800,7 +1833,9 @@ Window {
                             return dockItemRoot.fullRestX
                                    + (1 - dockWindow.dockPackT)
                                      * (dockItemRoot.morphedInsertPreviewX - dockItemRoot.fullRestX)
-                        if (!dockWindow.neighborsPacked || dockWindow.dragFrom < 0)
+                        if (dockWindow.dragFrom < 0)
+                            return dockItemRoot.fullRestX
+                        if (!dockWindow.neighborsPacked && dockWindow.dockPackT < 0.02)
                             return dockItemRoot.fullRestX
                         return dockItemRoot.compactRestX
                                + (1 - dockWindow.dockPackT)
