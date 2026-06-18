@@ -141,6 +141,8 @@ private:
     bool ensurePinnedShortcut(const QString& path, QString* shortcutPathOut = nullptr);
     void insertKeyAtIndex(QStringList& order, const QString& key, int index);
     bool isRightSectionPin(const DockItemEntry& entry) const;
+    bool hasRightSectionCacheForOrderKey(const QString& orderKey) const;
+    DockItemEntry rightSectionCachedEntryForOrderKey(const QString& orderKey) const;
     bool isLeftSectionEntry(const DockItemEntry& entry) const;
     bool isRightSectionEntry(const DockItemEntry& entry) const;
     void transferToLeftSection(int from, int to);

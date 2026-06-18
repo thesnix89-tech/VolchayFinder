@@ -648,14 +648,34 @@ void DockModel::applySeparateCustomOrder()
     }
 
     for (const auto& entry : transient) {
-        const QString key = entryOrderKey(entry);
         if (isRightSectionPin(entry) || entry.running) {
             bool orderChanged = false;
-            if (!m_transientOrder.contains(key)) {
-                m_transientOrder.append(key);
-                orderChanged = true;
+            if (isRightSectionPin(entry)) {
+                rememberRightSectionEntry(entry);
+                bool hasExistingOrderKey = false;
+                for (const QString& alias : hiddenPinKeysForEntry(entry)) {
+                    if (m_transientOrder.contains(alias)) {
+                        hasExistingOrderKey = true;
+                        break;
+                    }
+                }
+                if (!hasExistingOrderKey) {
+                    const QString key = entryOrderKey(entry);
+                    if (!m_transientOrder.contains(key)) {
+                        m_transientOrder.append(key);
+                        orderChanged = true;
+                    }
+                }
+            } else {
+                const QString key = entryOrderKey(entry);
+                if (!m_transientOrder.contains(key)) {
+                    m_transientOrder.append(key);
+                    orderChanged = true;
+                }
             }
-            m_customOrder.removeAll(key);
+            for (const QString& alias : hiddenPinKeysForEntry(entry)) {
+                m_customOrder.removeAll(alias);
+            }
             if (orderChanged) {
                 QSettings settings;
                 settings.setValue(QStringLiteral("dock/transientOrder"), m_transientOrder);
@@ -674,6 +694,9 @@ void DockModel::applySeparateCustomOrder()
     transientAlive.reserve(transient.size());
     for (const auto& entry : transient) {
         transientAlive.append(entryOrderKey(entry));
+        for (const QString& alias : hiddenPinKeysForEntry(entry)) {
+            transientAlive.append(alias);
+        }
     }
     transientAlive.removeDuplicates();
 
@@ -685,7 +708,7 @@ void DockModel::applySeparateCustomOrder()
         }
     }
     for (auto it = m_transientOrder.begin(); it != m_transientOrder.end(); ) {
-        if (!transientAlive.contains(*it) && !m_rightSectionPinCache.contains(*it)) {
+        if (!transientAlive.contains(*it) && !hasRightSectionCacheForOrderKey(*it)) {
             it = m_transientOrder.erase(it);
         } else {
             ++it;
@@ -799,6 +822,38 @@ bool DockModel::isRightSectionPin(const DockItemEntry& entry) const
     return false;
 }
 
+bool DockModel::hasRightSectionCacheForOrderKey(const QString& orderKey) const
+{
+    if (orderKey.isEmpty()) {
+        return false;
+    }
+    if (m_rightSectionPinCache.contains(orderKey)) {
+        return true;
+    }
+    for (auto it = m_rightSectionPinCache.constBegin(); it != m_rightSectionPinCache.constEnd(); ++it) {
+        if (hiddenPinKeysForEntry(it.value()).contains(orderKey)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+DockItemEntry DockModel::rightSectionCachedEntryForOrderKey(const QString& orderKey) const
+{
+    if (orderKey.isEmpty()) {
+        return {};
+    }
+    if (m_rightSectionPinCache.contains(orderKey)) {
+        return m_rightSectionPinCache.value(orderKey);
+    }
+    for (auto it = m_rightSectionPinCache.constBegin(); it != m_rightSectionPinCache.constEnd(); ++it) {
+        if (hiddenPinKeysForEntry(it.value()).contains(orderKey)) {
+            return it.value();
+        }
+    }
+    return {};
+}
+
 bool DockModel::isLeftSectionEntry(const DockItemEntry& entry) const
 {
     if (entry.kind != QLatin1String("app")) {
@@ -838,9 +893,13 @@ void DockModel::insertKeyAtIndex(QStringList& order, const QString& key, int ind
 
 void DockModel::insertPinnedKeyAtSlot(const QString& orderKey, int pinnedSlot)
 {
+    if (hasRightSectionCacheForOrderKey(orderKey)) {
+        clearRightSectionPin(rightSectionCachedEntryForOrderKey(orderKey));
+    } else {
+        m_transientOrder.removeAll(orderKey);
+        m_rightSectionPinCache.remove(orderKey);
+    }
     m_customOrder.removeAll(orderKey);
-    m_transientOrder.removeAll(orderKey);
-    m_rightSectionPinCache.remove(orderKey);
     insertKeyAtIndex(m_customOrder, orderKey, pinnedSlot);
     ensureExplorerLeadingInOrder();
 }
@@ -984,12 +1043,14 @@ void DockModel::appendRightSectionPins()
             continue;
         }
 
-        if (m_rightSectionPinCache.contains(rightKey)) {
-            DockItemEntry cached = m_rightSectionPinCache.value(rightKey);
+        const DockItemEntry cachedEntry = rightSectionCachedEntryForOrderKey(rightKey);
+        if (hasRightSectionCacheForOrderKey(rightKey)) {
+            DockItemEntry cached = cachedEntry;
             cached.pinned = false;
             cached.running = false;
             cached.pinnedOnly = false;
             upsertEntry(cached);
+            rememberRightSectionEntry(cached);
             continue;
         }
 
@@ -1004,6 +1065,7 @@ void DockModel::appendRightSectionPins()
             candidate.running = false;
             candidate.pinnedOnly = false;
             upsertEntry(candidate);
+            rememberRightSectionEntry(candidate);
             break;
         }
     }
