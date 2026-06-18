@@ -173,11 +173,22 @@ QString windowText(HWND hwnd)
     return text.trimmed();
 }
 
+bool isOwnProcessWindow(HWND hwnd)
+{
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    return pid != 0 && pid == GetCurrentProcessId();
+}
+
 BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
 {
     auto* context = reinterpret_cast<EnumContext*>(lParam);
 
     if (!IsWindowVisible(hwnd)) {
+        return TRUE;
+    }
+
+    if (isOwnProcessWindow(hwnd)) {
         return TRUE;
     }
 
