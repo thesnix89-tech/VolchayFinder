@@ -256,6 +256,13 @@ int main(int argc, char *argv[])
         dockModel.setSeparateTransientApps(taskbarController.dockSeparateTransientApps());
     });
     dockModel.setSeparateTransientApps(taskbarController.dockSeparateTransientApps());
+    QObject::connect(&taskbarController, &TaskbarController::showDownloadsInDockChanged, &dockModel, [&dockModel, &taskbarController]() {
+        dockModel.setShowDownloadsInDock(taskbarController.showDownloadsInDock());
+    });
+    dockModel.setShowDownloadsInDock(taskbarController.showDownloadsInDock());
+    QObject::connect(&dockModel, &DockModel::unpinDownloadsFromDock, &taskbarController, [&taskbarController]() {
+        taskbarController.setShowDownloadsInDock(false);
+    });
     QObject::connect(&taskbarController, &TaskbarController::shellActionLogged, [](const QString& message) {
         appendLine(QString("[TaskbarController] %1").arg(message));
     });

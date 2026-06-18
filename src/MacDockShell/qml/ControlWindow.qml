@@ -1078,6 +1078,45 @@ Window {
                             onClicked: settingsWindow.trashIconStyle = "macos"
                         }
                     }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: "#ECECEC"
+                    }
+
+                    RowLayout {
+                        width: parent.width
+                        spacing: 12
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: "Папка «Загрузки» в доке"
+                                color: "#1D1D1F"
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: "Показывать папку загрузок рядом с корзиной"
+                                color: "#86868B"
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: showDownloadsToggle
+                            checked: taskbarController.showDownloadsInDock
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: showDownloadsToggle.checked = !showDownloadsToggle.checked
+                        }
+                    }
                 }
             }
 
@@ -1141,7 +1180,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false

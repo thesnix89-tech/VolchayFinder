@@ -783,6 +783,15 @@ void DockModel::setSeparateTransientApps(bool enabled)
     refresh();
 }
 
+void DockModel::setShowDownloadsInDock(bool show)
+{
+    if (m_showDownloadsInDock == show) {
+        return;
+    }
+    m_showDownloadsInDock = show;
+    refresh();
+}
+
 int DockModel::pinnedAppCount() const
 {
     return m_pinnedAppCount;
@@ -1148,6 +1157,9 @@ bool DockModel::canUnpinIndex(int index) const
     }
 
     const DockItemEntry& entry = m_entries.at(index);
+    if (entry.kind == QLatin1String("downloads")) {
+        return m_showDownloadsInDock;
+    }
     return entry.kind == QLatin1String("app") && !isExplorerEntry(entry)
             && (entry.pinned || isRightSectionPin(entry));
 }
@@ -1159,6 +1171,16 @@ void DockModel::unpinIndex(int index)
     }
 
     const DockItemEntry entry = m_entries.at(index);
+
+    if (entry.kind == QLatin1String("downloads")) {
+        if (!m_showDownloadsInDock) {
+            return;
+        }
+        m_reorderActive = false;
+        emit unpinDownloadsFromDock();
+        emit logMessage(QStringLiteral("unpinIndex: Downloads removed from dock"));
+        return;
+    }
 
     if (!canUnpinIndex(index)) {
         if (isExplorerEntry(entry)) {
@@ -1977,23 +1999,25 @@ QString DockModel::ensureStockIconFile(const QString& cacheKey, int stockIconId)
 
 void DockModel::appendTrailingShellItems()
 {
-    // Downloads stack.
-    DockItemEntry downloads;
-    downloads.kind = QStringLiteral("downloads");
-    downloads.appId = QStringLiteral("shell.downloads");
-    downloads.label = QStringLiteral("Загрузки");
-    const QString downloadsPath = downloadsFolderPath();
-    downloads.launchPath = downloadsPath;
-    downloads.iconHint = QStringLiteral("⬇");
-    downloads.pinned = true;
-    downloads.pinnedOnly = true;
-    if (!downloadsPath.isEmpty()) {
-        const QString iconUrl = ensureIconFile(QStringLiteral("shell.downloads"), downloadsPath);
-        if (!iconUrl.isEmpty()) {
-            downloads.iconUrl = iconUrl;
+    if (m_showDownloadsInDock) {
+        // Downloads stack.
+        DockItemEntry downloads;
+        downloads.kind = QStringLiteral("downloads");
+        downloads.appId = QStringLiteral("shell.downloads");
+        downloads.label = QStringLiteral("Загрузки");
+        const QString downloadsPath = downloadsFolderPath();
+        downloads.launchPath = downloadsPath;
+        downloads.iconHint = QStringLiteral("⬇");
+        downloads.pinned = true;
+        downloads.pinnedOnly = true;
+        if (!downloadsPath.isEmpty()) {
+            const QString iconUrl = ensureIconFile(QStringLiteral("shell.downloads"), downloadsPath);
+            if (!iconUrl.isEmpty()) {
+                downloads.iconUrl = iconUrl;
+            }
         }
+        m_entries.push_back(downloads);
     }
-    m_entries.push_back(downloads);
 
     // Recycle Bin (Trash). Icon reflects empty vs full state.
     const bool full = recycleBinHasItems();

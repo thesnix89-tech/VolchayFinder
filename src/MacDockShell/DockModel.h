@@ -85,6 +85,7 @@ public:
     Q_INVOKABLE void syncFromWindowsTaskbarPins();
     Q_INVOKABLE int appItemCount() const;
     Q_INVOKABLE void setSeparateTransientApps(bool enabled);
+    Q_INVOKABLE void setShowDownloadsInDock(bool show);
     int pinnedAppCount() const;
     int transientAppCount() const;
     Q_INVOKABLE QString trashWindowsIconUrl() const;
@@ -99,6 +100,7 @@ signals:
     void activeAppWindowChanged(const QString& title, const QString& appLabel, bool active);
     void explorerIconStyleChanged();
     void dockLayoutChanged();
+    void unpinDownloadsFromDock();
 
 private:
     void applyFlatCustomOrder();
@@ -172,6 +174,7 @@ private:
     QStringList m_customOrder;
     QStringList m_transientOrder;
     bool m_separateTransientApps = true;
+    bool m_showDownloadsInDock = true;
     int m_pinnedAppCount = 0;
     int m_transientAppCount = 0;
     // Apps removed from the dock only — Windows taskbar pins stay untouched.

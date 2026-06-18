@@ -30,6 +30,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(QString trashIconStyle READ trashIconStyle WRITE setTrashIconStyle NOTIFY trashIconStyleChanged)
     Q_PROPERTY(QString menuBarIconStyle READ menuBarIconStyle WRITE setMenuBarIconStyle NOTIFY menuBarIconStyleChanged)
     Q_PROPERTY(QString menuBarCustomIconPath READ menuBarCustomIconPath NOTIFY menuBarCustomIconPathChanged)
+    Q_PROPERTY(bool showDownloadsInDock READ showDownloadsInDock WRITE setShowDownloadsInDock NOTIFY showDownloadsInDockChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -39,7 +40,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock);
     Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
     Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style) const;
     Q_INVOKABLE bool importCustomMenuBarIcon();
@@ -81,6 +82,8 @@ public:
     QString menuBarIconStyle() const;
     void setMenuBarIconStyle(const QString& style);
     QString menuBarCustomIconPath() const;
+    bool showDownloadsInDock() const;
+    void setShowDownloadsInDock(bool show);
 
 signals:
     void taskbarHiddenChanged();
@@ -104,6 +107,7 @@ signals:
     void trashIconStyleChanged();
     void menuBarIconStyleChanged();
     void menuBarCustomIconPathChanged();
+    void showDownloadsInDockChanged();
     void shellLayoutRestoreNeeded();
 
 private:
@@ -151,5 +155,6 @@ private:
     QString m_trashIconStyle = QStringLiteral("windows");
     QString m_menuBarIconStyle = QStringLiteral("apple");
     QString m_menuBarCustomIconPath;
+    bool m_showDownloadsInDock = true;
     QTimer* m_fullscreenTimer = nullptr;
 };

@@ -101,7 +101,7 @@ Window {
     readonly property int dockShellStride: dockSlotSize + dockShellSpacing
     // Trailing macOS-style shell items (Downloads + Trash) live after the separator
     // and are excluded from drag-reorder and external-pin insertion.
-    readonly property int trailingShellCount: 2
+    readonly property int trailingShellCount: (taskbarController.showDownloadsInDock ? 1 : 0) + 1
     readonly property int appSlotCount: Math.max(0, dockRepeater.count - trailingShellCount)
     readonly property int appReorderSlotCount: dockWindow.pinnedAppCount + dockWindow.transientAppCount
     readonly property int pinnedAppCount: dockModel.pinnedAppCount
@@ -2276,8 +2276,8 @@ Window {
                     }
 
                     function beginDragReorder() {
-                        // Trailing shell items (Downloads/Trash) are fixed and not draggable.
-                        if (dockItemRoot.isSpecial)
+                        // Trailing shell items are fixed — except Downloads, which supports unpin drag.
+                        if (dockItemRoot.isSpecial && dockItemRoot.kind !== "downloads")
                             return
                         var wasMagnified = dockItemRoot.magnifyHover
                         dockWindow.abortReorderSettle()
@@ -3087,7 +3087,8 @@ Window {
                                 dockItemRoot.beginDragReorder()
                             } else if (!dockWindow.neighborsPacked
                                        && movedX > 6
-                                       && movedX > movedY) {
+                                       && movedX > movedY
+                                       && dockItemRoot.kind === "app") {
                                 dockWindow.neighborsPacked = true
                                 dockWindow.syncDockPackState()
                             }

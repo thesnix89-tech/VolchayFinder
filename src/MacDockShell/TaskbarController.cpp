@@ -1189,6 +1189,21 @@ bool TaskbarController::importCustomMenuBarIcon()
     return true;
 }
 
+bool TaskbarController::showDownloadsInDock() const
+{
+    return m_showDownloadsInDock;
+}
+
+void TaskbarController::setShowDownloadsInDock(bool show)
+{
+    if (m_showDownloadsInDock == show) {
+        return;
+    }
+    m_showDownloadsInDock = show;
+    saveSettings();
+    emit showDownloadsInDockChanged();
+}
+
 void TaskbarController::loadSettings()
 {
     QSettings settings;
@@ -1210,6 +1225,7 @@ void TaskbarController::loadSettings()
     setTrashIconStyle(settings.value(QStringLiteral("shell/trashIconStyle"), QStringLiteral("windows")).toString());
     setMenuBarIconStyle(settings.value(QStringLiteral("shell/menuBarIconStyle"), QStringLiteral("apple")).toString());
     m_menuBarCustomIconPath = settings.value(QStringLiteral("shell/menuBarCustomIconPath")).toString();
+    m_showDownloadsInDock = settings.value(QStringLiteral("shell/showDownloadsInDock"), true).toBool();
     reconcileWindowsStartup();
 }
 
@@ -1230,6 +1246,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/trashIconStyle"), m_trashIconStyle);
     settings.setValue(QStringLiteral("shell/menuBarIconStyle"), m_menuBarIconStyle);
     settings.setValue(QStringLiteral("shell/menuBarCustomIconPath"), m_menuBarCustomIconPath);
+    settings.setValue(QStringLiteral("shell/showDownloadsInDock"), m_showDownloadsInDock);
 }
 
 void TaskbarController::updateTaskbarVisibility()
@@ -1241,7 +1258,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1256,6 +1273,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setExplorerIconStyle(explorerIconStyle);
     setTrashIconStyle(trashIconStyle);
     setMenuBarIconStyle(menuBarIconStyle);
+    setShowDownloadsInDock(showDownloadsInDock);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);
