@@ -451,19 +451,6 @@ Window {
             var shellLeadIn = 1 + dockShellSpacing
             if (externalPinPreview && dragFrom < 0)
                 return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - shellLeadIn
-            if (dragFrom < 0 || !reordering)
-                return appShellSeparatorXForAppCount(appSlotCount)
-            if (!neighborsPacked) {
-                var fullSep = appShellSeparatorXForAppCount(appSlotCount)
-                if (dragFrom < appSlotCount) {
-                    var packedSep = appShellSeparatorXForAppCount(appSlotCount - 1)
-                    return packedSep + (1 - dockPackT) * (fullSep - packedSep)
-                }
-                return fullSep
-            }
-            var morphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
-            if (dragFrom < appSlotCount && morphTarget < appSlotCount)
-                return appShellSeparatorXForAppCount(appSlotCount - 1)
             return appShellSeparatorXForAppCount(appSlotCount)
         }
 
