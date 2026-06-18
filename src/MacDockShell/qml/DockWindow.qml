@@ -324,23 +324,66 @@ Window {
         return transientToPinnedExpansion(from, toSlot) > 0.001
     }
 
-    function previewSlotLeftForIndex(slot, from, toSlot) {
-        var expansion = transientToPinnedExpansion(from, toSlot)
-        if (expansion <= 0.001)
-            return slotLeftForIndex(slot)
-        if (slot <= pinnedAppCount)
-            return linearSlotLeftForIndex(slot)
-        if (slot < appSlotCount) {
-            var local = slot - pinnedAppCount
-            var sectionStart = linearSeparatorXForBoundary(pinnedAppCount) + 1 + expansion
-            var sectionEnd = appShellSeparatorXForAppCount(appSlotCount)
-            var packedTransient = packedTransientCount(from)
-            var zoneWidth = sectionEnd - sectionStart
-            var blockWidth = appIconsExtentForCount(packedTransient)
-            var inset = Math.max(0, (zoneWidth - blockWidth) / 2)
-            return sectionStart + inset + local * dockAppStride
+    // pinned → transient: expand transient zone by sliding the app/shell divider right.
+    function pinnedToTransientExpansion(from, toSlot) {
+        if (!taskbarController.dockSeparateTransientApps || transientAppCount <= 0)
+            return 0
+        if (from < 0 || from >= pinnedAppCount)
+            return 0
+        if (!neighborsPacked || !dragInDockZone)
+            return 0
+        if (toSlot < 0 || toSlot < pinnedAppCount)
+            return 0
+        var blend = Math.max(0, Math.min(1, toSlot - pinnedAppCount + 1))
+        return blend * (1 - dockPackT) * dockAppStride
+    }
+
+    function crossSectionRowExpansionAtSlot(from, toSlot) {
+        return Math.max(transientToPinnedExpansion(from, toSlot),
+                        pinnedToTransientExpansion(from, toSlot))
+    }
+
+    function previewSlotLeftForIndex(slot, from, toSlot, itemIndex) {
+        var pinnedExpansion = transientToPinnedExpansion(from, toSlot)
+        if (pinnedExpansion > 0.001) {
+            if (slot <= pinnedAppCount)
+                return linearSlotLeftForIndex(slot)
+            if (slot < appSlotCount) {
+                var local = slot - pinnedAppCount
+                var sectionStart = linearSeparatorXForBoundary(pinnedAppCount) + 1 + pinnedExpansion
+                var sectionEnd = appShellSeparatorXForAppCount(appSlotCount)
+                var packedTransient = packedTransientCount(from)
+                var zoneWidth = sectionEnd - sectionStart
+                var blockWidth = appIconsExtentForCount(packedTransient)
+                var inset = Math.max(0, (zoneWidth - blockWidth) / 2)
+                return sectionStart + inset + local * dockAppStride
+            }
+            return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
         }
-        return slotLeftForIndex(slot)
+
+        var shellExpansion = pinnedToTransientExpansion(from, toSlot)
+        if (shellExpansion > 0.001) {
+            if (itemIndex >= appSlotCount)
+                return slotLeftForIndex(itemIndex) + shellExpansion
+
+            var transStart = transientSectionStartX()
+            var transEnd = appShellSeparatorXForAppCount(appSlotCount) + shellExpansion
+            var expandedCount = transientAppCount + 1
+            var transZoneWidth = transEnd - transStart
+            var transBlockWidth = appIconsExtentForCount(expandedCount)
+            var transInset = Math.max(0, (transZoneWidth - transBlockWidth) / 2)
+
+            if (slot >= pinnedAppCount && slot < appSlotCount) {
+                var localSlot = slot - pinnedAppCount
+                return transStart + transInset + localSlot * dockAppStride
+            }
+            if (slot === appSlotCount && itemIndex < appSlotCount)
+                return transStart + transInset + transientAppCount * dockAppStride
+
+            return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
+        }
+
+        return slotLeftForIndex(itemIndex >= 0 ? itemIndex : slot)
     }
 
     function separatorCenterX() {
@@ -655,7 +698,7 @@ Window {
             var slot = previewModelSlotForIndex(itemIndex, from, s)
             if (slot < 0)
                 return slotLeftForIndex(itemIndex)
-            return previewSlotLeftForIndex(slot, from, s)
+            return previewSlotLeftForIndex(slot, from, s, itemIndex)
         }
         if (slotFloor === slotCeil)
             return xAtSlot(slotFloor)
@@ -669,9 +712,16 @@ Window {
             var shellLeadIn = 1 + dockShellSpacing
             if (externalPinPreview && dragFrom < 0)
                 return insertSlotXForItem(boundaryIndex, externalPinMorphSlot) - shellLeadIn
+            var restShellSep = appShellSeparatorXForAppCount(appSlotCount)
+            if (reordering && dragFrom >= 0 && dragFrom < pinnedAppCount) {
+                var shellMorphTarget = reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
+                var shellExpansion = pinnedToTransientExpansion(dragFrom, shellMorphTarget)
+                if (shellExpansion > 0.001)
+                    return restShellSep + shellExpansion
+            }
             if (dragFrom < 0 || !reordering || dragFrom >= appSlotCount)
-                return appShellSeparatorXForAppCount(appSlotCount)
-            var fullSep = appShellSeparatorXForAppCount(appSlotCount)
+                return restShellSep
+            var fullSep = restShellSep
             var packedSep = appShellSeparatorXForPack(dragFrom)
             return packedSep + (1 - dockPackT) * (fullSep - packedSep)
         }
@@ -1083,8 +1133,10 @@ Window {
             ? rowContentWidth(Math.max(0, layoutDockCount - 1)) + 2 * hoverBleed
             : (reordering ? rowContentWidthForPack(dragFrom) + 2 * hoverBleed
                            : rowContentWidth(dockRepeater.count)) + 2 * hoverBleed
+    readonly property real crossSectionMorphTarget: reorderMorphSlot >= 0 ? reorderMorphSlot : dragTo
     readonly property real dockRowWidth: dockRowCompactWidth
             + (1 - dockPackT) * (dockRowFullWidth - dockRowCompactWidth)
+            + crossSectionRowExpansionAtSlot(dragFrom, crossSectionMorphTarget)
     readonly property int dockPillWidth: dockRowWidth + 2 * dockEndCap
     // Single animated driver — window and pill stay in sync (no wing/pill desync).
     property real animatedPillWidth: dockPillWidth
@@ -1109,7 +1161,7 @@ Window {
         return Math.round((Screen.width - dockWindowWidth) / 2)
     }
     width: reordering && reorderFrozenWindowWidth > 0
-            ? reorderFrozenWindowWidth
+            ? Math.max(reorderFrozenWindowWidth, dockWindowWidth)
             : dockWindowWidth
     height: dockSlotSize + dockTopAirspace + dockBottomGap
     x: dockWindowX
@@ -2270,7 +2322,8 @@ Window {
                         return slot < 0
                                 ? dockItemRoot.fullRestX
                                 : dockWindow.previewSlotLeftForIndex(
-                                    slot, dockWindow.dragFrom, dockItemRoot.layoutDragTo)
+                                    slot, dockWindow.dragFrom, dockItemRoot.layoutDragTo,
+                                    dockItemRoot.index)
                     }
                     readonly property real morphedPreviewRestX: {
                         if (dockWindow.reorderMorphSlot < 0 || dockWindow.dragFrom < 0)
@@ -2313,6 +2366,17 @@ Window {
                         if (dockWindow.dragFrom < 0)
                             return dockItemRoot.fullRestX
                         if (dockItemRoot.isSpecial) {
+                            var shellMorphTarget = dockWindow.reorderMorphSlot >= 0
+                                    ? dockWindow.reorderMorphSlot : dockWindow.dragTo
+                            if (dockWindow.pinnedToTransientExpansion(
+                                    dockWindow.dragFrom, shellMorphTarget) > 0.001) {
+                                var expandedShellX = dockWindow.previewSlotLeftForIndex(
+                                        dockItemRoot.index, dockWindow.dragFrom, shellMorphTarget,
+                                        dockItemRoot.index)
+                                return dockItemRoot.compactRestX
+                                       + (1 - dockWindow.dockPackT)
+                                         * (expandedShellX - dockItemRoot.compactRestX)
+                            }
                             return dockItemRoot.compactRestX
                                    + (1 - dockWindow.dockPackT)
                                      * (dockItemRoot.fullRestX - dockItemRoot.compactRestX)
