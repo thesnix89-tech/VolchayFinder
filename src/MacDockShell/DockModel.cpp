@@ -553,6 +553,20 @@ void DockModel::restorePathsToDock(const QString& sourcePath, const QString& sho
 
 void DockModel::applyCustomOrder()
 {
+    if (m_separateTransientApps) {
+        applySeparateCustomOrder();
+    } else {
+        applyFlatCustomOrder();
+    }
+}
+
+bool DockModel::isTransientEntry(const DockItemEntry& entry) const
+{
+    return entry.kind == QLatin1String("app") && entry.running && !entry.pinned;
+}
+
+void DockModel::applyFlatCustomOrder()
+{
     // Register newly seen apps. Explorer goes to the far left by default (macOS Finder).
     for (const auto& entry : m_entries) {
         const QString key = entryOrderKey(entry);
@@ -586,6 +600,152 @@ void DockModel::applyCustomOrder()
                      [this](const DockItemEntry& a, const DockItemEntry& b) {
                          return m_customOrder.indexOf(entryOrderKey(a)) < m_customOrder.indexOf(entryOrderKey(b));
                      });
+    updateLayoutCounts();
+}
+
+void DockModel::applySeparateCustomOrder()
+{
+    QVector<DockItemEntry> pinned;
+    QVector<DockItemEntry> transient;
+    pinned.reserve(m_entries.size());
+    transient.reserve(m_entries.size());
+
+    for (const auto& entry : m_entries) {
+        if (entry.kind != QLatin1String("app")) {
+            continue;
+        }
+        if (entry.pinned) {
+            pinned.push_back(entry);
+        } else if (entry.running) {
+            transient.push_back(entry);
+        }
+    }
+
+    for (const auto& entry : pinned) {
+        const QString key = entryOrderKey(entry);
+        if (!m_customOrder.contains(key)) {
+            if (isExplorerEntry(entry)) {
+                m_customOrder.prepend(key);
+            } else {
+                m_customOrder.append(key);
+            }
+        }
+        m_transientOrder.removeAll(key);
+    }
+
+    for (const auto& entry : transient) {
+        const QString key = entryOrderKey(entry);
+        if (!m_transientOrder.contains(key)) {
+            m_transientOrder.append(key);
+        }
+        m_customOrder.removeAll(key);
+    }
+
+    QStringList pinnedAlive;
+    pinnedAlive.reserve(pinned.size());
+    for (const auto& entry : pinned) {
+        pinnedAlive.append(entryOrderKey(entry));
+    }
+    pinnedAlive.removeDuplicates();
+
+    QStringList transientAlive;
+    transientAlive.reserve(transient.size());
+    for (const auto& entry : transient) {
+        transientAlive.append(entryOrderKey(entry));
+    }
+    transientAlive.removeDuplicates();
+
+    for (auto it = m_customOrder.begin(); it != m_customOrder.end(); ) {
+        if (!pinnedAlive.contains(*it)) {
+            it = m_customOrder.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = m_transientOrder.begin(); it != m_transientOrder.end(); ) {
+        if (!transientAlive.contains(*it)) {
+            it = m_transientOrder.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    const auto sortByOrder = [this](const DockItemEntry& a, const DockItemEntry& b, const QStringList& order) {
+        return order.indexOf(entryOrderKey(a)) < order.indexOf(entryOrderKey(b));
+    };
+
+    std::stable_sort(pinned.begin(), pinned.end(),
+                     [&](const DockItemEntry& a, const DockItemEntry& b) {
+                         return sortByOrder(a, b, m_customOrder);
+                     });
+    std::stable_sort(transient.begin(), transient.end(),
+                     [&](const DockItemEntry& a, const DockItemEntry& b) {
+                         return sortByOrder(a, b, m_transientOrder);
+                     });
+
+    m_entries.clear();
+    m_entries += pinned;
+    m_entries += transient;
+    updateLayoutCounts();
+}
+
+void DockModel::updateLayoutCounts()
+{
+    int pinned = 0;
+    int transient = 0;
+    for (const auto& entry : m_entries) {
+        if (entry.kind != QLatin1String("app")) {
+            continue;
+        }
+        if (entry.pinned) {
+            ++pinned;
+        } else if (m_separateTransientApps && entry.running && !entry.pinned) {
+            ++transient;
+        }
+    }
+
+    if (pinned != m_pinnedAppCount || transient != m_transientAppCount) {
+        m_pinnedAppCount = pinned;
+        m_transientAppCount = transient;
+        emit dockLayoutChanged();
+    } else {
+        m_pinnedAppCount = pinned;
+        m_transientAppCount = transient;
+    }
+}
+
+void DockModel::mergeTransientIntoCustomOrder()
+{
+    for (const QString& key : m_transientOrder) {
+        if (!m_customOrder.contains(key)) {
+            m_customOrder.append(key);
+        }
+    }
+    m_transientOrder.clear();
+}
+
+void DockModel::setSeparateTransientApps(bool enabled)
+{
+    if (m_separateTransientApps == enabled) {
+        return;
+    }
+
+    m_separateTransientApps = enabled;
+    if (!enabled) {
+        mergeTransientIntoCustomOrder();
+        saveOrder();
+    }
+    refresh();
+}
+
+int DockModel::pinnedAppCount() const
+{
+    return m_pinnedAppCount;
+}
+
+int DockModel::transientAppCount() const
+{
+    return m_transientAppCount;
 }
 
 void DockModel::ensureExplorerLeadingInOrder()
@@ -759,24 +919,83 @@ void DockModel::moveItem(int from, int to)
         return;
     }
 
+    if (m_separateTransientApps) {
+        const int pinnedCount = m_pinnedAppCount;
+        const bool fromPinned = from < pinnedCount;
+        const bool fromTransient = !fromPinned && from < pinnedCount + m_transientAppCount;
+
+        if (fromTransient && to < pinnedCount) {
+            const DockItemEntry& entry = m_entries.at(from);
+            const QString path = entry.exePath.isEmpty() ? entry.launchPath : entry.exePath;
+            if (!path.isEmpty()) {
+                pinPathAt(path, to);
+            }
+            return;
+        }
+
+        if (fromPinned && to >= pinnedCount) {
+            unpinIndex(from);
+            return;
+        }
+    }
+
     beginResetModel();
     m_entries.move(from, to);
 
-    // Rebuild the saved order: currently visible apps in their new order first,
-    // then any other remembered apps that are not on the dock right now.
-    QStringList newOrder;
-    for (const auto& entry : m_entries) {
-        if (entry.kind != QLatin1String("app")) {
-            continue; // never persist the trailing shell items in the custom order
+    if (m_separateTransientApps) {
+        QStringList pinnedKeys;
+        QStringList transientKeys;
+        for (const auto& entry : m_entries) {
+            if (entry.kind != QLatin1String("app")) {
+                continue;
+            }
+            const QString key = entryOrderKey(entry);
+            if (entry.pinned) {
+                pinnedKeys.append(key);
+            } else if (entry.running) {
+                transientKeys.append(key);
+            }
         }
-        newOrder.append(entryOrderKey(entry));
-    }
-    for (const QString& key : m_customOrder) {
-        if (!newOrder.contains(key)) {
-            newOrder.append(key);
+
+        QStringList newCustomOrder;
+        for (const QString& key : pinnedKeys) {
+            newCustomOrder.append(key);
         }
+        for (const QString& key : m_customOrder) {
+            if (!newCustomOrder.contains(key) && !transientKeys.contains(key)) {
+                newCustomOrder.append(key);
+            }
+        }
+        m_customOrder = newCustomOrder;
+
+        QStringList newTransientOrder;
+        for (const QString& key : transientKeys) {
+            newTransientOrder.append(key);
+        }
+        for (const QString& key : m_transientOrder) {
+            if (!newTransientOrder.contains(key) && !pinnedKeys.contains(key)) {
+                newTransientOrder.append(key);
+            }
+        }
+        m_transientOrder = newTransientOrder;
+        updateLayoutCounts();
+    } else {
+        // Rebuild the saved order: currently visible apps in their new order first,
+        // then any other remembered apps that are not on the dock right now.
+        QStringList newOrder;
+        for (const auto& entry : m_entries) {
+            if (entry.kind != QLatin1String("app")) {
+                continue; // never persist the trailing shell items in the custom order
+            }
+            newOrder.append(entryOrderKey(entry));
+        }
+        for (const QString& key : m_customOrder) {
+            if (!newOrder.contains(key)) {
+                newOrder.append(key);
+            }
+        }
+        m_customOrder = newOrder;
     }
-    m_customOrder = newOrder;
     endResetModel();
 
     saveOrder();
@@ -792,6 +1011,7 @@ void DockModel::loadOrder()
 {
     QSettings settings;
     m_customOrder = settings.value(QStringLiteral("dock/customOrder")).toStringList();
+    m_transientOrder = settings.value(QStringLiteral("dock/transientOrder")).toStringList();
     m_dockHiddenPins = settings.value(QStringLiteral("dock/hiddenPins")).toStringList();
     m_dockExplicitPins = settings.value(QStringLiteral("dock/explicitPins")).toStringList();
     ensureExplorerLeadingInOrder();
@@ -801,6 +1021,7 @@ void DockModel::saveOrder()
 {
     QSettings settings;
     settings.setValue(QStringLiteral("dock/customOrder"), m_customOrder);
+    settings.setValue(QStringLiteral("dock/transientOrder"), m_transientOrder);
     settings.setValue(QStringLiteral("dock/hiddenPins"), m_dockHiddenPins);
     settings.setValue(QStringLiteral("dock/explicitPins"), m_dockExplicitPins);
 }

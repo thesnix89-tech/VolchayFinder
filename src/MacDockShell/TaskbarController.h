@@ -21,6 +21,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool dockHoverBounce READ dockHoverBounce WRITE setDockHoverBounce NOTIFY dockHoverBounceChanged)
     Q_PROPERTY(bool dockDragFadeEnabled READ dockDragFadeEnabled WRITE setDockDragFadeEnabled NOTIFY dockDragFadeEnabledChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
+    Q_PROPERTY(bool dockSeparateTransientApps READ dockSeparateTransientApps WRITE setDockSeparateTransientApps NOTIFY dockSeparateTransientAppsChanged)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
     Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
     Q_PROPERTY(QString menuBarAppName READ menuBarAppName NOTIFY menuBarAppNameChanged)
@@ -38,7 +39,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle);
     Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
     Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style) const;
     Q_INVOKABLE bool importCustomMenuBarIcon();
@@ -65,6 +66,8 @@ public:
     void setDockDragFadeEnabled(bool enabled);
     bool dockStaticIcons() const;
     void setDockStaticIcons(bool enabled);
+    bool dockSeparateTransientApps() const;
+    void setDockSeparateTransientApps(bool enabled);
     bool darkTheme() const;
     void setDarkTheme(bool enabled);
     bool startWithWindows() const;
@@ -92,6 +95,7 @@ signals:
     void dockHoverBounceChanged();
     void dockDragFadeEnabledChanged();
     void dockStaticIconsChanged();
+    void dockSeparateTransientAppsChanged();
     void darkThemeChanged();
     void startWithWindowsChanged();
     void menuBarAppNameChanged();
@@ -136,6 +140,7 @@ private:
     bool m_dockHoverBounce = true;
     bool m_dockDragFadeEnabled = false;
     bool m_dockStaticIcons = false;
+    bool m_dockSeparateTransientApps = true;
     bool m_darkTheme = false;
     bool m_startWithWindows = false;
     bool m_dockAutoHidden = false;

@@ -957,6 +957,19 @@ void TaskbarController::setDockStaticIcons(bool enabled)
     emit dockStaticIconsChanged();
 }
 
+bool TaskbarController::dockSeparateTransientApps() const
+{
+    return m_dockSeparateTransientApps;
+}
+
+void TaskbarController::setDockSeparateTransientApps(bool enabled)
+{
+    if (m_dockSeparateTransientApps == enabled)
+        return;
+    m_dockSeparateTransientApps = enabled;
+    emit dockSeparateTransientAppsChanged();
+}
+
 bool TaskbarController::darkTheme() const
 {
     return m_darkTheme;
@@ -1185,6 +1198,7 @@ void TaskbarController::loadSettings()
     m_dockHoverBounce = settings.value(QStringLiteral("shell/dockHoverBounce"), true).toBool();
     m_dockDragFadeEnabled = settings.value(QStringLiteral("shell/dockDragFadeEnabled"), false).toBool();
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
+    m_dockSeparateTransientApps = settings.value(QStringLiteral("shell/dockSeparateTransientApps"), true).toBool();
     m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
     m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
     setExplorerIconStyle(settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString());
@@ -1204,6 +1218,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/dockHoverBounce"), m_dockHoverBounce);
     settings.setValue(QStringLiteral("shell/dockDragFadeEnabled"), m_dockDragFadeEnabled);
     settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
+    settings.setValue(QStringLiteral("shell/dockSeparateTransientApps"), m_dockSeparateTransientApps);
     settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
     settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
     settings.setValue(QStringLiteral("shell/explorerIconStyle"), m_explorerIconStyle);
@@ -1221,7 +1236,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1230,6 +1245,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setDockHoverBounce(dockHoverBounce);
     setDockDragFadeEnabled(dockDragFadeEnabled);
     setDockStaticIcons(dockStaticIcons);
+    setDockSeparateTransientApps(dockSeparateTransientApps);
     setDarkTheme(darkTheme);
     setStartWithWindows(startWithWindows);
     setExplorerIconStyle(explorerIconStyle);

@@ -40,6 +40,8 @@ struct DockItemEntry
 class DockModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(int pinnedAppCount READ pinnedAppCount NOTIFY dockLayoutChanged)
+    Q_PROPERTY(int transientAppCount READ transientAppCount NOTIFY dockLayoutChanged)
 
 public:
     enum Roles {
@@ -81,6 +83,9 @@ public:
     Q_INVOKABLE void setTrashIconStyle(const QString& style);
     Q_INVOKABLE void syncFromWindowsTaskbarPins();
     Q_INVOKABLE int appItemCount() const;
+    Q_INVOKABLE void setSeparateTransientApps(bool enabled);
+    int pinnedAppCount() const;
+    int transientAppCount() const;
     Q_INVOKABLE QString trashWindowsIconUrl() const;
     Q_INVOKABLE QString trashMacIconUrl() const;
 
@@ -92,8 +97,14 @@ signals:
     void logMessage(const QString& message);
     void activeAppWindowChanged(const QString& title, const QString& appLabel, bool active);
     void explorerIconStyleChanged();
+    void dockLayoutChanged();
 
 private:
+    void applyFlatCustomOrder();
+    void applySeparateCustomOrder();
+    void updateLayoutCounts();
+    bool isTransientEntry(const DockItemEntry& entry) const;
+    void mergeTransientIntoCustomOrder();
     void loadPinnedApps();
     void invalidatePinnedCache();
     void scanWindows();
@@ -143,6 +154,10 @@ private:
     // User-defined dock order (stable keys). Keeps icons from reshuffling on app
     // switches and persists drag-and-drop customization across sessions.
     QStringList m_customOrder;
+    QStringList m_transientOrder;
+    bool m_separateTransientApps = true;
+    int m_pinnedAppCount = 0;
+    int m_transientAppCount = 0;
     // Apps removed from the dock only — Windows taskbar pins stay untouched.
     QStringList m_dockHiddenPins;
     // Apps pinned via the dock that may not yet appear in the Windows taskbar registry.

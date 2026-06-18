@@ -92,6 +92,12 @@ Window {
     // and are excluded from drag-reorder and external-pin insertion.
     readonly property int trailingShellCount: 2
     readonly property int appSlotCount: Math.max(0, dockRepeater.count - trailingShellCount)
+    readonly property int pinnedAppCount: dockModel.pinnedAppCount
+    readonly property int transientAppCount: dockModel.transientAppCount
+    readonly property bool showTransientSeparator:
+        taskbarController.dockSeparateTransientApps && transientAppCount > 0
+    readonly property int pinnedPinSlotCount: taskbarController.dockSeparateTransientApps
+            ? pinnedAppCount : appSlotCount
     readonly property int dockShrinkAnimMs: 220
     readonly property int reorderAnimMs: 360
     readonly property int dockPackAnimMs: 220
@@ -124,6 +130,16 @@ Window {
 
     function isAllowedPinSlot(slot, appCount) {
         return slot >= minAllowedPinSlot(appCount) && slot <= maxAllowedPinSlot(appCount)
+    }
+
+    function clampReorderSlot(candidate, fromIndex, count) {
+        var maxSlot = count - 1
+        if (maxSlot < 0)
+            return 0
+        if (!taskbarController.dockSeparateTransientApps)
+            return Math.max(0, Math.min(maxSlot, candidate))
+        var appEnd = dockWindow.pinnedAppCount + dockWindow.transientAppCount
+        return Math.max(0, Math.min(Math.max(0, appEnd - 1), candidate))
     }
 
     function slotLeftForIndex(index) {
@@ -367,6 +383,7 @@ Window {
         var iconSize = taskbarController.dockIconSize
         var dragCenter = leftX + iconSize / 2
         var candidate = candidateSlotForCenter(dragCenter, count)
+        candidate = clampReorderSlot(candidate, fromIndex, count)
 
         if (dragTo < 0) {
             dragTo = fromIndex
@@ -692,10 +709,10 @@ Window {
         var rowLocal = dockRowHost.mapFromGlobal(centerGlobalX, centerGlobalY)
         var dragCenter = rowLocal.x
         // Clamp to the app range so dropped apps never land in the trailing shell section.
-        var candidate = candidateInsertSlotForCenter(dragCenter, dockWindow.appSlotCount)
+        var candidate = candidateInsertSlotForCenter(dragCenter, dockWindow.pinnedPinSlotCount)
 
         externalPinSlotAnim.stop()
-        externalPinMorphSlot = continuousInsertSlotForCenter(dragCenter, dockWindow.appSlotCount)
+        externalPinMorphSlot = continuousInsertSlotForCenter(dragCenter, dockWindow.pinnedPinSlotCount)
 
         if (externalPinSlotSnapped && prevLayoutExternalPinTo >= 0 && candidate !== externalPinTo) {
             if (Math.abs(candidate - externalPinTo) === 1) {
@@ -743,8 +760,8 @@ Window {
         dockModel.setReorderActive(true)
         externalPinSlotSnapped = false
         externalPinGhostVisible = false
-        externalPinMorphSlot = dockWindow.appSlotCount
-        externalPinTo = dockWindow.appSlotCount
+        externalPinMorphSlot = dockWindow.pinnedPinSlotCount
+        externalPinTo = dockWindow.pinnedPinSlotCount
         prevLayoutExternalPinTo = externalPinTo
         externalPinPreview = true
         if (hasDropPointer)
@@ -834,7 +851,7 @@ Window {
     function finishExternalPinDrop(path, index) {
         if (externalPinSettling)
             return
-        if (!isAllowedPinSlot(index, appSlotCount)) {
+        if (!isAllowedPinSlot(index, pinnedPinSlotCount)) {
             cancelExternalPinPreview()
             return
         }
@@ -865,7 +882,7 @@ Window {
     function commitExternalPinDrop() {
         var path = externalPinPath
         var index = externalPinTo
-        if (!isAllowedPinSlot(index, appSlotCount))
+        if (!isAllowedPinSlot(index, pinnedPinSlotCount))
             return
         var itemCount = dockRepeater.count
         // Keep preview width (N+1 slots) while the model catches up — no shrink/grow flicker.
@@ -1162,7 +1179,7 @@ Window {
             // index overwrite it on Drop: that is what made the app land at the
             // right edge while the plus placeholder was shown elsewhere.
             if (!dockWindow.externalPinPreview && index >= 0)
-                dockWindow.externalPinTo = Math.max(0, Math.min(index, dockWindow.appSlotCount))
+                dockWindow.externalPinTo = Math.max(0, Math.min(index, dockWindow.pinnedPinSlotCount))
 
             dockWindow.setExternalPinPath(path)
             dockWindow.finishExternalPinDrop(path, dockWindow.externalPinTo)
@@ -1593,6 +1610,22 @@ Window {
                 }
             }
 
+            // macOS-style separator between pinned apps and transient running apps.
+            Rectangle {
+                id: dockTransientSeparator
+                visible: dockWindow.showTransientSeparator
+                         && !dockWindow.reordering
+                         && !dockWindow.externalPinPreview
+                x: dockWindow.slotLeftForIndex(dockWindow.pinnedAppCount) - Math.round(dockWindow.dockSpacing / 2)
+                y: Math.round((dockWindow.dockBarHeight - height) / 2)
+                width: 1
+                height: Math.round(dockWindow.dockBarHeight * 0.72)
+                radius: 0.5
+                color: "#000000"
+                opacity: 0.58
+                z: 5
+            }
+
             // macOS-style vertical separator between apps and Trash/Downloads.
             Rectangle {
                 id: dockSeparator
@@ -1603,10 +1636,10 @@ Window {
                 x: dockWindow.slotLeftForIndex(dockWindow.appSlotCount) - Math.round(dockWindow.dockSpacing / 2)
                 y: Math.round((dockWindow.dockBarHeight - height) / 2)
                 width: 1
-                height: Math.round(dockWindow.dockBarHeight * 0.52)
+                height: Math.round(dockWindow.dockBarHeight * 0.72)
                 radius: 0.5
                 color: "#000000"
-                opacity: 0.35
+                opacity: 0.58
                 z: 5
             }
 

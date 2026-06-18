@@ -252,6 +252,10 @@ int main(int argc, char *argv[])
         dockModel.setTrashIconStyle(taskbarController.trashIconStyle());
     });
     dockModel.setTrashIconStyle(taskbarController.trashIconStyle());
+    QObject::connect(&taskbarController, &TaskbarController::dockSeparateTransientAppsChanged, &dockModel, [&dockModel, &taskbarController]() {
+        dockModel.setSeparateTransientApps(taskbarController.dockSeparateTransientApps());
+    });
+    dockModel.setSeparateTransientApps(taskbarController.dockSeparateTransientApps());
     QObject::connect(&taskbarController, &TaskbarController::shellActionLogged, [](const QString& message) {
         appendLine(QString("[TaskbarController] %1").arg(message));
     });
