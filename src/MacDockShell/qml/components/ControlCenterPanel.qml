@@ -7,7 +7,8 @@ Popup {
     id: root
     popupType: Popup.Window
     modal: false
-    focus: true
+    focus: false
+    clip: true
     closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
     padding: 10
     width: 322

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Effects
 
 // macOS-style popup button: menu opens downward from the label with crossfade.
 Item {
@@ -19,7 +18,7 @@ Item {
 
     readonly property color itemText: darkTheme ? "#F2F2F7" : "#1D1D1F"
     readonly property color panelBg: darkTheme ? "#3A3A3C" : "#F5F5F7"
-    readonly property color panelBorder: darkTheme ? "#FFFFFF1A" : "#0000001A"
+    readonly property color panelBorder: darkTheme ? "#48484A" : "#0000001A"
     readonly property color chevronBtnBg: darkTheme ? "#3A3A3C" : "#E8E8ED"
     readonly property color chevronBtnBorder: darkTheme ? "#5A5A5E" : "#C8C8CC"
     readonly property color chevronGlyph: darkTheme ? "#E5E5EA" : "#636366"
@@ -55,7 +54,7 @@ Item {
     function repositionPopup() {
         const anchor = control.mapToItem(control.popupOverlay, 0, 0)
         popup.x = anchor.x + control.width - popup.width
-        popup.y = anchor.y - popup.padding
+        popup.y = anchor.y - popup.contentInset
     }
 
     function openPopup() {
@@ -157,14 +156,16 @@ Item {
         parent: control.popupOverlay
         popupType: Popup.Item
         modal: false
-        padding: 4
+        focus: false
+        padding: 0
         closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
         z: 1000
 
+        readonly property int contentInset: 4
         readonly property int rowHeight: 26
         width: control.panelWidth
         implicitWidth: control.panelWidth
-        implicitHeight: padding * 2 + control.model.length * rowHeight
+        implicitHeight: contentInset * 2 + control.model.length * rowHeight
 
         onAboutToShow: control.repositionPopup()
 
@@ -188,31 +189,18 @@ Item {
             }
         }
 
-        background: Item {
+        background: Rectangle {
             implicitWidth: control.panelWidth
             implicitHeight: popup.implicitHeight
-
-            Rectangle {
-                anchors.fill: parent
-                radius: 10
-                color: control.panelBg
-                border.width: 1
-                border.color: control.panelBorder
-
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    shadowEnabled: true
-                    shadowColor: "#40000000"
-                    shadowBlur: 0.85
-                    shadowVerticalOffset: 4
-                    shadowHorizontalOffset: 0
-                    autoPaddingEnabled: true
-                }
-            }
+            radius: 10
+            color: control.panelBg
+            border.width: 1
+            border.color: control.panelBorder
         }
 
         contentItem: Column {
-            width: control.panelWidth - popup.padding * 2
+            anchors.fill: parent
+            anchors.margins: popup.contentInset
             spacing: 0
 
             Repeater {
