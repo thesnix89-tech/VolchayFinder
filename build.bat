@@ -4,3 +4,5 @@ if errorlevel 1 exit /b 1
 call "C:\Users\alexa\Qt\6.8.3\msvc2022_64\bin\qt-cmake.bat" -S "%~dp0." -B "%~dp0build" -G Ninja
 if errorlevel 1 exit /b 1
 cmake --build "%~dp0build" -j 4
+if errorlevel 1 exit /b 1
+call "%~dp0tools\copy_emoji_font.bat"

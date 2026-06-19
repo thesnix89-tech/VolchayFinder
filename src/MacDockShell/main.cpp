@@ -28,6 +28,7 @@
 #include "MacCursor.h"
 #include "DockDropTarget.h"
 #include "ShelfController.h"
+#include "EmojiFontLoader.h"
 
 namespace {
 
@@ -231,6 +232,18 @@ int main(int argc, char *argv[])
     OleInitialize(nullptr);
     loadBundledFonts();
 
+    QString emojiFontPath;
+    QString emojiFontFamily;
+    if (EmojiFontLoader::loadAppleEmojiFont(&emojiFontPath, &emojiFontFamily)) {
+        appendLine(QString("Apple emoji font loaded: %1 (family: %2, Qt %3)")
+                       .arg(emojiFontPath, emojiFontFamily, QString::fromUtf8(qVersion())));
+    } else {
+        appendLine("Apple emoji font not found; using system Segoe UI Emoji.");
+        appendLine("Expected paths: %AppData%/ENI/MacDockShell/fonts/emoji/AppleColorEmoji-Windows.ttf; "
+                     "<exeDir>/fonts/emoji/AppleColorEmoji-Windows.ttf; "
+                     "src/MacDockShell/fonts/emoji/AppleColorEmoji-Windows.ttf");
+    }
+
     if (tryActivateExistingInstance(app.arguments())) {
         appendLine("Forwarded launch to an already running MacDockShell instance.");
         return 0;
@@ -322,22 +335,27 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine dockEngine;
     QQmlApplicationEngine controlEngine;
 
+    const QString emojiFamily = EmojiFontLoader::emojiFontFamilyName();
+
     topBarEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
+    topBarEngine.rootContext()->setContextProperty("emojiFontFamily", emojiFamily);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
     dockEngine.rootContext()->setContextProperty("dockDropTarget", &dockDropTarget);
     dockEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     dockEngine.rootContext()->setContextProperty("shelfController", &shelfController);
+    dockEngine.rootContext()->setContextProperty("emojiFontFamily", emojiFamily);
     QObject::connect(&dockDropTarget, &DockDropTarget::logMessage, [](const QString& message) {
         appendLine(QString("[DockDropTarget] %1").arg(message));
     });
     controlEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     controlEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     controlEngine.rootContext()->setContextProperty("macCursor", &macCursor);
+    controlEngine.rootContext()->setContextProperty("emojiFontFamily", emojiFamily);
 
     auto connectWarnings = [&app](QQmlApplicationEngine& engine, const QString& name) {
         QObject::connect(&engine, &QQmlApplicationEngine::warnings, &app, [name](const QList<QQmlError>& warnings) {

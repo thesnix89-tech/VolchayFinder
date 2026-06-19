@@ -2561,13 +2561,30 @@ Window {
                                 visible: dockIconImage.status !== Image.Ready
                             }
 
+                            Image {
+                                anchors.centerIn: parent
+                                width: parent.width * 0.72
+                                height: parent.height * 0.72
+                                source: dockItemRoot.kind === "trash"
+                                        ? "qrc:/src/MacDockShell/icons/emoji_trash.png"
+                                        : "qrc:/src/MacDockShell/icons/emoji_downloads.png"
+                                sourceSize: Qt.size(64, 64)
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                visible: dockIconImage.status !== Image.Ready
+                                         && (dockItemRoot.kind === "trash" || dockItemRoot.kind === "downloads")
+                            }
+
                             Text {
                                 anchors.centerIn: parent
                                 text: dockItemRoot.iconHint.length > 0 ? dockItemRoot.iconHint : dockItemRoot.label.slice(0, 1)
                                 color: "#1C222B"
+                                font.family: "SF Pro Text"
                                 font.pixelSize: dockItemRoot.magnifyHover ? 24 : 20
                                 font.weight: Font.DemiBold
                                 visible: dockIconImage.status !== Image.Ready
+                                         && dockItemRoot.kind !== "trash"
+                                         && dockItemRoot.kind !== "downloads"
                             }
                         }
                     }

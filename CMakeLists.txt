@@ -11,6 +11,8 @@ qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(MacDockShell
     src/MacDockShell/main.cpp
+    src/MacDockShell/EmojiFontLoader.cpp
+    src/MacDockShell/EmojiFontLoader.h
     src/MacDockShell/TaskbarController.cpp
     src/MacDockShell/TaskbarController.h
     src/MacDockShell/DockModel.cpp
@@ -61,6 +63,10 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/icons/appearance_auto.png
         src/MacDockShell/icons/appearance_light.png
         src/MacDockShell/icons/appearance_dark.png
+        src/MacDockShell/icons/emoji_laptop.png
+        src/MacDockShell/icons/emoji_folder.png
+        src/MacDockShell/icons/emoji_trash.png
+        src/MacDockShell/icons/emoji_downloads.png
         src/MacDockShell/cursors/100/arrow.cur
         src/MacDockShell/cursors/100/pointing_hand.cur
         src/MacDockShell/cursors/100/closed_hand.cur

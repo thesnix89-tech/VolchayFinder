@@ -229,9 +229,13 @@ Window {
                         anchors.leftMargin: 10
                         spacing: 8
 
-                        Text {
-                            text: "💻"
-                            font.pixelSize: 13
+                        Image {
+                            width: 14
+                            height: 14
+                            source: "qrc:/src/MacDockShell/icons/emoji_laptop.png"
+                            sourceSize: Qt.size(28, 28)
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
                             Layout.alignment: Qt.AlignVCenter
                         }
 
@@ -265,9 +269,13 @@ Window {
                         anchors.leftMargin: 10
                         spacing: 8
 
-                        Text {
-                            text: "📁"
-                            font.pixelSize: 13
+                        Image {
+                            width: 14
+                            height: 14
+                            source: "qrc:/src/MacDockShell/icons/emoji_folder.png"
+                            sourceSize: Qt.size(28, 28)
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
                             Layout.alignment: Qt.AlignVCenter
                         }
 
