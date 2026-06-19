@@ -13,6 +13,7 @@ Window {
     property string explorerIconStyle: taskbarController.explorerIconStyle
     property string trashIconStyle: taskbarController.trashIconStyle
     property string menuBarIconStyle: taskbarController.menuBarIconStyle
+    property string dockLightStyle: taskbarController.dockLightStyle
     property bool pinFromTaskbarRequested: false
 
     onVisibleChanged: {
@@ -23,6 +24,7 @@ Window {
         explorerIconStyle = taskbarController.explorerIconStyle
         trashIconStyle = taskbarController.trashIconStyle
         menuBarIconStyle = taskbarController.menuBarIconStyle
+        dockLightStyle = taskbarController.dockLightStyle
     }
 
     x: Math.round((Screen.width - width) / 2)
@@ -281,6 +283,8 @@ Window {
                 property string subtitle
                 property bool selected
                 property bool darkPreview: false
+                property bool colorPreview: false
+                property color previewFill: "#F3F3F3"
 
                 width: 148
                 height: 164
@@ -305,6 +309,16 @@ Window {
                             fillMode: Image.PreserveAspectFit
                             smooth: true
                             mipmap: true
+                            visible: !card.colorPreview
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 14
+                            color: card.previewFill
+                            border.width: 1
+                            border.color: "#D1D1D6"
+                            visible: card.colorPreview
                         }
 
                         Text {
@@ -313,8 +327,9 @@ Window {
                             color: "#86868B"
                             font.pixelSize: 28
                             font.weight: Font.Medium
-                            visible: previewImage.source.toString().length === 0
-                                    || previewImage.status !== Image.Ready
+                            visible: !card.colorPreview
+                                    && (previewImage.source.toString().length === 0
+                                    || previewImage.status !== Image.Ready)
                         }
                     }
 
@@ -787,6 +802,58 @@ Window {
                         }
                     }
 
+                    // Separator 5a
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    // Option 5a: Light-theme dock background
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 10
+                        opacity: darkThemeToggle.checked ? 0.45 : 1.0
+                        enabled: !darkThemeToggle.checked
+
+                        Text {
+                            text: "Фон дока (светлая тема)"
+                            color: "#1D1D1F"
+                            font.pixelSize: 12
+                            font.weight: Font.Medium
+                        }
+
+                        Text {
+                            text: "На тёмной теме док всегда чёрный. Этот выбор применяется только к светлой теме."
+                            color: "#86868B"
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        Row {
+                            spacing: 16
+
+                            ExplorerIconCard {
+                                selected: settingsWindow.dockLightStyle === "white"
+                                colorPreview: true
+                                previewFill: "#F3F3F3"
+                                title: "Белый"
+                                subtitle: "Как сейчас"
+                                onClicked: settingsWindow.dockLightStyle = "white"
+                            }
+
+                            ExplorerIconCard {
+                                selected: settingsWindow.dockLightStyle === "macos27"
+                                colorPreview: true
+                                previewFill: "#5E5E5E"
+                                title: "macOS 27"
+                                subtitle: "Серый как на Mac"
+                                onClicked: settingsWindow.dockLightStyle = "macos27"
+                            }
+                        }
+                    }
+
                     // Separator 5
                     Rectangle {
                         Layout.fillWidth: true
@@ -1185,7 +1252,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false

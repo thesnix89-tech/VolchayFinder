@@ -1533,7 +1533,11 @@ Window {
     property real dockSlideY: dockRestY
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
     readonly property bool darkTheme: taskbarController.darkTheme
-    readonly property color dockPillColor: darkTheme ? "#5E5E5E" : "#F3F3F3"
+    readonly property color dockPillColor: darkTheme
+            ? "#000000"
+            : (taskbarController.dockLightStyle === "macos27" ? "#5E5E5E" : "#F3F3F3")
+    readonly property color dockSeparatorColor: darkTheme ? "#FFFFFF" : "#000000"
+    readonly property real dockSeparatorOpacity: darkTheme ? 0.28 : 0.58
     readonly property int themeAnimMs: 320
     y: dockSlideY
 
@@ -2180,9 +2184,16 @@ Window {
                 width: 1
                 height: Math.round(dockWindow.dockBarHeight * 0.72)
                 radius: 0.5
-                color: "#000000"
-                opacity: 0.58
+                color: dockWindow.dockSeparatorColor
+                opacity: dockWindow.dockSeparatorOpacity
                 z: 5
+
+                Behavior on color {
+                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
+                Behavior on opacity {
+                    NumberAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
 
                 Behavior on x {
                     enabled: !dockPackAnim.running && !dockChromeWidthAnim.running && !reorderSlotAnim.running
@@ -2203,9 +2214,16 @@ Window {
                 width: 1
                 height: Math.round(dockWindow.dockBarHeight * 0.72)
                 radius: 0.5
-                color: "#000000"
-                opacity: 0.58
+                color: dockWindow.dockSeparatorColor
+                opacity: dockWindow.dockSeparatorOpacity
                 z: 5
+
+                Behavior on color {
+                    ColorAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
+                Behavior on opacity {
+                    NumberAnimation { duration: dockWindow.themeAnimMs; easing.type: Easing.InOutCubic }
+                }
 
                 Behavior on x {
                     enabled: !dockPackAnim.running && !dockChromeWidthAnim.running && !reorderSlotAnim.running
@@ -2413,7 +2431,7 @@ Window {
                             return dockWindow.settleDragY
                         return 0
                     }
-                    readonly property real runningDotBase: dockWindow.darkTheme ? 0.42 : 0.35
+                    readonly property real runningDotBase: 0.9
                     readonly property real runningDotOpacity: dockItemRoot.running && !dockItemRoot.reorderLifted
                             ? dockItemRoot.runningDotBase
                             : 0
@@ -2556,9 +2574,9 @@ Window {
 
                     Rectangle {
                         id: runningDot
-                        width: 4
-                        height: 4
-                        radius: 2
+                        width: 5
+                        height: 2.5
+                        radius: height / 2
                         visible: dockItemRoot.running
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: parent.bottom
@@ -2570,17 +2588,6 @@ Window {
                         }
                         Behavior on opacity {
                             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-                        }
-                        Rectangle {
-                            id: unpinnedRunningRing
-                            anchors.fill: parent
-                            anchors.margins: -1
-                            radius: 3
-                            color: "transparent"
-                            border.width: dockItemRoot.running && !dockItemRoot.pinned ? 1.5 : 0
-                            border.color: dockWindow.darkTheme ? "#FFFFFF" : "#000000"
-                            opacity: dockItemRoot.running && !dockItemRoot.pinned ? dockItemRoot.runningDotBase : 0
-                            visible: dockItemRoot.running && !dockItemRoot.pinned
                         }
                     }
 

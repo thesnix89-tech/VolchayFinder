@@ -985,6 +985,29 @@ void TaskbarController::setDarkTheme(bool enabled)
     emit darkThemeChanged();
 }
 
+QString TaskbarController::dockLightStyle() const
+{
+    return m_dockLightStyle;
+}
+
+QString TaskbarController::normalizeDockLightStyle(const QString& style) const
+{
+    if (style == QStringLiteral("macos27")) {
+        return QStringLiteral("macos27");
+    }
+    return QStringLiteral("white");
+}
+
+void TaskbarController::setDockLightStyle(const QString& style)
+{
+    const QString normalized = normalizeDockLightStyle(style);
+    if (m_dockLightStyle == normalized) {
+        return;
+    }
+    m_dockLightStyle = normalized;
+    emit dockLightStyleChanged();
+}
+
 bool TaskbarController::startWithWindows() const
 {
     return m_startWithWindows;
@@ -1220,6 +1243,7 @@ void TaskbarController::loadSettings()
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
     m_dockSeparateTransientApps = settings.value(QStringLiteral("shell/dockSeparateTransientApps"), true).toBool();
     m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
+    setDockLightStyle(settings.value(QStringLiteral("shell/dockLightStyle"), QStringLiteral("white")).toString());
     m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
     setExplorerIconStyle(settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString());
     setTrashIconStyle(settings.value(QStringLiteral("shell/trashIconStyle"), QStringLiteral("windows")).toString());
@@ -1241,6 +1265,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
     settings.setValue(QStringLiteral("shell/dockSeparateTransientApps"), m_dockSeparateTransientApps);
     settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
+    settings.setValue(QStringLiteral("shell/dockLightStyle"), m_dockLightStyle);
     settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
     settings.setValue(QStringLiteral("shell/explorerIconStyle"), m_explorerIconStyle);
     settings.setValue(QStringLiteral("shell/trashIconStyle"), m_trashIconStyle);
@@ -1258,7 +1283,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1269,6 +1294,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setDockStaticIcons(dockStaticIcons);
     setDockSeparateTransientApps(dockSeparateTransientApps);
     setDarkTheme(darkTheme);
+    setDockLightStyle(dockLightStyle);
     setStartWithWindows(startWithWindows);
     setExplorerIconStyle(explorerIconStyle);
     setTrashIconStyle(trashIconStyle);
