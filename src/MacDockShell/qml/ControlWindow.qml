@@ -39,6 +39,11 @@ Window {
     readonly property color buttonBorder: darkTheme ? "#636366" : "#D1D1D6"
     readonly property color buttonText: primaryText
     readonly property var languageCodes: ["system", "en", "uk", "ru"]
+    readonly property color scrollTrackBg: darkTheme ? "#3A3A3C" : "#E5E5EA"
+    readonly property int settingsScrollGutter: settingsVScroll.trackWidth
+    readonly property int settingsCardInset: 8
+    readonly property int settingsScrollInsetLeft: settingsCardInset
+    readonly property int settingsScrollInsetRight: settingsCardInset
 
     function syncLanguageIndex() {
         const idx = languageCodes.indexOf(taskbarController.uiLanguage)
@@ -419,6 +424,7 @@ Window {
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 52
+                leftPadding: settingsWindow.settingsScrollGutter
                 clip: true
 
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -435,8 +441,14 @@ Window {
                 }
 
                 ScrollBar.vertical: MacScrollBar {
+                    id: settingsVScroll
+                    parent: settingsScroll
+                    anchors.left: settingsScroll.left
+                    anchors.top: settingsScroll.top
+                    anchors.bottom: settingsScroll.bottom
                     darkTheme: settingsWindow.darkTheme
-                    trackColor: settingsWindow.windowBg
+                    trackColor: settingsWindow.scrollTrackBg
+                    alwaysVisible: true
                 }
 
                 Rectangle {
@@ -454,29 +466,38 @@ Window {
                         spacing: 0
 
             // Setting Rounded Box Group (macOS style grouped items)
-            Rectangle {
-                id: settingsGroup
+            Item {
+                width: scrollColumn.width
+                height: settingsPage === 0 ? settingsGroup.height : 0
                 visible: settingsPage === 0
-                height: settingsPage === 0 ? innerLayout.implicitHeight + 24 : 0
-                width: parent.width
-                radius: 10
-                color: settingsWindow.cardBg
-                border.width: 1
-                border.color: settingsWindow.borderColor
 
-                Behavior on color {
-                    ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
-                }
-
-                ColumnLayout {
-                    id: innerLayout
+                Rectangle {
+                    id: settingsGroup
+                    anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: 12
-                    spacing: 0
+                    anchors.leftMargin: settingsWindow.settingsScrollInsetLeft
+                    anchors.rightMargin: settingsWindow.settingsScrollInsetRight
+                    height: innerLayout.implicitHeight + 24
+                    radius: 10
+                    clip: true
+                    color: settingsWindow.cardBg
+                    border.width: 1
+                    border.color: settingsWindow.borderColor
 
-                    // Option 0: Interface language
+                    Behavior on color {
+                        ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
+                    ColumnLayout {
+                        id: innerLayout
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 12
+                        spacing: 0
+
+                        // Option 0: Interface language
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 45
@@ -1127,24 +1148,33 @@ Window {
                     }
                 }
             }
+            }
 
-            Rectangle {
-                id: explorerSettingsGroup
+            Item {
+                width: scrollColumn.width
+                height: settingsPage === 1 ? explorerSettingsGroup.height : 0
                 visible: settingsPage === 1
-                width: parent.width
-                height: settingsPage === 1 ? explorerInner.implicitHeight + 24 : 0
-                radius: 10
-                color: settingsWindow.cardBg
-                border.width: 1
-                border.color: settingsWindow.borderColor
 
-                Behavior on color {
-                    ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
-                }
-                clip: true
+                Rectangle {
+                    id: explorerSettingsGroup
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: settingsWindow.settingsScrollInsetLeft
+                    anchors.rightMargin: settingsWindow.settingsScrollInsetRight
+                    height: explorerInner.implicitHeight + 24
+                    radius: 10
+                    color: settingsWindow.cardBg
+                    border.width: 1
+                    border.color: settingsWindow.borderColor
 
-                Column {
-                    id: explorerInner
+                    Behavior on color {
+                        ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+                    clip: true
+
+                    Column {
+                        id: explorerInner
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
@@ -1356,6 +1386,7 @@ Window {
                             onClicked: showDownloadsToggle.checked = !showDownloadsToggle.checked
                         }
                     }
+                }
                 }
             }
 

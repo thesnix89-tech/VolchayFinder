@@ -7,29 +7,39 @@ ScrollBar {
 
     property bool darkTheme: false
     property color trackColor: "#0000000F"
+    property bool alwaysVisible: false
 
     readonly property bool verticalBar: control.orientation === Qt.Vertical
     readonly property bool engaged: control.active || control.hovered || control.pressed
+    readonly property bool shown: alwaysVisible || engaged
+    readonly property int trackWidth: alwaysVisible ? 15 : 8
+    readonly property int thumbWidth: alwaysVisible ? 11 : 6
+    readonly property int barPadding: 2
+    readonly property color thumbColor: {
+        if (alwaysVisible)
+            return darkTheme ? "#AEAEB2" : "#757575"
+        return darkTheme
+            ? (pressed ? "#636366" : (hovered ? "#8E8E93" : "#636366"))
+            : (pressed ? "#7B7B7B" : (hovered ? "#AEAEB2" : "#C7C7CC"))
+    }
 
-    implicitWidth: verticalBar ? 8 : parent ? parent.height : 8
-    implicitHeight: verticalBar ? (parent ? parent.height : 8) : 8
-    padding: 2
+    implicitWidth: verticalBar ? trackWidth : parent ? parent.height : trackWidth
+    implicitHeight: verticalBar ? (parent ? parent.height : trackWidth) : trackWidth
+    padding: barPadding
     policy: ScrollBar.AsNeeded
     interactive: true
 
-    opacity: engaged ? 1.0 : 0.0
+    opacity: shown ? 1.0 : 0.0
 
     Behavior on opacity {
         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
     }
 
     contentItem: Rectangle {
-        implicitWidth: verticalBar ? 6 : control.availableWidth
-        implicitHeight: verticalBar ? control.availableHeight : 6
+        implicitWidth: verticalBar ? control.thumbWidth : control.availableWidth
+        implicitHeight: verticalBar ? control.availableHeight : control.thumbWidth
         radius: verticalBar ? width / 2 : height / 2
-        color: control.darkTheme
-               ? (control.pressed ? "#636366" : (control.hovered ? "#8E8E93" : "#636366"))
-               : (control.pressed ? "#7B7B7B" : (control.hovered ? "#AEAEB2" : "#C7C7CC"))
+        color: control.thumbColor
 
         Behavior on color {
             ColorAnimation { duration: 120; easing.type: Easing.OutCubic }
@@ -37,12 +47,12 @@ ScrollBar {
     }
 
     background: Rectangle {
-        implicitWidth: verticalBar ? 8 : control.width
-        implicitHeight: verticalBar ? control.height : 8
+        implicitWidth: verticalBar ? control.trackWidth : control.width
+        implicitHeight: verticalBar ? control.height : control.trackWidth
         radius: verticalBar ? width / 2 : height / 2
-        color: control.engaged ? control.trackColor : "transparent"
-        visible: control.engaged
-        opacity: control.engaged ? 1.0 : 0.0
+        color: control.shown ? control.trackColor : "transparent"
+        visible: control.shown
+        opacity: control.shown ? 1.0 : 0.0
 
         Behavior on opacity {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
