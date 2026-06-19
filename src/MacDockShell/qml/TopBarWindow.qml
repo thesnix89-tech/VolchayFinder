@@ -220,7 +220,7 @@ Window {
         }
 
         Action {
-            text: "Системные настройки..."
+            text: qsTr("Settings…")
             onTriggered: taskbarController.settingsVisible = true
         }
 
@@ -234,7 +234,7 @@ Window {
         }
 
         Action {
-            text: "Выход"
+            text: qsTr("Quit")
             onTriggered: taskbarController.quitApplication()
         }
     }

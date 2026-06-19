@@ -1922,14 +1922,14 @@ Window {
         id: dockContextMenu
         
         MenuItem {
-            text: "Системные настройки..."
+            text: qsTr("Settings…")
             onTriggered: taskbarController.settingsVisible = true
         }
         
         MenuSeparator {}
         
         MenuItem {
-            text: "Выход из оболочки"
+            text: qsTr("Exit shell")
             onTriggered: taskbarController.quitApplication()
         }
     }
@@ -2109,7 +2109,7 @@ Window {
                         Text {
                             id: reorderRemoveText
                             anchors.centerIn: parent
-                            text: "Remove"
+                            text: qsTr("Remove")
                             color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
                             font.pixelSize: 11
                             font.weight: Font.Medium
@@ -2624,7 +2624,7 @@ Window {
                                 anchors.centerIn: parent
                                 text: dockItemRoot.pinned || dockItemRoot.rightSectionPinned
                                       ? dockItemRoot.label
-                                      : dockItemRoot.label + " (не закреплено)"
+                                      : qsTr("%1 (unpinned)").arg(dockItemRoot.label)
                                 color: dockWindow.darkTheme ? "#F2F2F7" : "#1C222B"
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -2752,7 +2752,7 @@ Window {
                         }
 
                         Menu {
-                            title: "Параметры"
+                            title: qsTr("Options")
                             popupType: Popup.Window
                             padding: 6
                             implicitWidth: 190
@@ -2789,7 +2789,7 @@ Window {
                             }
 
                             Action {
-                                text: "Показать в Проводнике"
+                                text: qsTr("Show in Explorer")
                                 onTriggered: {
                                     var i = dockItemRoot.index
                                     Qt.callLater(function() { dockModel.revealIndex(i) })
@@ -2807,21 +2807,21 @@ Window {
                         }
 
                         Action {
-                            text: "Показать все окна"
+                            text: qsTr("Show all windows")
                             onTriggered: {
                                 var i = dockItemRoot.index
                                 Qt.callLater(function() { dockModel.activateIndex(i) })
                             }
                         }
                         Action {
-                            text: "Скрыть"
+                            text: qsTr("Hide")
                             onTriggered: {
                                 var i = dockItemRoot.index
                                 Qt.callLater(function() { dockModel.minimizeIndex(i) })
                             }
                         }
                         Action {
-                            text: "Завершить"
+                            text: qsTr("Quit")
                             onTriggered: {
                                 var i = dockItemRoot.index
                                 Qt.callLater(function() { dockModel.closeIndex(i) })
@@ -2869,7 +2869,7 @@ Window {
                             }
                         }
                         Action {
-                            text: "Открыть папку «Загрузки»"
+                            text: qsTr("Open Downloads folder")
                             onTriggered: Qt.callLater(function() { shelfController.openDownloadsFolder() })
                         }
                     }
@@ -2914,11 +2914,11 @@ Window {
                             }
                         }
                         Action {
-                            text: "Открыть"
+                            text: qsTr("Open")
                             onTriggered: Qt.callLater(function() { shelfController.openRecycleBin() })
                         }
                         Action {
-                            text: "Очистить корзину"
+                            text: qsTr("Empty Trash")
                             onTriggered: Qt.callLater(function() { shelfController.emptyRecycleBin() })
                         }
                     }
@@ -2956,7 +2956,7 @@ Window {
                             spacing: 2
 
                             Text {
-                                text: "Загрузки"
+                                text: qsTr("Downloads")
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 color: "#6B6B6F"
@@ -2967,7 +2967,7 @@ Window {
 
                             Text {
                                 visible: downloadsListModel.count === 0
-                                text: "Нет недавних загрузок"
+                                text: qsTr("No recent downloads")
                                 font.pixelSize: 13
                                 color: "#8A8A8E"
                                 leftPadding: 8
@@ -3039,7 +3039,7 @@ Window {
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     leftPadding: 8
-                                    text: "Открыть папку «Загрузки»"
+                                    text: qsTr("Open Downloads folder")
                                     font.pixelSize: 13
                                     color: folderHover.containsMouse ? "white" : "#1D1D1F"
                                 }

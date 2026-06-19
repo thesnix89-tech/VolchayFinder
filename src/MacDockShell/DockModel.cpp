@@ -2004,7 +2004,7 @@ void DockModel::appendTrailingShellItems()
         DockItemEntry downloads;
         downloads.kind = QStringLiteral("downloads");
         downloads.appId = QStringLiteral("shell.downloads");
-        downloads.label = QStringLiteral("Загрузки");
+        downloads.label = tr("Downloads");
         const QString downloadsPath = downloadsFolderPath();
         downloads.launchPath = downloadsPath;
         downloads.iconHint = QStringLiteral("⬇");
@@ -2024,7 +2024,7 @@ void DockModel::appendTrailingShellItems()
     DockItemEntry trash;
     trash.kind = QStringLiteral("trash");
     trash.appId = QStringLiteral("shell.trash");
-    trash.label = QStringLiteral("Корзина");
+    trash.label = tr("Trash");
     trash.iconHint = QStringLiteral("🗑");
     trash.pinned = true;
     trash.pinnedOnly = true;
@@ -2058,8 +2058,8 @@ QString DockModel::explorerDefaultIconUrl() const
 QString DockModel::explorerDisplayLabel() const
 {
     return m_explorerIconStyle == QLatin1String("macos")
-            ? QStringLiteral("Finder")
-            : QStringLiteral("File Explorer");
+            ? tr("Finder")
+            : tr("File Explorer");
 }
 
 QString DockModel::resolveExplorerIconUrl(const DockItemEntry& entry) const

@@ -22,6 +22,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool dockDragFadeEnabled READ dockDragFadeEnabled WRITE setDockDragFadeEnabled NOTIFY dockDragFadeEnabledChanged)
     Q_PROPERTY(bool dockStaticIcons READ dockStaticIcons WRITE setDockStaticIcons NOTIFY dockStaticIconsChanged)
     Q_PROPERTY(bool dockSeparateTransientApps READ dockSeparateTransientApps WRITE setDockSeparateTransientApps NOTIFY dockSeparateTransientAppsChanged)
+    Q_PROPERTY(QString appearanceMode READ appearanceMode WRITE setAppearanceMode NOTIFY appearanceModeChanged)
     Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
     Q_PROPERTY(QString dockLightStyle READ dockLightStyle WRITE setDockLightStyle NOTIFY dockLightStyleChanged)
     Q_PROPERTY(bool startWithWindows READ startWithWindows WRITE setStartWithWindows NOTIFY startWithWindowsChanged)
@@ -32,6 +33,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(QString menuBarIconStyle READ menuBarIconStyle WRITE setMenuBarIconStyle NOTIFY menuBarIconStyleChanged)
     Q_PROPERTY(QString menuBarCustomIconPath READ menuBarCustomIconPath NOTIFY menuBarCustomIconPathChanged)
     Q_PROPERTY(bool showDownloadsInDock READ showDownloadsInDock WRITE setShowDownloadsInDock NOTIFY showDownloadsInDockChanged)
+    Q_PROPERTY(QString uiLanguage READ uiLanguage WRITE setUiLanguage NOTIFY languageChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -47,6 +49,9 @@ public:
     Q_INVOKABLE bool importCustomMenuBarIcon();
     Q_INVOKABLE void tryAutostartShell();
     Q_INVOKABLE void enforceTaskbarHidden();
+    Q_INVOKABLE QStringList availableLanguages() const;
+    Q_INVOKABLE QString languageDisplayName(const QString& code) const;
+    Q_INVOKABLE void refreshMenuBar();
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;
@@ -70,6 +75,8 @@ public:
     void setDockStaticIcons(bool enabled);
     bool dockSeparateTransientApps() const;
     void setDockSeparateTransientApps(bool enabled);
+    QString appearanceMode() const;
+    void setAppearanceMode(const QString& mode);
     bool darkTheme() const;
     void setDarkTheme(bool enabled);
     QString dockLightStyle() const;
@@ -87,6 +94,9 @@ public:
     QString menuBarCustomIconPath() const;
     bool showDownloadsInDock() const;
     void setShowDownloadsInDock(bool show);
+    QString uiLanguage() const;
+    void setUiLanguage(const QString& language);
+    QString effectiveLanguage() const;
 
 signals:
     void taskbarHiddenChanged();
@@ -102,6 +112,7 @@ signals:
     void dockDragFadeEnabledChanged();
     void dockStaticIconsChanged();
     void dockSeparateTransientAppsChanged();
+    void appearanceModeChanged();
     void darkThemeChanged();
     void dockLightStyleChanged();
     void startWithWindowsChanged();
@@ -113,6 +124,7 @@ signals:
     void menuBarCustomIconPathChanged();
     void showDownloadsInDockChanged();
     void shellLayoutRestoreNeeded();
+    void languageChanged();
 
 private:
     QString normalizeMenuBarIconStyle(const QString& style) const;
@@ -130,6 +142,12 @@ private:
     bool detectForegroundOccupiesScreen() const;
     void updateFullscreenState();
     void updateForegroundMenuBar();
+    QStringList defaultMenuBarItems() const;
+    QString normalizeAppearanceMode(const QString& mode) const;
+    bool effectiveDarkTheme() const;
+    bool isWindowsDarkMode() const;
+    void updateEffectiveAppearance();
+    QString normalizeUiLanguage(const QString& language) const;
     void syncWindowsStartup(bool enabled);
     void reconcileWindowsStartup();
 
@@ -150,7 +168,8 @@ private:
     bool m_dockDragFadeEnabled = false;
     bool m_dockStaticIcons = false;
     bool m_dockSeparateTransientApps = true;
-    bool m_darkTheme = false;
+    QString m_appearanceMode = QStringLiteral("auto");
+    bool m_cachedEffectiveDarkTheme = false;
     QString m_dockLightStyle = QStringLiteral("white");
     bool m_startWithWindows = false;
     bool m_dockAutoHidden = false;
@@ -162,5 +181,7 @@ private:
     QString m_menuBarIconStyle = QStringLiteral("apple");
     QString m_menuBarCustomIconPath;
     bool m_showDownloadsInDock = true;
+    QString m_uiLanguage = QStringLiteral("system");
     QTimer* m_fullscreenTimer = nullptr;
+    QTimer* m_appearanceTimer = nullptr;
 };

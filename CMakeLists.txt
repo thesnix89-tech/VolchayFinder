@@ -4,7 +4,7 @@ project(MacDockShell VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Network)
+find_package(Qt6 REQUIRED COMPONENTS Quick Network LinguistTools)
 
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
@@ -42,6 +42,8 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/ControlCenterPanel.qml
         src/MacDockShell/qml/components/MacToggle.qml
         src/MacDockShell/qml/components/MacScrollBar.qml
+        src/MacDockShell/qml/components/MacPopupButton.qml
+        src/MacDockShell/qml/components/MacAppearancePicker.qml
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
@@ -56,6 +58,9 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/icons/finder_macos.png
         src/MacDockShell/icons/trash_macos_full.png
         src/MacDockShell/icons/trash_macos_empty.png
+        src/MacDockShell/icons/appearance_auto.png
+        src/MacDockShell/icons/appearance_light.png
+        src/MacDockShell/icons/appearance_dark.png
         src/MacDockShell/cursors/100/arrow.cur
         src/MacDockShell/cursors/100/pointing_hand.cur
         src/MacDockShell/cursors/100/closed_hand.cur
@@ -82,6 +87,20 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/cursors/150/precision.cur
         src/MacDockShell/cursors/150/busy.ani
         src/MacDockShell/cursors/150/working.ani
+)
+
+qt_add_translations(MacDockShell
+    TS_FILES
+        i18n/MacDockShell_en.ts
+        i18n/MacDockShell_uk.ts
+        i18n/MacDockShell_ru.ts
+    RESOURCE_PREFIX "/i18n"
+    QML_FILES
+        src/MacDockShell/qml/TopBarWindow.qml
+        src/MacDockShell/qml/DockWindow.qml
+        src/MacDockShell/qml/ControlWindow.qml
+        src/MacDockShell/qml/components/StatusArea.qml
+        src/MacDockShell/qml/components/ControlCenterPanel.qml
 )
 
 set_target_properties(MacDockShell PROPERTIES

@@ -248,9 +248,9 @@ Popup {
 
                         Repeater {
                             model: [
-                                { kind: "wifi", title: "Wi-Fi", subtitle: "Выкл." },
-                                { kind: "bt", title: "Bluetooth", subtitle: "Выкл." },
-                                { kind: "airdrop", title: "AirDrop", subtitle: "Получение: Выкл." }
+                                { kind: "wifi", title: qsTr("Wi-Fi"), subtitle: qsTr("Off") },
+                                { kind: "bt", title: qsTr("Bluetooth"), subtitle: qsTr("Off") },
+                                { kind: "airdrop", title: qsTr("AirDrop"), subtitle: qsTr("Receiving: Off") }
                             ]
                             delegate: Item {
                                 Layout.fillWidth: true
@@ -314,7 +314,7 @@ Popup {
                             }
                             Text {
                                 width: parent.width
-                                text: "Фокусирование"
+                                text: qsTr("Focus")
                                 color: root.labelColor
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -347,7 +347,7 @@ Popup {
                             }
                             Text {
                                 width: parent.width
-                                text: "Повтор экрана"
+                                text: qsTr("Screen Mirroring")
                                 color: root.labelColor
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
@@ -371,7 +371,7 @@ Popup {
                 spacing: 8
 
                 Text {
-                    text: "Дисплей"
+                    text: qsTr("Display")
                     color: root.labelColor
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -396,7 +396,7 @@ Popup {
                 spacing: 8
 
                 Text {
-                    text: "Звук"
+                    text: qsTr("Sound")
                     color: root.labelColor
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -473,7 +473,7 @@ Popup {
                 }
 
                 Text {
-                    text: "Музыка"
+                    text: qsTr("Music")
                     color: root.labelColor
                     font.pixelSize: 14
                     font.weight: Font.DemiBold

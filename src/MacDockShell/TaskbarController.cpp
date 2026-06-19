@@ -215,28 +215,22 @@ QString normalizeMenuLabel(const QString& raw)
     return label.trimmed();
 }
 
-QStringList defaultMenuBarItems()
+QString pickMenuBarIconFile(const QString& dialogTitle)
 {
-    const LANGID language = GetUserDefaultUILanguage();
-    if (PRIMARYLANGID(language) == LANG_RUSSIAN) {
-        return {
-            QStringLiteral("Файл"),
-            QStringLiteral("Правка"),
-            QStringLiteral("Вид"),
-            QStringLiteral("Переход"),
-            QStringLiteral("Окно"),
-            QStringLiteral("Справка"),
-        };
-    }
+    wchar_t buffer[MAX_PATH] = {};
+    OPENFILENAMEW ofn = {};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.lpstrFilter = L"Images\0*.png;*.svg;*.ico;*.jpg;*.jpeg;*.bmp;*.webp\0All Files\0*.*\0\0";
+    ofn.lpstrFile = buffer;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+    const std::wstring nativeTitle = dialogTitle.toStdWString();
+    ofn.lpstrTitle = nativeTitle.c_str();
 
-    return {
-        QStringLiteral("File"),
-        QStringLiteral("Edit"),
-        QStringLiteral("View"),
-        QStringLiteral("Go"),
-        QStringLiteral("Window"),
-        QStringLiteral("Help"),
-    };
+    if (!GetOpenFileNameW(&ofn)) {
+        return {};
+    }
+    return QString::fromWCharArray(buffer);
 }
 
 QStringList readMenuBarItems(HWND hwnd)
@@ -352,23 +346,6 @@ bool setWindowsRunAtStartup(bool enabled)
     return setStatus == ERROR_SUCCESS;
 }
 
-QString pickMenuBarIconFile()
-{
-    wchar_t buffer[MAX_PATH] = {};
-    OPENFILENAMEW ofn = {};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.lpstrFilter = L"Images\0*.png;*.svg;*.ico;*.jpg;*.jpeg;*.bmp;*.webp\0All Files\0*.*\0\0";
-    ofn.lpstrFile = buffer;
-    ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
-    ofn.lpstrTitle = L"Choose menu bar icon";
-
-    if (!GetOpenFileNameW(&ofn)) {
-        return {};
-    }
-    return QString::fromWCharArray(buffer);
-}
-
 } // namespace
 
 TaskbarController::TaskbarController(QObject* parent)
@@ -383,6 +360,10 @@ TaskbarController::TaskbarController(QObject* parent)
         enforceTaskbarHidden();
     });
     m_fullscreenTimer->start();
+    m_appearanceTimer = new QTimer(this);
+    m_appearanceTimer->setInterval(2000);
+    connect(m_appearanceTimer, &QTimer::timeout, this, &TaskbarController::updateEffectiveAppearance);
+    m_appearanceTimer->start();
     m_menuBarItems = defaultMenuBarItems();
     loadSettings();
     updateForegroundMenuBar();
@@ -971,18 +952,95 @@ void TaskbarController::setDockSeparateTransientApps(bool enabled)
     emit dockSeparateTransientAppsChanged();
 }
 
+QString TaskbarController::normalizeAppearanceMode(const QString& mode) const
+{
+    if (mode == QLatin1String("light") || mode == QLatin1String("dark")) {
+        return mode;
+    }
+    return QStringLiteral("auto");
+}
+
+bool TaskbarController::isWindowsDarkMode() const
+{
+    HKEY key = nullptr;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER,
+                      L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                      0,
+                      KEY_READ,
+                      &key) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    DWORD value = 1;
+    DWORD size = sizeof(value);
+    DWORD type = 0;
+    const LSTATUS status = RegQueryValueExW(
+        key, L"AppsUseLightTheme", nullptr, &type, reinterpret_cast<LPBYTE>(&value), &size);
+    RegCloseKey(key);
+
+    if (status != ERROR_SUCCESS || type != REG_DWORD) {
+        return false;
+    }
+    return value == 0;
+}
+
+bool TaskbarController::effectiveDarkTheme() const
+{
+    if (m_appearanceMode == QLatin1String("dark")) {
+        return true;
+    }
+    if (m_appearanceMode == QLatin1String("light")) {
+        return false;
+    }
+    return isWindowsDarkMode();
+}
+
+void TaskbarController::updateEffectiveAppearance()
+{
+    if (m_appearanceMode != QLatin1String("auto")) {
+        return;
+    }
+
+    const bool effective = effectiveDarkTheme();
+    if (effective == m_cachedEffectiveDarkTheme) {
+        return;
+    }
+
+    m_cachedEffectiveDarkTheme = effective;
+    emit darkThemeChanged();
+}
+
+QString TaskbarController::appearanceMode() const
+{
+    return m_appearanceMode;
+}
+
+void TaskbarController::setAppearanceMode(const QString& mode)
+{
+    const QString normalized = normalizeAppearanceMode(mode);
+    if (m_appearanceMode == normalized) {
+        return;
+    }
+
+    m_appearanceMode = normalized;
+    saveSettings();
+    emit appearanceModeChanged();
+
+    const bool effective = effectiveDarkTheme();
+    if (effective != m_cachedEffectiveDarkTheme) {
+        m_cachedEffectiveDarkTheme = effective;
+        emit darkThemeChanged();
+    }
+}
+
 bool TaskbarController::darkTheme() const
 {
-    return m_darkTheme;
+    return effectiveDarkTheme();
 }
 
 void TaskbarController::setDarkTheme(bool enabled)
 {
-    if (m_darkTheme == enabled) {
-        return;
-    }
-    m_darkTheme = enabled;
-    emit darkThemeChanged();
+    setAppearanceMode(enabled ? QStringLiteral("dark") : QStringLiteral("light"));
 }
 
 QString TaskbarController::dockLightStyle() const
@@ -1184,7 +1242,7 @@ QString TaskbarController::menuBarIconPreviewUrl(const QString& style, bool dark
 
 bool TaskbarController::importCustomMenuBarIcon()
 {
-    const QString sourcePath = pickMenuBarIconFile();
+    const QString sourcePath = pickMenuBarIconFile(tr("Choose menu bar icon"));
     if (sourcePath.isEmpty()) {
         return false;
     }
@@ -1242,7 +1300,14 @@ void TaskbarController::loadSettings()
     m_dockDragFadeEnabled = settings.value(QStringLiteral("shell/dockDragFadeEnabled"), false).toBool();
     m_dockStaticIcons = settings.value(QStringLiteral("shell/dockStaticIcons"), false).toBool();
     m_dockSeparateTransientApps = settings.value(QStringLiteral("shell/dockSeparateTransientApps"), true).toBool();
-    m_darkTheme = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
+    if (settings.contains(QStringLiteral("shell/appearanceMode"))) {
+        m_appearanceMode = normalizeAppearanceMode(
+            settings.value(QStringLiteral("shell/appearanceMode"), QStringLiteral("auto")).toString());
+    } else {
+        const bool legacyDark = settings.value(QStringLiteral("shell/darkTheme"), false).toBool();
+        m_appearanceMode = legacyDark ? QStringLiteral("dark") : QStringLiteral("light");
+    }
+    m_cachedEffectiveDarkTheme = effectiveDarkTheme();
     setDockLightStyle(settings.value(QStringLiteral("shell/dockLightStyle"), QStringLiteral("white")).toString());
     m_startWithWindows = settings.value(QStringLiteral("shell/startWithWindows"), false).toBool();
     setExplorerIconStyle(settings.value(QStringLiteral("shell/explorerIconStyle"), QStringLiteral("default")).toString());
@@ -1250,6 +1315,7 @@ void TaskbarController::loadSettings()
     setMenuBarIconStyle(settings.value(QStringLiteral("shell/menuBarIconStyle"), QStringLiteral("apple")).toString());
     m_menuBarCustomIconPath = settings.value(QStringLiteral("shell/menuBarCustomIconPath")).toString();
     m_showDownloadsInDock = settings.value(QStringLiteral("shell/showDownloadsInDock"), true).toBool();
+    m_uiLanguage = normalizeUiLanguage(settings.value(QStringLiteral("shell/uiLanguage"), QStringLiteral("system")).toString());
     reconcileWindowsStartup();
 }
 
@@ -1264,7 +1330,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/dockDragFadeEnabled"), m_dockDragFadeEnabled);
     settings.setValue(QStringLiteral("shell/dockStaticIcons"), m_dockStaticIcons);
     settings.setValue(QStringLiteral("shell/dockSeparateTransientApps"), m_dockSeparateTransientApps);
-    settings.setValue(QStringLiteral("shell/darkTheme"), m_darkTheme);
+    settings.setValue(QStringLiteral("shell/appearanceMode"), m_appearanceMode);
     settings.setValue(QStringLiteral("shell/dockLightStyle"), m_dockLightStyle);
     settings.setValue(QStringLiteral("shell/startWithWindows"), m_startWithWindows);
     settings.setValue(QStringLiteral("shell/explorerIconStyle"), m_explorerIconStyle);
@@ -1272,6 +1338,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/menuBarIconStyle"), m_menuBarIconStyle);
     settings.setValue(QStringLiteral("shell/menuBarCustomIconPath"), m_menuBarCustomIconPath);
     settings.setValue(QStringLiteral("shell/showDownloadsInDock"), m_showDownloadsInDock);
+    settings.setValue(QStringLiteral("shell/uiLanguage"), m_uiLanguage);
 }
 
 void TaskbarController::updateTaskbarVisibility()
@@ -1304,4 +1371,92 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     saveSettings();
     setShellActive(true);
     setSettingsVisible(false);
+}
+
+QString TaskbarController::normalizeUiLanguage(const QString& language) const
+{
+    if (language == QLatin1String("en")
+        || language == QLatin1String("uk")
+        || language == QLatin1String("ru")
+        || language == QLatin1String("system")) {
+        return language;
+    }
+    return QStringLiteral("system");
+}
+
+QString TaskbarController::uiLanguage() const
+{
+    return m_uiLanguage;
+}
+
+void TaskbarController::setUiLanguage(const QString& language)
+{
+    const QString normalized = normalizeUiLanguage(language);
+    if (m_uiLanguage == normalized) {
+        return;
+    }
+    m_uiLanguage = normalized;
+    saveSettings();
+    emit languageChanged();
+}
+
+QString TaskbarController::effectiveLanguage() const
+{
+    if (m_uiLanguage != QLatin1String("system")) {
+        return m_uiLanguage;
+    }
+
+    const LANGID language = GetUserDefaultUILanguage();
+    switch (PRIMARYLANGID(language)) {
+    case LANG_RUSSIAN:
+        return QStringLiteral("ru");
+    case LANG_UKRAINIAN:
+        return QStringLiteral("uk");
+    default:
+        return QStringLiteral("en");
+    }
+}
+
+QStringList TaskbarController::availableLanguages() const
+{
+    return {
+        QStringLiteral("system"),
+        QStringLiteral("en"),
+        QStringLiteral("uk"),
+        QStringLiteral("ru"),
+    };
+}
+
+QString TaskbarController::languageDisplayName(const QString& code) const
+{
+    if (code == QLatin1String("system")) {
+        return tr("System");
+    }
+    if (code == QLatin1String("en")) {
+        return QStringLiteral("English");
+    }
+    if (code == QLatin1String("uk")) {
+        return QStringLiteral("Українська");
+    }
+    if (code == QLatin1String("ru")) {
+        return QStringLiteral("Русский");
+    }
+    return code;
+}
+
+QStringList TaskbarController::defaultMenuBarItems() const
+{
+    return {
+        tr("File"),
+        tr("Edit"),
+        tr("View"),
+        tr("Go"),
+        tr("Window"),
+        tr("Help"),
+    };
+}
+
+void TaskbarController::refreshMenuBar()
+{
+    updateForegroundMenuBar();
 }

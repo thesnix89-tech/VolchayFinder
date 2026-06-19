@@ -14,19 +14,17 @@ RowLayout {
     readonly property color activeFill: darkTheme ? "#636366" : "#D1D1D6"
     property string clockText: ""
 
-    readonly property var _weekdays: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
-    readonly property var _months: [
-        "января", "февраля", "марта", "апреля", "мая", "июня",
-        "июля", "августа", "сентября", "октября", "ноября", "декабря"
-    ]
+    readonly property var _weekdays: []
+    readonly property var _months: []
 
     function refreshClock() {
         var d = new Date()
-        var hh = d.getHours()
-        var mm = d.getMinutes()
-        var time = (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm
-        clockText = _weekdays[d.getDay()] + ", " + d.getDate() + " "
-                + _months[d.getMonth()] + " " + time
+        var locale = Qt.locale()
+        var weekday = locale.toString(d, "ddd")
+        var day = d.getDate()
+        var month = locale.toString(d, "MMMM")
+        var time = locale.toString(d, "hh:mm")
+        clockText = weekday + ", " + day + " " + month + " " + time
     }
 
     Timer {

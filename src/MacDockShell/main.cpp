@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QLocale>
+#include <QTranslator>
 
 #include <objbase.h>
 
@@ -31,6 +33,7 @@ namespace {
 
 QFile* gLogFile = nullptr;
 QtMessageHandler gPreviousHandler = nullptr;
+QTranslator gAppTranslator;
 
 QString logFilePathFallback()
 {
@@ -59,6 +62,22 @@ void appendLine(const QString& line)
     out << line << '\n';
     out.flush();
     gLogFile->flush();
+}
+
+bool installAppLanguage(const QString& code)
+{
+    QGuiApplication::removeTranslator(&gAppTranslator);
+    QLocale::setDefault(QLocale(code));
+
+    const QString resourcePath = QStringLiteral(":/i18n/MacDockShell_%1.qm").arg(code);
+    if (!gAppTranslator.load(resourcePath)) {
+        appendLine(QString("Failed to load translation: %1").arg(resourcePath));
+        return false;
+    }
+
+    QGuiApplication::installTranslator(&gAppTranslator);
+    appendLine(QString("Installed UI language: %1").arg(code));
+    return true;
 }
 
 QString levelToString(QtMsgType type)
@@ -332,6 +351,17 @@ int main(int argc, char *argv[])
     connectWarnings(topBarEngine, QStringLiteral("TopBarEngine"));
     connectWarnings(dockEngine, QStringLiteral("DockEngine"));
     connectWarnings(controlEngine, QStringLiteral("ControlEngine"));
+
+    installAppLanguage(taskbarController.effectiveLanguage());
+
+    QObject::connect(&taskbarController, &TaskbarController::languageChanged, &app, [&]() {
+        installAppLanguage(taskbarController.effectiveLanguage());
+        topBarEngine.retranslate();
+        dockEngine.retranslate();
+        controlEngine.retranslate();
+        dockModel.refresh();
+        taskbarController.refreshMenuBar();
+    });
 
     loadQml(topBarEngine, QStringLiteral(":/src/MacDockShell/qml/TopBarWindow.qml"));
     loadQml(dockEngine, QStringLiteral(":/src/MacDockShell/qml/DockWindow.qml"));

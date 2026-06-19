@@ -1,11 +1,12 @@
 import QtQuick
+import QtQuick.Effects
 
-// Pill toggle like the reference: off = outline + dark knob left, on = filled + light knob right.
 Item {
     id: control
 
     property bool checked: false
     property bool enabled: true
+    property bool darkTheme: false
 
     signal clicked()
 
@@ -15,10 +16,10 @@ Item {
     height: 31
     opacity: enabled ? 1.0 : 0.45
 
-    readonly property color trackOn: "#1D1D1F"
-    readonly property color trackOff: "#FFFFFF"
-    readonly property real knobSize: 25
-    readonly property real knobInset: 3
+    readonly property color trackOn: "#007AFF"
+    readonly property color trackOff: darkTheme ? "#39393D" : "#E9E9EA"
+    readonly property real knobSize: 27
+    readonly property real knobInset: 2
     readonly property real knobOffX: knobInset
     readonly property real knobOnX: width - knobSize - knobInset
 
@@ -27,14 +28,9 @@ Item {
         anchors.fill: parent
         radius: height / 2
         color: control.checked ? control.trackOn : control.trackOff
-        border.width: control.checked ? 0 : 1.5
-        border.color: control.trackOn
 
         Behavior on color {
-            ColorAnimation { duration: 200; easing.type: Easing.OutCubic }
-        }
-        Behavior on border.width {
-            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+            ColorAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
     }
 
@@ -45,14 +41,21 @@ Item {
         radius: width / 2
         x: control.checked ? control.knobOnX : control.knobOffX
         y: control.knobInset
-        color: control.checked ? "#FFFFFF" : control.trackOn
+        color: "#FFFFFF"
         z: 1
+
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: "#26000000"
+            shadowBlur: 0.35
+            shadowVerticalOffset: 1
+            shadowHorizontalOffset: 0
+            autoPaddingEnabled: false
+        }
 
         Behavior on x {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
-        }
-        Behavior on color {
-            ColorAnimation { duration: 200; easing.type: Easing.OutCubic }
         }
     }
 

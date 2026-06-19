@@ -16,6 +16,26 @@ Window {
     property string dockLightStyle: taskbarController.dockLightStyle
     property bool pinFromTaskbarRequested: false
 
+    readonly property bool darkTheme: taskbarController.darkTheme
+    readonly property color windowBg: darkTheme ? "#1C1C1E" : "#F6F6F6"
+    readonly property color sidebarBg: darkTheme ? "#2C2C2E" : "#EAEAEA"
+    readonly property color cardBg: darkTheme ? "#2C2C2E" : "#FFFFFF"
+    readonly property color groupDivider: darkTheme ? "#38383A" : "#F0F0F0"
+    readonly property color primaryText: darkTheme ? "#FFFFFF" : "#1D1D1F"
+    readonly property color secondaryText: darkTheme ? "#8E8E93" : "#86868B"
+    readonly property color separatorColor: darkTheme ? "#38383A" : "#D5D5D5"
+    readonly property color borderColor: darkTheme ? "#48484A" : "#E5E5E5"
+    readonly property color sidebarTitleColor: darkTheme ? "#8E8E93" : "#5C5C5C"
+    readonly property color navInactiveText: darkTheme ? "#EBEBF5" : "#1D1D1F"
+    readonly property color pinButtonBg: darkTheme ? "#3A3A3C" : "#FFFFFF"
+    readonly property color pinButtonBorder: darkTheme ? "#48484A" : "#D1D1D6"
+    readonly property color subtleButtonBg: darkTheme ? "#3A3A3C" : "#FFFFFF"
+    readonly property color subtleButtonBorder: darkTheme ? "#48484A" : "#D1D1D6"
+    readonly property color sliderTrack: darkTheme ? "#48484A" : "#E5E5EA"
+    readonly property color sliderHandleBorder: darkTheme ? "#636366" : "#C5C5C5"
+    readonly property color sectionSeparator: darkTheme ? "#38383A" : "#ECECEC"
+    readonly property color outerBorder: darkTheme ? "#48484A" : "#C5C5C5"
+
     onVisibleChanged: {
         if (!visible) {
             pinFromTaskbarRequested = false
@@ -25,21 +45,33 @@ Window {
         trashIconStyle = taskbarController.trashIconStyle
         menuBarIconStyle = taskbarController.menuBarIconStyle
         dockLightStyle = taskbarController.dockLightStyle
+        languagePopup.currentIndex = Math.max(0, languagePopup.model.indexOf(taskbarController.uiLanguage))
+    }
+
+    Connections {
+        target: taskbarController
+        function onLanguageChanged() {
+            languagePopup.currentIndex = Math.max(0, languagePopup.model.indexOf(taskbarController.uiLanguage))
+        }
     }
 
     x: Math.round((Screen.width - width) / 2)
     y: Math.round((Screen.height - height) / 2)
     visible: taskbarController.settingsVisible
     color: "transparent"
-    title: "Finder Preferences"
+    title: qsTr("Finder Preferences")
     flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool
 
     Rectangle {
         id: bgContainer
         anchors.fill: parent
         radius: 14
-        color: "#F6F6F6"
+        color: settingsWindow.windowBg
         clip: true
+
+        Behavior on color {
+            ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
 
         // Sidebar Pane
         Rectangle {
@@ -48,8 +80,12 @@ Window {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            color: "#EAEAEA"
+            color: settingsWindow.sidebarBg
             radius: 14 // Round the left corners to match the window container
+
+            Behavior on color {
+                ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+            }
 
             // Overlap helper rectangle to keep the dividing border edge sharp
             Rectangle {
@@ -57,7 +93,7 @@ Window {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                color: "#EAEAEA"
+                color: settingsWindow.sidebarBg
             }
 
             // Drag area to move the frameless window
@@ -80,7 +116,7 @@ Window {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 width: 1
-                color: "#D5D5D5"
+                color: settingsWindow.separatorColor
             }
 
             // Window controls (Traffic lights) in top left
@@ -154,8 +190,8 @@ Window {
 
                 // Preferences Title
                 Text {
-                    text: "Настройки"
-                    color: "#5C5C5C"
+                    text: qsTr("Settings")
+                    color: settingsWindow.sidebarTitleColor
                     font.pixelSize: 11
                     font.weight: Font.Bold
                     Layout.leftMargin: 16
@@ -183,8 +219,8 @@ Window {
                         }
 
                         Text {
-                            text: "Рабочий стол и Док"
-                            color: settingsPage === 0 ? "white" : "#1D1D1F"
+                            text: qsTr("Desktop & Dock")
+                            color: settingsPage === 0 ? "white" : settingsWindow.navInactiveText
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
@@ -219,8 +255,8 @@ Window {
                         }
 
                         Text {
-                            text: "Проводник"
-                            color: settingsPage === 1 ? "white" : "#1D1D1F"
+                            text: qsTr("Explorer")
+                            color: settingsPage === 1 ? "white" : settingsWindow.navInactiveText
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
@@ -265,8 +301,8 @@ Window {
             // Header Title
             Text {
                 id: mainTitle
-                text: settingsPage === 0 ? "Рабочий стол и Док" : "Проводник"
-                color: "#1D1D1F"
+                text: settingsPage === 0 ? qsTr("Desktop & Dock") : qsTr("Explorer")
+                color: settingsWindow.primaryText
                 font.pixelSize: 17
                 font.weight: Font.Bold
                 anchors.top: parent.top
@@ -324,7 +360,7 @@ Window {
                         Text {
                             anchors.centerIn: parent
                             text: "+"
-                            color: "#86868B"
+                            color: settingsWindow.secondaryText
                             font.pixelSize: 28
                             font.weight: Font.Medium
                             visible: !card.colorPreview
@@ -366,7 +402,7 @@ Window {
                 anchors.bottomMargin: 52
                 clip: true
 
-                ScrollBar.vertical: MacScrollBar { }
+                ScrollBar.vertical: MacScrollBar { darkTheme: settingsWindow.darkTheme }
 
                 Column {
                     width: settingsScroll.availableWidth
@@ -379,9 +415,13 @@ Window {
                 height: settingsPage === 0 ? innerLayout.implicitHeight + 24 : 0
                 width: parent.width
                 radius: 10
-                color: "#FFFFFF"
+                color: settingsWindow.cardBg
                 border.width: 1
-                border.color: "#E5E5E5"
+                border.color: settingsWindow.borderColor
+
+                Behavior on color {
+                    ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
 
                 ColumnLayout {
                     id: innerLayout
@@ -390,6 +430,54 @@ Window {
                     anchors.top: parent.top
                     anchors.margins: 12
                     spacing: 0
+
+                    // Option 0: Interface language
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            spacing: 2
+                            Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Interface language")
+                                color: settingsWindow.primaryText
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: qsTr("Choose the language for menus and settings")
+                                color: settingsWindow.secondaryText
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacPopupButton {
+                            id: languagePopup
+                            Layout.preferredWidth: 180
+                            Layout.alignment: Qt.AlignVCenter
+                            model: taskbarController.availableLanguages()
+                            currentIndex: Math.max(0, model.indexOf(taskbarController.uiLanguage))
+                            darkTheme: taskbarController.darkTheme
+                            textForIndex: function(index) {
+                                return taskbarController.languageDisplayName(languagePopup.model[index])
+                            }
+                            onActivated: function(index) {
+                                taskbarController.uiLanguage = languagePopup.model[index]
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: settingsWindow.groupDivider
+                    }
 
                     // Option 1: Hide Taskbar
                     RowLayout {
@@ -401,16 +489,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Автоматически скрывать панель задач Windows"
-                                color: "#1D1D1F"
+                                text: qsTr("Automatically hide the Windows taskbar")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Скрывает стандартную панель задач для лучшего вида"
-                                color: "#86868B"
+                                text: qsTr("Hides the standard taskbar for a cleaner look")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -419,6 +507,7 @@ Window {
 
                         MacToggle {
                             id: hideTaskbarToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.autoHideWindowsTaskbar
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: hideTaskbarToggle.checked = !hideTaskbarToggle.checked
@@ -429,7 +518,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 1b: Keep Windows auto-hide after exit
@@ -442,16 +531,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Оставить панель задач Windows скрытой после выхода"
-                                color: "#1D1D1F"
+                                text: qsTr("Keep the Windows taskbar hidden after exit")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "При выходе сохраняет включённой настройку «Автоматически скрывать панель задач» в Windows"
-                                color: "#86868B"
+                                text: qsTr("On exit, keeps Windows \"Automatically hide the taskbar\" enabled")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -460,6 +549,7 @@ Window {
 
                         MacToggle {
                             id: keepTaskbarAutoHideOnExitToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.keepTaskbarAutoHideOnExit
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: keepTaskbarAutoHideOnExitToggle.checked = !keepTaskbarAutoHideOnExitToggle.checked
@@ -470,7 +560,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 1c: Pin apps from Windows taskbar (manual, on Apply)
@@ -479,16 +569,16 @@ Window {
                         spacing: 8
 
                         Text {
-                            text: "Прикрепить приложения из панели задач Windows"
-                            color: "#1D1D1F"
+                            text: qsTr("Pin apps from the Windows taskbar")
+                            color: settingsWindow.primaryText
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
                         }
                         Text {
-                            text: "Одноразовое действие: нажмите кнопку, затем «Применить». При следующем запуске или открытии настроек нужно повторить, если снова хотите синхронизировать док с панелью задач"
-                            color: "#86868B"
+                            text: qsTr("One-time action: click the button, then Apply. Repeat on the next launch or when reopening settings if you want to sync the dock with the taskbar again")
+                            color: settingsWindow.secondaryText
                             font.pixelSize: 10
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
@@ -499,10 +589,12 @@ Window {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 36
                             radius: 6
-                            color: pinFromTaskbarMouse.pressed ? "#D1D1D6"
-                                    : (pinFromTaskbarMouse.containsMouse ? "#ECECEF" : "#FFFFFF")
+                            color: pinFromTaskbarMouse.pressed ? settingsWindow.pinButtonBorder
+                                    : (pinFromTaskbarMouse.containsMouse
+                                       ? (settingsWindow.darkTheme ? "#48484A" : "#ECECEF")
+                                       : settingsWindow.pinButtonBg)
                             border.width: 1
-                            border.color: settingsWindow.pinFromTaskbarRequested ? "#34C759" : "#D1D1D6"
+                            border.color: settingsWindow.pinFromTaskbarRequested ? "#34C759" : settingsWindow.pinButtonBorder
 
                             RowLayout {
                                 anchors.fill: parent
@@ -531,8 +623,8 @@ Window {
 
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "Прикрепить из панели задач Windows"
-                                    color: "#1D1D1F"
+                                    text: qsTr("Pin from Windows taskbar")
+                                    color: settingsWindow.primaryText
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
                                     wrapMode: Text.WordWrap
@@ -553,7 +645,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 2: Show Top Bar
@@ -566,16 +658,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Показывать строку меню macOS"
-                                color: "#1D1D1F"
+                                text: qsTr("Show macOS menu bar")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Отображает статус-бар в верхней части экрана"
-                                color: "#86868B"
+                                text: qsTr("Displays the status bar at the top of the screen")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -584,6 +676,7 @@ Window {
 
                         MacToggle {
                             id: showTopBarToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.showTopBar
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: showTopBarToggle.checked = !showTopBarToggle.checked
@@ -594,7 +687,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 3: Icon Size Slider
@@ -607,16 +700,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Размер иконок дока"
-                                color: "#1D1D1F"
+                                text: qsTr("Dock icon size")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Выбор размера значков панели (в пикселях)"
-                                color: "#86868B"
+                                text: qsTr("Choose the dock icon size in pixels")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -642,7 +735,7 @@ Window {
                                 width: iconSizeSlider.availableWidth
                                 height: implicitHeight
                                 radius: 2
-                                color: "#E5E5EA"
+                                color: settingsWindow.sliderTrack
 
                                 Rectangle {
                                     width: iconSizeSlider.visualPosition * parent.width
@@ -659,7 +752,7 @@ Window {
                                 implicitHeight: 16
                                 radius: 8
                                 color: "white"
-                                border.color: "#C5C5C5"
+                                border.color: settingsWindow.sliderHandleBorder
                                 border.width: 0.5
                             }
                         }
@@ -667,7 +760,7 @@ Window {
                         // Text indicator showing current value
                         Text {
                             text: Math.round(iconSizeSlider.value) + " px"
-                            color: "#1D1D1F"
+                            color: settingsWindow.primaryText
                             font.pixelSize: 11
                             font.weight: Font.Medium
                             Layout.preferredWidth: 36
@@ -680,7 +773,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 4: Dock Hover Bounce
@@ -695,16 +788,16 @@ Window {
                             opacity: staticIconsToggle.checked ? 0.4 : 1.0
                             Behavior on opacity { NumberAnimation { duration: 150 } }
                             Text {
-                                text: "Подпрыгивание иконок при наведении"
-                                color: "#1D1D1F"
+                                text: qsTr("Bounce icons on hover")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Иконки приподнимаются, когда вы наводите на них курсор"
-                                color: "#86868B"
+                                text: qsTr("Icons lift when you hover over them")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -713,6 +806,7 @@ Window {
 
                         MacToggle {
                             id: hoverBounceToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.dockHoverBounce
                             enabled: !staticIconsToggle.checked
                             Layout.alignment: Qt.AlignVCenter
@@ -724,7 +818,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 4b: Drag fade
@@ -737,16 +831,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Делать иконки прозрачными во время перетаскивания"
-                                color: "#1D1D1F"
+                                text: qsTr("Fade icons while dragging")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Вне области дока иконка полупрозрачная, внутри — непрозрачная, как на macOS"
-                                color: "#86868B"
+                                text: qsTr("Outside the dock the icon is semi-transparent; inside it stays opaque, like on macOS")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -755,6 +849,7 @@ Window {
 
                         MacToggle {
                             id: dragFadeToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.dockDragFadeEnabled
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: dragFadeToggle.checked = !dragFadeToggle.checked
@@ -765,40 +860,40 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
-                    // Option 5: Dark Theme
-                    RowLayout {
+                    // Option 5: Appearance
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 45
+                        spacing: 12
 
                         ColumnLayout {
                             spacing: 2
-                            Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Тёмная тема"
-                                color: "#1D1D1F"
+                                text: qsTr("Appearance")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Тёмный док и верхняя панель в стиле macOS Monterey"
-                                color: "#86868B"
+                                text: qsTr("Choose the look of the dock and menu bar")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                         }
 
-                        MacToggle {
-                            id: darkThemeToggle
-                            checked: taskbarController.darkTheme
-                            Layout.alignment: Qt.AlignVCenter
-                            onClicked: darkThemeToggle.checked = !darkThemeToggle.checked
+                        MacAppearancePicker {
+                            labelColor: settingsWindow.primaryText
+                            currentMode: taskbarController.appearanceMode
+                            onModeSelected: function(mode) {
+                                taskbarController.setAppearanceMode(mode)
+                            }
                         }
                     }
 
@@ -806,26 +901,26 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 5a: Light-theme dock background
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 10
-                        opacity: darkThemeToggle.checked ? 0.45 : 1.0
-                        enabled: !darkThemeToggle.checked
+                        opacity: settingsWindow.darkTheme ? 0.45 : 1.0
+                        enabled: !settingsWindow.darkTheme
 
                         Text {
-                            text: "Фон дока (светлая тема)"
-                            color: "#1D1D1F"
+                            text: qsTr("Dock background (light theme)")
+                            color: settingsWindow.primaryText
                             font.pixelSize: 12
                             font.weight: Font.Medium
                         }
 
                         Text {
-                            text: "На тёмной теме док всегда чёрный. Этот выбор применяется только к светлой теме."
-                            color: "#86868B"
+                            text: qsTr("On dark theme the dock is always black. This choice applies only to the light theme.")
+                            color: settingsWindow.secondaryText
                             font.pixelSize: 10
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
@@ -838,8 +933,8 @@ Window {
                                 selected: settingsWindow.dockLightStyle === "white"
                                 colorPreview: true
                                 previewFill: "#F3F3F3"
-                                title: "Белый"
-                                subtitle: "Как сейчас"
+                                title: qsTr("White")
+                                subtitle: qsTr("Current default")
                                 onClicked: settingsWindow.dockLightStyle = "white"
                             }
 
@@ -847,8 +942,8 @@ Window {
                                 selected: settingsWindow.dockLightStyle === "macos27"
                                 colorPreview: true
                                 previewFill: "#5E5E5E"
-                                title: "macOS 27"
-                                subtitle: "Серый как на Mac"
+                                title: qsTr("macOS 27")
+                                subtitle: qsTr("Gray like on Mac")
                                 onClicked: settingsWindow.dockLightStyle = "macos27"
                             }
                         }
@@ -858,7 +953,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 6: Static Dock Icons
@@ -871,16 +966,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Статичные иконки дока"
-                                color: "#1D1D1F"
+                                text: qsTr("Static dock icons")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Иконки не двигаются и не увеличиваются при наведении"
-                                color: "#86868B"
+                                text: qsTr("Icons do not move or magnify on hover")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -889,6 +984,7 @@ Window {
 
                         MacToggle {
                             id: staticIconsToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.dockStaticIcons
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: staticIconsToggle.checked = !staticIconsToggle.checked
@@ -899,7 +995,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 6b: Separate transient apps section
@@ -912,16 +1008,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Закреплять новые приложения в отдельной стороне"
-                                color: "#1D1D1F"
+                                text: qsTr("Pin new apps in a separate section")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Незакреплённые запущенные программы появляются между закреплёнными иконками и корзиной, как на macOS"
-                                color: "#86868B"
+                                text: qsTr("Unpinned running apps appear between pinned icons and the trash, like on macOS")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -930,6 +1026,7 @@ Window {
 
                         MacToggle {
                             id: separateTransientToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.dockSeparateTransientApps
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: separateTransientToggle.checked = !separateTransientToggle.checked
@@ -940,7 +1037,7 @@ Window {
                     Rectangle {
                         Layout.fillWidth: true
                         height: 1
-                        color: "#F0F0F0"
+                        color: settingsWindow.groupDivider
                     }
 
                     // Option 7: Start with Windows
@@ -953,16 +1050,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Запускать с Windows"
-                                color: "#1D1D1F"
+                                text: qsTr("Start with Windows")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Автоматически запускать оболочку при входе в систему"
-                                color: "#86868B"
+                                text: qsTr("Automatically start the shell when you sign in")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -971,6 +1068,7 @@ Window {
 
                         MacToggle {
                             id: startWithWindowsToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.startWithWindows
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: startWithWindowsToggle.checked = !startWithWindowsToggle.checked
@@ -985,9 +1083,13 @@ Window {
                 width: parent.width
                 height: settingsPage === 1 ? explorerInner.implicitHeight + 24 : 0
                 radius: 10
-                color: "#FFFFFF"
+                color: settingsWindow.cardBg
                 border.width: 1
-                border.color: "#E5E5E5"
+                border.color: settingsWindow.borderColor
+
+                Behavior on color {
+                    ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
                 clip: true
 
                 Column {
@@ -999,16 +1101,16 @@ Window {
                     spacing: 14
 
                     Text {
-                        text: "Иконка меню"
-                        color: "#1D1D1F"
+                        text: qsTr("Menu bar icon")
+                        color: settingsWindow.primaryText
                         font.pixelSize: 12
                         font.weight: Font.Medium
                     }
 
                     Text {
                         width: parent.width
-                        text: "Иконка слева в верхней панели"
-                        color: "#86868B"
+                        text: qsTr("Icon on the left side of the top bar")
+                        color: settingsWindow.secondaryText
                         font.pixelSize: 10
                         wrapMode: Text.WordWrap
                     }
@@ -1018,43 +1120,43 @@ Window {
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "apple"
-                            darkPreview: darkThemeToggle.checked
-                            previewSource: taskbarController.menuBarIconPreviewUrl("apple", darkThemeToggle.checked)
+                            darkPreview: settingsWindow.darkTheme
+                            previewSource: taskbarController.menuBarIconPreviewUrl("apple", settingsWindow.darkTheme)
                             title: "Apple"
-                            subtitle: "Как на Mac"
+                            subtitle: qsTr("Like on Mac")
                             onClicked: settingsWindow.menuBarIconStyle = "apple"
                         }
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "star"
-                            darkPreview: darkThemeToggle.checked
-                            previewSource: taskbarController.menuBarIconPreviewUrl("star", darkThemeToggle.checked)
+                            darkPreview: settingsWindow.darkTheme
+                            previewSource: taskbarController.menuBarIconPreviewUrl("star", settingsWindow.darkTheme)
                             title: "Megushell"
-                            subtitle: "Звёздочка"
+                            subtitle: qsTr("Star")
                             onClicked: settingsWindow.menuBarIconStyle = "star"
                         }
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "windows"
-                            darkPreview: darkThemeToggle.checked
-                            previewSource: taskbarController.menuBarIconPreviewUrl("windows", darkThemeToggle.checked)
+                            darkPreview: settingsWindow.darkTheme
+                            previewSource: taskbarController.menuBarIconPreviewUrl("windows", settingsWindow.darkTheme)
                             title: "Windows"
-                            subtitle: "Сетка"
+                            subtitle: qsTr("Grid")
                             onClicked: settingsWindow.menuBarIconStyle = "windows"
                         }
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "custom"
-                            darkPreview: darkThemeToggle.checked
-                            previewSource: taskbarController.menuBarIconPreviewUrl("custom", darkThemeToggle.checked)
-                            title: "Своя"
-                            subtitle: "Из файла"
+                            darkPreview: settingsWindow.darkTheme
+                            previewSource: taskbarController.menuBarIconPreviewUrl("custom", settingsWindow.darkTheme)
+                            title: qsTr("Custom")
+                            subtitle: qsTr("From file")
                             onClicked: settingsWindow.menuBarIconStyle = "custom"
                         }
                     }
 
                     Button {
-                        text: "Загрузить…"
+                        text: qsTr("Import…")
                         implicitHeight: 30
                         onClicked: {
                             if (taskbarController.importCustomMenuBarIcon())
@@ -1063,29 +1165,32 @@ Window {
 
                         background: Rectangle {
                             radius: 6
-                            color: parent.down ? "#ECECEC" : (parent.hovered ? "#F5F5F7" : "#FFFFFF")
+                            color: parent.down ? settingsWindow.sectionSeparator
+                                   : (parent.hovered
+                                      ? (settingsWindow.darkTheme ? "#48484A" : "#F5F5F7")
+                                      : settingsWindow.subtleButtonBg)
                             border.width: 1
-                            border.color: "#D1D1D6"
+                            border.color: settingsWindow.subtleButtonBorder
                         }
                     }
 
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: "#ECECEC"
+                        color: settingsWindow.sectionSeparator
                     }
 
                     Text {
-                        text: "Иконка проводника"
-                        color: "#1D1D1F"
+                        text: qsTr("Explorer icon")
+                        color: settingsWindow.primaryText
                         font.pixelSize: 12
                         font.weight: Font.Medium
                     }
 
                     Text {
                         width: parent.width
-                        text: "Как отображать File Explorer в доке"
-                        color: "#86868B"
+                        text: qsTr("How to display File Explorer in the dock")
+                        color: settingsWindow.secondaryText
                         font.pixelSize: 10
                         wrapMode: Text.WordWrap
                     }
@@ -1096,7 +1201,7 @@ Window {
                         ExplorerIconCard {
                             selected: settingsWindow.explorerIconStyle === "default"
                             previewSource: dockModel.explorerDefaultIconUrl()
-                            title: "Стандартная"
+                            title: qsTr("Default")
                             subtitle: "Windows"
                             onClicked: settingsWindow.explorerIconStyle = "default"
                         }
@@ -1105,7 +1210,7 @@ Window {
                             selected: settingsWindow.explorerIconStyle === "macos"
                             previewSource: dockModel.explorerMacIconUrl()
                             title: "macOS Finder"
-                            subtitle: "Как на Mac"
+                            subtitle: qsTr("Like on Mac")
                             onClicked: settingsWindow.explorerIconStyle = "macos"
                         }
                     }
@@ -1113,20 +1218,20 @@ Window {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: "#ECECEC"
+                        color: settingsWindow.sectionSeparator
                     }
 
                     Text {
-                        text: "Иконка корзины"
-                        color: "#1D1D1F"
+                        text: qsTr("Trash icon")
+                        color: settingsWindow.primaryText
                         font.pixelSize: 12
                         font.weight: Font.Medium
                     }
 
                     Text {
                         width: parent.width
-                        text: "Как отображать корзину в доке"
-                        color: "#86868B"
+                        text: qsTr("How to display the trash in the dock")
+                        color: settingsWindow.secondaryText
                         font.pixelSize: 10
                         wrapMode: Text.WordWrap
                     }
@@ -1137,7 +1242,7 @@ Window {
                         ExplorerIconCard {
                             selected: settingsWindow.trashIconStyle === "windows"
                             previewSource: dockModel.trashWindowsIconUrl()
-                            title: "Стандартная"
+                            title: qsTr("Default")
                             subtitle: "Windows"
                             onClicked: settingsWindow.trashIconStyle = "windows"
                         }
@@ -1146,7 +1251,7 @@ Window {
                             selected: settingsWindow.trashIconStyle === "macos"
                             previewSource: dockModel.trashMacIconUrl()
                             title: "macOS"
-                            subtitle: "Как на Mac"
+                            subtitle: qsTr("Like on Mac")
                             onClicked: settingsWindow.trashIconStyle = "macos"
                         }
                     }
@@ -1154,7 +1259,7 @@ Window {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: "#ECECEC"
+                        color: settingsWindow.sectionSeparator
                     }
 
                     RowLayout {
@@ -1166,16 +1271,16 @@ Window {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.fillWidth: true
                             Text {
-                                text: "Папка «Загрузки» в доке"
-                                color: "#1D1D1F"
+                                text: qsTr("Downloads folder in dock")
+                                color: settingsWindow.primaryText
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
                             Text {
-                                text: "Показывать папку загрузок рядом с корзиной"
-                                color: "#86868B"
+                                text: qsTr("Show the downloads folder next to the trash")
+                                color: settingsWindow.secondaryText
                                 font.pixelSize: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -1184,6 +1289,7 @@ Window {
 
                         MacToggle {
                             id: showDownloadsToggle
+                            darkTheme: settingsWindow.darkTheme
                             checked: taskbarController.showDownloadsInDock
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: showDownloadsToggle.checked = !showDownloadsToggle.checked
@@ -1205,7 +1311,7 @@ Window {
                 // Red/Grey Button to Exit App
                 Button {
                     id: exitBtn
-                    text: "Выход"
+                    text: qsTr("Quit")
                     Layout.preferredWidth: 80
                     Layout.preferredHeight: 30
 
@@ -1230,7 +1336,7 @@ Window {
                 // macOS Accent Blue Apply Button
                 Button {
                     id: applyBtn
-                    text: "Применить"
+                    text: qsTr("Apply")
                     Layout.preferredWidth: 100
                     Layout.preferredHeight: 30
 
@@ -1252,7 +1358,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, darkThemeToggle.checked, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, taskbarController.darkTheme, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false
@@ -1266,7 +1372,7 @@ Window {
             anchors.fill: parent
             color: "transparent"
             border.width: 1
-            border.color: "#C5C5C5"
+            border.color: settingsWindow.outerBorder
             radius: 14
             z: 100
         }
