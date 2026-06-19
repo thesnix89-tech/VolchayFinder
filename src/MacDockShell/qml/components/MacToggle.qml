@@ -9,44 +9,26 @@ Item {
 
     signal clicked()
 
-    implicitWidth: 58
-    implicitHeight: 25
+    implicitWidth: 53
+    implicitHeight: 23
     width: implicitWidth
     height: implicitHeight
     opacity: enabled ? 1.0 : 0.45
 
     readonly property color trackOff: darkTheme ? "#39393D" : "#E9E9EA"
-    readonly property real stroke: 1.5
-    readonly property real padX: 1
-    readonly property real innerHeight: height - stroke * 2
-    readonly property real knobWidth: 30
-    readonly property real knobHeight: 19
-    readonly property real padY: (innerHeight - knobHeight) / 2
+    readonly property real padX: 2
+    readonly property real knobWidth: 33
+    readonly property real knobHeight: 21
+    readonly property real padY: (height - knobHeight) / 2
     readonly property real knobRadius: knobHeight / 2
-    readonly property real knobY: stroke + padY
-    readonly property real knobOffX: stroke + padX
-    readonly property real knobOnX: width - stroke - padX - knobWidth
-
-    Rectangle {
-        id: outline
-        anchors.fill: parent
-        radius: height / 2
-        color: "transparent"
-        border.width: control.stroke
-        border.color: control.checked
-            ? "#003E8F"
-            : (control.darkTheme ? "#5A5A5E" : "#AEAEB2")
-
-        Behavior on border.color {
-            ColorAnimation { duration: 220; easing.type: Easing.OutCubic }
-        }
-    }
+    readonly property real knobY: padY
+    readonly property real knobOffX: padX
+    readonly property real knobOnX: width - padX - knobWidth
 
     Rectangle {
         id: fill
         anchors.fill: parent
-        anchors.margins: control.stroke
-        radius: control.innerHeight / 2
+        radius: height / 2
         color: control.checked ? "#007AFF" : control.trackOff
 
         Behavior on color {
