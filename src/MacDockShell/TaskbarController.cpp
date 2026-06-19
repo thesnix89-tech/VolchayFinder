@@ -1102,8 +1102,8 @@ QString TaskbarController::bundledMenuBarIconResource(const QString& style, bool
     }
     if (style == QStringLiteral("windows")) {
         return darkTheme
-                ? QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows_white.png")
-                : QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows.png");
+                ? QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows_white.svg")
+                : QStringLiteral("qrc:/src/MacDockShell/qml/menu_bar_icon_windows.svg");
     }
     return darkTheme
             ? QStringLiteral("qrc:/src/MacDockShell/qml/apple_logo_white.svg")
@@ -1144,7 +1144,7 @@ QString TaskbarController::menuBarIconUrl(bool darkTheme) const
     return bundledMenuBarIconResource(m_menuBarIconStyle, darkTheme);
 }
 
-QString TaskbarController::menuBarIconPreviewUrl(const QString& style) const
+QString TaskbarController::menuBarIconPreviewUrl(const QString& style, bool darkTheme) const
 {
     const QString normalized = normalizeMenuBarIconStyle(style);
     if (normalized == QStringLiteral("custom")) {
@@ -1156,7 +1156,7 @@ QString TaskbarController::menuBarIconPreviewUrl(const QString& style) const
         }
         return QString();
     }
-    return bundledMenuBarIconResource(normalized, false);
+    return bundledMenuBarIconResource(normalized, darkTheme);
 }
 
 bool TaskbarController::importCustomMenuBarIcon()

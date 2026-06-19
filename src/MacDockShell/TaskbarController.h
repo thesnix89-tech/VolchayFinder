@@ -42,7 +42,7 @@ public:
     Q_INVOKABLE void quitApplication();
     Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock);
     Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
-    Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style) const;
+    Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style, bool darkTheme = false) const;
     Q_INVOKABLE bool importCustomMenuBarIcon();
     Q_INVOKABLE void tryAutostartShell();
     Q_INVOKABLE void enforceTaskbarHidden();

@@ -45,10 +45,10 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
+        src/MacDockShell/qml/menu_bar_icon_windows.svg
+        src/MacDockShell/qml/menu_bar_icon_windows_white.svg
         src/MacDockShell/qml/menu_bar_icon_star.png
         src/MacDockShell/qml/menu_bar_icon_star_white.png
-        src/MacDockShell/qml/menu_bar_icon_windows.png
-        src/MacDockShell/qml/menu_bar_icon_windows_white.png
         src/MacDockShell/fonts/SF-Pro-Text-Regular.otf
         src/MacDockShell/fonts/SF-Pro-Text-Medium.otf
         src/MacDockShell/fonts/SF-Pro-Text-Semibold.otf

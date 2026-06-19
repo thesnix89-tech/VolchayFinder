@@ -280,12 +280,13 @@ Window {
                 property string title
                 property string subtitle
                 property bool selected
+                property bool darkPreview: false
 
                 width: 148
                 height: 164
                 radius: 10
                 clip: true
-                color: "#FAFAFA"
+                color: darkPreview ? "#2C2C2E" : "#FAFAFA"
                 border.width: selected ? 2 : 1
                 border.color: selected ? "#007AFF" : "#E5E5E5"
 
@@ -320,7 +321,7 @@ Window {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: card.title
-                        color: "#1D1D1F"
+                        color: card.darkPreview ? "#F5F5F7" : "#1D1D1F"
                         font.pixelSize: 12
                         font.weight: Font.Medium
                     }
@@ -328,7 +329,7 @@ Window {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: card.subtitle
-                        color: "#86868B"
+                        color: card.darkPreview ? "#B7BDC9" : "#86868B"
                         font.pixelSize: 10
                     }
                 }
@@ -950,7 +951,8 @@ Window {
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "apple"
-                            previewSource: taskbarController.menuBarIconPreviewUrl("apple")
+                            darkPreview: darkThemeToggle.checked
+                            previewSource: taskbarController.menuBarIconPreviewUrl("apple", darkThemeToggle.checked)
                             title: "Apple"
                             subtitle: "Как на Mac"
                             onClicked: settingsWindow.menuBarIconStyle = "apple"
@@ -958,7 +960,8 @@ Window {
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "star"
-                            previewSource: taskbarController.menuBarIconPreviewUrl("star")
+                            darkPreview: darkThemeToggle.checked
+                            previewSource: taskbarController.menuBarIconPreviewUrl("star", darkThemeToggle.checked)
                             title: "Megushell"
                             subtitle: "Звёздочка"
                             onClicked: settingsWindow.menuBarIconStyle = "star"
@@ -966,7 +969,8 @@ Window {
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "windows"
-                            previewSource: taskbarController.menuBarIconPreviewUrl("windows")
+                            darkPreview: darkThemeToggle.checked
+                            previewSource: taskbarController.menuBarIconPreviewUrl("windows", darkThemeToggle.checked)
                             title: "Windows"
                             subtitle: "Сетка"
                             onClicked: settingsWindow.menuBarIconStyle = "windows"
@@ -974,7 +978,8 @@ Window {
 
                         ExplorerIconCard {
                             selected: settingsWindow.menuBarIconStyle === "custom"
-                            previewSource: taskbarController.menuBarIconPreviewUrl("custom")
+                            darkPreview: darkThemeToggle.checked
+                            previewSource: taskbarController.menuBarIconPreviewUrl("custom", darkThemeToggle.checked)
                             title: "Своя"
                             subtitle: "Из файла"
                             onClicked: settingsWindow.menuBarIconStyle = "custom"
