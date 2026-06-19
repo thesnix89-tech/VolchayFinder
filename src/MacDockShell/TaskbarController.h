@@ -52,6 +52,8 @@ public:
     Q_INVOKABLE QStringList availableLanguages() const;
     Q_INVOKABLE QString languageDisplayName(const QString& code) const;
     Q_INVOKABLE void refreshMenuBar();
+    Q_INVOKABLE void setAppearanceMode(const QString& mode);
+    Q_INVOKABLE void setUiLanguage(const QString& language);
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;
@@ -76,7 +78,6 @@ public:
     bool dockSeparateTransientApps() const;
     void setDockSeparateTransientApps(bool enabled);
     QString appearanceMode() const;
-    void setAppearanceMode(const QString& mode);
     bool darkTheme() const;
     void setDarkTheme(bool enabled);
     QString dockLightStyle() const;
@@ -95,7 +96,6 @@ public:
     bool showDownloadsInDock() const;
     void setShowDownloadsInDock(bool show);
     QString uiLanguage() const;
-    void setUiLanguage(const QString& language);
     QString effectiveLanguage() const;
 
 signals:

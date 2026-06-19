@@ -15,6 +15,7 @@ Item {
     property bool darkTheme: false
 
     signal activated(int index)
+    signal valueActivated(var value)
 
     readonly property color itemText: darkTheme ? "#F2F2F7" : "#1D1D1F"
     readonly property color panelBg: darkTheme ? "#323234" : "#F5F5F7"
@@ -115,10 +116,11 @@ Item {
 
     Popup {
         id: popup
-        popupType: Popup.Window
+        popupType: Popup.Item
         modal: false
         padding: 6
         closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
+        z: 1000
 
         readonly property int rowHeight: 28
         readonly property int panelWidth: 220
@@ -192,11 +194,11 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+                        preventStealing: true
                         onClicked: {
-                            if (control.currentIndex !== rowItem.index) {
-                                control.currentIndex = rowItem.index
-                                control.activated(rowItem.index)
-                            }
+                            control.currentIndex = rowItem.index
+                            control.activated(rowItem.index)
+                            control.valueActivated(rowItem.modelData)
                             popup.close()
                         }
                     }

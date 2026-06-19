@@ -35,6 +35,15 @@ Window {
     readonly property color sliderHandleBorder: darkTheme ? "#636366" : "#C5C5C5"
     readonly property color sectionSeparator: darkTheme ? "#38383A" : "#ECECEC"
     readonly property color outerBorder: darkTheme ? "#48484A" : "#C5C5C5"
+    readonly property color buttonBg: darkTheme ? "#48484A" : "#FFFFFF"
+    readonly property color buttonBorder: darkTheme ? "#636366" : "#D1D1D6"
+    readonly property color buttonText: primaryText
+    readonly property var languageCodes: ["system", "en", "uk", "ru"]
+
+    function syncLanguageIndex() {
+        const idx = languageCodes.indexOf(taskbarController.uiLanguage)
+        languagePopup.currentIndex = idx >= 0 ? idx : 0
+    }
 
     onVisibleChanged: {
         if (!visible) {
@@ -45,13 +54,13 @@ Window {
         trashIconStyle = taskbarController.trashIconStyle
         menuBarIconStyle = taskbarController.menuBarIconStyle
         dockLightStyle = taskbarController.dockLightStyle
-        languagePopup.currentIndex = Math.max(0, languagePopup.model.indexOf(taskbarController.uiLanguage))
+        syncLanguageIndex()
     }
 
     Connections {
         target: taskbarController
         function onLanguageChanged() {
-            languagePopup.currentIndex = Math.max(0, languagePopup.model.indexOf(taskbarController.uiLanguage))
+            settingsWindow.syncLanguageIndex()
         }
     }
 
@@ -82,6 +91,7 @@ Window {
             anchors.bottom: parent.bottom
             color: settingsWindow.sidebarBg
             radius: 14 // Round the left corners to match the window container
+            clip: true
 
             Behavior on color {
                 ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -281,6 +291,15 @@ Window {
             anchors.margins: 20
             anchors.bottomMargin: 16
 
+            Rectangle {
+                anchors.fill: parent
+                color: settingsWindow.windowBg
+
+                Behavior on color {
+                    ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
+            }
+
             // Header Drag Area to move window from the top margin of content pane
             MouseArea {
                 anchors.top: parent.top
@@ -402,11 +421,37 @@ Window {
                 anchors.bottomMargin: 52
                 clip: true
 
-                ScrollBar.vertical: MacScrollBar { darkTheme: settingsWindow.darkTheme }
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                Column {
+                background: Rectangle {
+                    color: "transparent"
+                }
+
+                Component.onCompleted: {
+                    if (contentItem) {
+                        contentItem.boundsBehavior = Flickable.StopAtBounds
+                        contentItem.clip = true
+                    }
+                }
+
+                ScrollBar.vertical: MacScrollBar {
+                    darkTheme: settingsWindow.darkTheme
+                    trackColor: settingsWindow.windowBg
+                }
+
+                Rectangle {
                     width: settingsScroll.availableWidth
-                    spacing: 0
+                    implicitHeight: scrollColumn.implicitHeight
+                    color: settingsWindow.windowBg
+
+                    Behavior on color {
+                        ColorAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
+                    Column {
+                        id: scrollColumn
+                        width: parent.width
+                        spacing: 0
 
             // Setting Rounded Box Group (macOS style grouped items)
             Rectangle {
@@ -461,15 +506,15 @@ Window {
                             id: languagePopup
                             Layout.preferredWidth: 180
                             Layout.alignment: Qt.AlignVCenter
-                            model: taskbarController.availableLanguages()
-                            currentIndex: Math.max(0, model.indexOf(taskbarController.uiLanguage))
+                            model: settingsWindow.languageCodes
                             darkTheme: taskbarController.darkTheme
                             textForIndex: function(index) {
-                                return taskbarController.languageDisplayName(languagePopup.model[index])
+                                return taskbarController.languageDisplayName(settingsWindow.languageCodes[index])
                             }
-                            onActivated: function(index) {
-                                taskbarController.uiLanguage = languagePopup.model[index]
+                            onValueActivated: function(code) {
+                                taskbarController.setUiLanguage(code)
                             }
+                            Component.onCompleted: settingsWindow.syncLanguageIndex()
                         }
                     }
 
@@ -889,10 +934,14 @@ Window {
                         }
 
                         MacAppearancePicker {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: implicitHeight
+                            Layout.topMargin: 4
+                            Layout.bottomMargin: 8
                             labelColor: settingsWindow.primaryText
                             currentMode: taskbarController.appearanceMode
                             onModeSelected: function(mode) {
-                                taskbarController.setAppearanceMode(mode)
+                                taskbarController.appearanceMode = mode
                             }
                         }
                     }
@@ -927,6 +976,8 @@ Window {
                         }
 
                         Row {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 164
                             spacing: 16
 
                             ExplorerIconCard {
@@ -934,7 +985,7 @@ Window {
                                 colorPreview: true
                                 previewFill: "#F3F3F3"
                                 title: qsTr("White")
-                                subtitle: qsTr("Current default")
+                                subtitle: qsTr("Light style")
                                 onClicked: settingsWindow.dockLightStyle = "white"
                             }
 
@@ -1156,6 +1207,7 @@ Window {
                     }
 
                     Button {
+                        id: importMenuBarIconBtn
                         text: qsTr("Import…")
                         implicitHeight: 30
                         onClicked: {
@@ -1163,14 +1215,23 @@ Window {
                                 settingsWindow.menuBarIconStyle = "custom"
                         }
 
+                        contentItem: Text {
+                            text: importMenuBarIconBtn.text
+                            color: settingsWindow.buttonText
+                            font.pixelSize: 13
+                            font.weight: Font.Medium
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
                         background: Rectangle {
                             radius: 6
-                            color: parent.down ? settingsWindow.sectionSeparator
-                                   : (parent.hovered
-                                      ? (settingsWindow.darkTheme ? "#48484A" : "#F5F5F7")
-                                      : settingsWindow.subtleButtonBg)
+                            color: importMenuBarIconBtn.down ? settingsWindow.sectionSeparator
+                                   : (importMenuBarIconBtn.hovered
+                                      ? (settingsWindow.darkTheme ? "#5A5A5E" : "#F5F5F7")
+                                      : settingsWindow.buttonBg)
                             border.width: 1
-                            border.color: settingsWindow.subtleButtonBorder
+                            border.color: settingsWindow.buttonBorder
                         }
                     }
 
@@ -1298,6 +1359,7 @@ Window {
                 }
             }
 
+                    }
                 }
             }
 
