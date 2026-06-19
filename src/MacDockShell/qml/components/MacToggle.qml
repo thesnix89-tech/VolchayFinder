@@ -17,7 +17,7 @@ Item {
 
     readonly property color trackOff: darkTheme ? "#39393D" : "#E9E9EA"
     readonly property real stroke: 1.5
-    readonly property real padX: 3
+    readonly property real padX: 1
     readonly property real innerHeight: height - stroke * 2
     readonly property real knobWidth: 30
     readonly property real knobHeight: 19
