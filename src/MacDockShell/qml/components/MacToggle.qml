@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 
 Item {
     id: control
@@ -10,24 +9,44 @@ Item {
 
     signal clicked()
 
-    implicitWidth: 51
-    implicitHeight: 31
-    width: 51
-    height: 31
+    implicitWidth: 75
+    implicitHeight: 30
+    width: implicitWidth
+    height: implicitHeight
     opacity: enabled ? 1.0 : 0.45
 
-    readonly property color trackOn: "#007AFF"
     readonly property color trackOff: darkTheme ? "#39393D" : "#E9E9EA"
-    readonly property real knobSize: 27
-    readonly property real knobInset: 2
-    readonly property real knobOffX: knobInset
-    readonly property real knobOnX: width - knobSize - knobInset
+    readonly property real stroke: 1.5
+    readonly property real pad: 3
+    readonly property real innerHeight: height - stroke * 2
+    readonly property real knobHeight: innerHeight - pad * 2
+    readonly property real knobWidth: (width - stroke * 2 - pad * 2) / 2
+    readonly property real knobRadius: knobHeight / 2
+    readonly property real knobY: stroke + pad
+    readonly property real knobOffX: stroke + pad
+    readonly property real knobOnX: width - stroke - pad - knobWidth
 
     Rectangle {
-        id: track
+        id: outline
         anchors.fill: parent
         radius: height / 2
-        color: control.checked ? control.trackOn : control.trackOff
+        color: "transparent"
+        border.width: control.stroke
+        border.color: control.checked
+            ? "#003E8F"
+            : (control.darkTheme ? "#5A5A5E" : "#AEAEB2")
+
+        Behavior on border.color {
+            ColorAnimation { duration: 220; easing.type: Easing.OutCubic }
+        }
+    }
+
+    Rectangle {
+        id: fill
+        anchors.fill: parent
+        anchors.margins: control.stroke
+        radius: control.innerHeight / 2
+        color: control.checked ? "#007AFF" : control.trackOff
 
         Behavior on color {
             ColorAnimation { duration: 220; easing.type: Easing.OutCubic }
@@ -36,23 +55,13 @@ Item {
 
     Rectangle {
         id: knob
-        width: control.knobSize
-        height: control.knobSize
-        radius: width / 2
+        width: control.knobWidth
+        height: control.knobHeight
+        radius: control.knobRadius
         x: control.checked ? control.knobOnX : control.knobOffX
-        y: control.knobInset
+        y: control.knobY
         color: "#FFFFFF"
         z: 1
-
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: "#26000000"
-            shadowBlur: 0.35
-            shadowVerticalOffset: 1
-            shadowHorizontalOffset: 0
-            autoPaddingEnabled: false
-        }
 
         Behavior on x {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }

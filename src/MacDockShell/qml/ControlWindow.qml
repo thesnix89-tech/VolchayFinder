@@ -42,8 +42,10 @@ Window {
     readonly property color scrollTrackBg: darkTheme ? "#3A3A3C" : "#E5E5EA"
     readonly property int settingsScrollGutter: settingsVScroll.trackWidth
     readonly property int settingsCardInset: 8
-    readonly property int settingsScrollInsetLeft: settingsCardInset
-    readonly property int settingsScrollInsetRight: settingsCardInset
+    readonly property int settingsCardOuterMarginLeft: settingsCardInset
+    readonly property int settingsCardOuterMarginRight: 0
+    readonly property int settingsCardPaddingLeft: 12
+    readonly property int settingsCardPaddingRight: 12
 
     function syncLanguageIndex() {
         const idx = languageCodes.indexOf(taskbarController.uiLanguage)
@@ -476,8 +478,8 @@ Window {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: settingsWindow.settingsScrollInsetLeft
-                    anchors.rightMargin: settingsWindow.settingsScrollInsetRight
+                    anchors.leftMargin: settingsWindow.settingsCardOuterMarginLeft
+                    anchors.rightMargin: settingsWindow.settingsCardOuterMarginRight
                     height: innerLayout.implicitHeight + 24
                     radius: 10
                     clip: true
@@ -494,7 +496,9 @@ Window {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: 12
+                        anchors.leftMargin: settingsWindow.settingsCardPaddingLeft
+                        anchors.rightMargin: settingsWindow.settingsCardPaddingRight
+                        anchors.topMargin: settingsWindow.settingsCardPaddingLeft
                         spacing: 0
 
                         // Option 0: Interface language
@@ -1160,8 +1164,8 @@ Window {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: settingsWindow.settingsScrollInsetLeft
-                    anchors.rightMargin: settingsWindow.settingsScrollInsetRight
+                    anchors.leftMargin: settingsWindow.settingsCardOuterMarginLeft
+                    anchors.rightMargin: settingsWindow.settingsCardOuterMarginRight
                     height: explorerInner.implicitHeight + 24
                     radius: 10
                     color: settingsWindow.cardBg
@@ -1178,7 +1182,9 @@ Window {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    anchors.margins: 12
+                    anchors.leftMargin: settingsWindow.settingsCardPaddingLeft
+                    anchors.rightMargin: settingsWindow.settingsCardPaddingRight
+                    anchors.topMargin: settingsWindow.settingsCardPaddingLeft
                     spacing: 14
 
                     Text {
