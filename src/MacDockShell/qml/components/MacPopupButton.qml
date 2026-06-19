@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 
-// macOS-style popup button: current value label + circular chevron trigger,
-// floating menu with checkmark on the selected row.
+// macOS-style popup button: menu opens downward from the label with crossfade.
 Item {
     id: control
 
@@ -18,19 +18,44 @@ Item {
     signal valueActivated(var value)
 
     readonly property color itemText: darkTheme ? "#F2F2F7" : "#1D1D1F"
-    readonly property color panelBg: darkTheme ? "#323234" : "#F5F5F7"
-    readonly property color panelBorder: darkTheme ? "#48484A" : "#C2C2C2"
+    readonly property color panelBg: darkTheme ? "#3A3A3C" : "#F5F5F7"
+    readonly property color panelBorder: darkTheme ? "#FFFFFF1A" : "#0000001A"
     readonly property color chevronBtnBg: darkTheme ? "#3A3A3C" : "#E8E8ED"
     readonly property color chevronBtnBorder: darkTheme ? "#5A5A5E" : "#C8C8CC"
     readonly property color chevronGlyph: darkTheme ? "#E5E5EA" : "#636366"
     readonly property color hoverFill: "#3478F6"
     readonly property color hoverText: "#FFFFFF"
 
+    readonly property Item popupOverlay: {
+        var item = control
+        while (item.parent)
+            item = item.parent
+        return item
+    }
+
+    readonly property int panelWidth: {
+        var maxLabel = 0
+        for (var i = 0; i < model.length; i++)
+            maxLabel = Math.max(maxLabel, rowFontMetrics.advanceWidth(textForIndex(i)))
+        return Math.max(132, Math.ceil(maxLabel) + 52)
+    }
+
+    FontMetrics {
+        id: rowFontMetrics
+        font.pixelSize: 13
+    }
+
     implicitWidth: row.implicitWidth
     implicitHeight: 28
 
     function syncIndexFromModel() {
         // no-op hook for parents that need to refresh bindings
+    }
+
+    function repositionPopup() {
+        const anchor = control.mapToItem(control.popupOverlay, 0, 0)
+        popup.x = anchor.x + control.width - popup.width
+        popup.y = anchor.y - popup.padding
     }
 
     function openPopup() {
@@ -46,6 +71,7 @@ Item {
         spacing: 8
 
         Text {
+            id: valueLabel
             Layout.alignment: Qt.AlignVCenter
             text: control.textForIndex(control.currentIndex)
             color: control.itemText
@@ -54,6 +80,11 @@ Item {
             horizontalAlignment: Text.AlignRight
             elide: Text.ElideRight
             maximumLineCount: 1
+            opacity: popup.opened ? 0 : 1
+
+            Behavior on opacity {
+                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            }
         }
 
         Item {
@@ -65,8 +96,8 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: chevronMouse.pressed ? Qt.darker(control.chevronBtnBg, 1.08)
-                      : (chevronMouse.containsMouse ? Qt.lighter(control.chevronBtnBg, 1.04) : control.chevronBtnBg)
+                color: rowMouse.pressed ? Qt.darker(control.chevronBtnBg, 1.08)
+                      : (rowMouse.containsMouse ? Qt.lighter(control.chevronBtnBg, 1.04) : control.chevronBtnBg)
                 border.width: 1
                 border.color: control.chevronBtnBorder
             }
@@ -76,7 +107,9 @@ Item {
                 width: 10
                 height: 10
                 property color glyph: control.chevronGlyph
+                property bool menuOpen: popup.opened
                 onGlyphChanged: requestPaint()
+                onMenuOpenChanged: requestPaint()
                 onPaint: {
                     var ctx = getContext("2d")
                     ctx.reset()
@@ -99,48 +132,87 @@ Item {
                         ctx.stroke()
                     }
 
-                    chevron(5, 3.5, true)
-                    chevron(5, 6.5, false)
+                    if (menuOpen) {
+                        chevron(5, 3.5, false)
+                        chevron(5, 6.5, true)
+                    } else {
+                        chevron(5, 3.5, true)
+                        chevron(5, 6.5, false)
+                    }
                 }
-            }
-
-            MouseArea {
-                id: chevronMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: control.openPopup()
             }
         }
     }
 
+    MouseArea {
+        id: rowMouse
+        anchors.fill: row
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: control.openPopup()
+    }
+
     Popup {
         id: popup
+        parent: control.popupOverlay
         popupType: Popup.Item
         modal: false
-        padding: 6
+        padding: 4
         closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
         z: 1000
 
-        readonly property int rowHeight: 28
-        readonly property int panelWidth: 220
-        implicitWidth: panelWidth
+        readonly property int rowHeight: 26
+        width: control.panelWidth
+        implicitWidth: control.panelWidth
         implicitHeight: padding * 2 + control.model.length * rowHeight
 
-        x: -width + control.width
-        y: control.height + 4
+        onAboutToShow: control.repositionPopup()
 
-        background: Rectangle {
-            implicitWidth: popup.panelWidth
+        enter: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 180
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: 150
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        background: Item {
+            implicitWidth: control.panelWidth
             implicitHeight: popup.implicitHeight
-            color: control.panelBg
-            radius: 9
-            border.width: 1
-            border.color: control.panelBorder
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 10
+                color: control.panelBg
+                border.width: 1
+                border.color: control.panelBorder
+
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowColor: "#40000000"
+                    shadowBlur: 0.85
+                    shadowVerticalOffset: 4
+                    shadowHorizontalOffset: 0
+                    autoPaddingEnabled: true
+                }
+            }
         }
 
         contentItem: Column {
-            width: popup.panelWidth - popup.padding * 2
+            width: control.panelWidth - popup.padding * 2
             spacing: 0
 
             Repeater {
@@ -161,19 +233,19 @@ Item {
                         anchors.leftMargin: 4
                         anchors.rightMargin: 4
                         radius: 5
-                        color: rowMouse.containsMouse ? control.hoverFill : "transparent"
+                        color: itemMouse.containsMouse ? control.hoverFill : "transparent"
                     }
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 10
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
                         spacing: 8
 
                         Text {
                             Layout.preferredWidth: 14
                             text: rowItem.selected ? "\u2713" : ""
-                            color: rowMouse.containsMouse ? control.hoverText : control.itemText
+                            color: itemMouse.containsMouse ? control.hoverText : control.itemText
                             font.pixelSize: 12
                             font.weight: Font.Bold
                             horizontalAlignment: Text.AlignHCenter
@@ -182,7 +254,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: control.textForIndex(rowItem.index)
-                            color: rowMouse.containsMouse ? control.hoverText : control.itemText
+                            color: itemMouse.containsMouse ? control.hoverText : control.itemText
                             font.pixelSize: 13
                             elide: Text.ElideRight
                             maximumLineCount: 1
@@ -190,7 +262,7 @@ Item {
                     }
 
                     MouseArea {
-                        id: rowMouse
+                        id: itemMouse
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
