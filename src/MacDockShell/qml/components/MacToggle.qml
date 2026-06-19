@@ -9,22 +9,23 @@ Item {
 
     signal clicked()
 
-    implicitWidth: 75
-    implicitHeight: 30
+    implicitWidth: 58
+    implicitHeight: 25
     width: implicitWidth
     height: implicitHeight
     opacity: enabled ? 1.0 : 0.45
 
     readonly property color trackOff: darkTheme ? "#39393D" : "#E9E9EA"
     readonly property real stroke: 1.5
-    readonly property real pad: 3
+    readonly property real padX: 3
     readonly property real innerHeight: height - stroke * 2
-    readonly property real knobHeight: innerHeight - pad * 2
-    readonly property real knobWidth: (width - stroke * 2 - pad * 2) / 2
+    readonly property real knobWidth: 30
+    readonly property real knobHeight: 19
+    readonly property real padY: (innerHeight - knobHeight) / 2
     readonly property real knobRadius: knobHeight / 2
-    readonly property real knobY: stroke + pad
-    readonly property real knobOffX: stroke + pad
-    readonly property real knobOnX: width - stroke - pad - knobWidth
+    readonly property real knobY: stroke + padY
+    readonly property real knobOffX: stroke + padX
+    readonly property real knobOnX: width - stroke - padX - knobWidth
 
     Rectangle {
         id: outline
