@@ -1534,7 +1534,7 @@ Window {
     readonly property real iconDevicePixelRatio: screen ? screen.devicePixelRatio : 1.0
     readonly property bool darkTheme: taskbarController.darkTheme
     readonly property color dockPillColor: darkTheme
-            ? "#000000"
+            ? "#1E1E1F"
             : (taskbarController.dockLightStyle === "macos27" ? "#5E5E5E" : "#F3F3F3")
     readonly property color dockSeparatorColor: darkTheme ? "#FFFFFF" : "#000000"
     readonly property real dockSeparatorOpacity: darkTheme ? 0.28 : 0.58

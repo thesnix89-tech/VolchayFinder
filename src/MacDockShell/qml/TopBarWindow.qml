@@ -95,12 +95,14 @@ Window {
 
                     Text {
                         id: menuAppNameText
-                        text: taskbarController.menuBarAppName
+                        property string displayedName: taskbarController.menuBarAppName
+                        text: displayedName
+                        opacity: 1.0
                         color: topBarWindow.menuAccentTextColor
                         font.family: topBarWindow.uiFontFamily
-                        font.styleName: "Semibold"
+                        font.styleName: "Bold"
                         font.pixelSize: 13
-                        font.weight: Font.Normal
+                        font.weight: Font.Bold
 
                         Behavior on color {
                             ColorAnimation { duration: topBarWindow.themeAnimMs; easing.type: Easing.InOutCubic }
@@ -111,14 +113,19 @@ Window {
                             NumberAnimation {
                                 target: menuAppNameText
                                 property: "opacity"
-                                to: 0.25
+                                to: 0
                                 duration: 110
                                 easing.type: Easing.InCubic
+                            }
+                            PropertyAction {
+                                target: menuAppNameText
+                                property: "displayedName"
+                                value: taskbarController.menuBarAppName
                             }
                             NumberAnimation {
                                 target: menuAppNameText
                                 property: "opacity"
-                                to: 1.0
+                                to: 1
                                 duration: 220
                                 easing.type: Easing.OutCubic
                             }
@@ -126,7 +133,11 @@ Window {
 
                         Connections {
                             target: taskbarController
-                            function onMenuBarAppNameChanged() { menuAppNameSwap.restart() }
+                            function onMenuBarAppNameChanged() {
+                                if (taskbarController.menuBarAppName === menuAppNameText.displayedName)
+                                    return
+                                menuAppNameSwap.restart()
+                            }
                         }
                     }
                 }
