@@ -7,10 +7,11 @@ import "components"
 Window {
     id: topBarWindow
     width: Screen.width
+    height: Screen.height
     readonly property int barHeight: 26
     readonly property int appleSize: 17
     readonly property string uiFontFamily: "SF Pro Text"
-    height: barHeight
+    property var menuOverlayRegions: []
     x: 0
     y: 0
     visible: taskbarController.shellActive && taskbarController.showTopBar
@@ -28,6 +29,19 @@ Window {
     readonly property color menuAccentTextColor: darkTheme ? "#FFFFFF" : "#1B1F27"
     readonly property int themeAnimMs: 320
 
+    function syncHitRegions() {
+        var regions = [Qt.rect(0, 0, topBarWindow.width, topBarWindow.barHeight)]
+        for (var i = 0; i < topBarWindow.menuOverlayRegions.length; ++i)
+            regions.push(topBarWindow.menuOverlayRegions[i])
+        windowEffects.updateDockHitRegions(topBarWindow, regions, regions)
+    }
+
+    Component.onCompleted: Qt.callLater(syncHitRegions)
+    onWidthChanged: Qt.callLater(syncHitRegions)
+    onHeightChanged: Qt.callLater(syncHitRegions)
+    onVisibleChanged: Qt.callLater(syncHitRegions)
+    onMenuOverlayRegionsChanged: Qt.callLater(syncHitRegions)
+
     // Frameless tool windows on Windows often skip hover until the surface is "woken up".
     MouseArea {
         anchors.fill: parent
@@ -37,7 +51,11 @@ Window {
     }
 
     Rectangle {
-        anchors.fill: parent
+        id: topBarSurface
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: topBarWindow.barHeight
         color: topBarWindow.darkTheme ? "#2C2C2E" : "#F5F5F7"
         border.width: topBarWindow.darkTheme ? 1 : 0
         border.color: topBarWindow.darkTheme ? "#3A3A3C" : "transparent"
@@ -173,6 +191,9 @@ Window {
 
                 MenuBarExtrasRow {
                     darkTheme: topBarWindow.darkTheme
+                    onOverlayRegionsChanged: function(regions) {
+                        topBarWindow.menuOverlayRegions = regions
+                    }
                 }
 
                 StatusArea {

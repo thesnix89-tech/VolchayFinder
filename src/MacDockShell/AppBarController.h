@@ -15,6 +15,7 @@ public:
     explicit AppBarController(QObject* parent = nullptr);
     ~AppBarController() override;
 
+    void setResizeWindowToAppBarRect(bool resize);
     bool registerTopBar(void* hwnd, int height);
     bool updateTopBarRect(void* hwnd, int height);
     void unregisterTopBar();
@@ -40,6 +41,7 @@ private:
     // thread. Skipping the work when the rect is unchanged breaks the loop.
     QRect m_lastAppliedRect;
     bool m_hasAppliedRect = false;
+    bool m_resizeWindowToAppBarRect = true;
     unsigned int m_callbackMessage = 0;
     std::unique_ptr<QAbstractNativeEventFilter> m_nativeFilter;
 };

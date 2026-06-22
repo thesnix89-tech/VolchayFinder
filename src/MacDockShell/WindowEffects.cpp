@@ -194,6 +194,7 @@ struct DockWindowHitData
     QSet<HWND> hwndTree;
     bool dropHoverActive = false;
     bool dropCaptureActive = false;
+    bool allowDropBand = true;
 };
 
 class DockClickThroughState
@@ -268,7 +269,7 @@ public:
             }
         }
 
-        if (data->window) {
+        if (data->allowDropBand && data->window) {
             const QRect windowRect = data->window->geometry();
             if (windowRect.contains(screenPoint)) {
                 const int dropBandHeight = qMax(72, windowRect.height() / 3);
@@ -474,8 +475,32 @@ void WindowEffects::enableDockClickThrough(QWindow* window)
         auto data = std::make_shared<DockWindowHitData>();
         data->window = window;
         data->rootHwnd = hwnd;
+        data->allowDropBand = true;
         m_dockClickThroughState->dataByRoot.insert(hwnd, data);
     }
+
+    ensureHwndResyncHook(window, m_dockClickThroughState.get());
+}
+
+void WindowEffects::enableTopBarClickThrough(QWindow* window)
+{
+    if (!window || !m_dockClickThroughState) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    if (!hwnd) {
+        return;
+    }
+
+    auto data = m_dockClickThroughState->dataByRoot.value(hwnd);
+    if (!data) {
+        data = std::make_shared<DockWindowHitData>();
+        data->window = window;
+        data->rootHwnd = hwnd;
+        m_dockClickThroughState->dataByRoot.insert(hwnd, data);
+    }
+    data->allowDropBand = false;
 
     ensureHwndResyncHook(window, m_dockClickThroughState.get());
 }

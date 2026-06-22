@@ -8,6 +8,8 @@ RowLayout {
     id: root
     spacing: 4
 
+    signal overlayRegionsChanged(var regions)
+
     property bool darkTheme: false
     property int pendingMirrorIndex: -1
     property int mirroredSessionId: -1
@@ -33,6 +35,7 @@ RowLayout {
         mirroredMenuPopup.close()
         pendingMirrorIndex = -1
         menuLevels = []
+        overlayRegionsChanged([])
     }
 
     function menuRowHeight(item) {
@@ -74,16 +77,41 @@ RowLayout {
             menuLevels = menuLevels.slice(0, level + 1)
     }
 
+    function mirroredMenuRegions() {
+        var regions = []
+        if (!mirroredMenuPopup.opened || menuLevels.length === 0)
+            return regions
+
+        var baseX = mirroredMenuPopup.x + mirroredMenuPopup.leftPadding
+        var baseY = mirroredMenuPopup.y + mirroredMenuPopup.topPadding
+        for (var i = 0; i < menuLevels.length; ++i) {
+            var level = menuLevels[i]
+            regions.push(Qt.rect(
+                Math.round(baseX + i * (menuRowWidth + menuLevelGap)),
+                Math.round(baseY + (level.y || 0)),
+                menuRowWidth,
+                menuPanelHeight(level.items) + 12))
+        }
+        return regions
+    }
+
+    function reportOverlayRegions() {
+        overlayRegionsChanged(mirroredMenuRegions())
+    }
+
     function openMirroredMenu(sessionId, items, anchorX, anchorY) {
         mirroredSessionId = sessionId
         mirroredItems = items
         mirroredAnchorX = anchorX
         mirroredAnchorY = anchorY
         menuLevels = [{ items: items, pathPrefix: [], y: 0 }]
-        var local = root.mapFromGlobal(anchorX, anchorY)
-        mirroredMenuPopup.x = Math.round(local.x - mirroredMenuPopup.implicitWidth / 2)
-        mirroredMenuPopup.y = Math.round(local.y + 8)
+        var rootLocal = root.mapFromGlobal(anchorX, anchorY)
+        var scenePoint = root.mapToItem(null, rootLocal.x, rootLocal.y)
+        mirroredMenuPopup.x = Math.round(Math.max(0, Math.min(Screen.width - mirroredMenuPopup.implicitWidth,
+                                                              scenePoint.x - mirroredMenuPopup.implicitWidth / 2)))
+        mirroredMenuPopup.y = Math.round(scenePoint.y + 8)
         mirroredMenuPopup.open()
+        Qt.callLater(reportOverlayRegions)
     }
 
     Connections {
@@ -101,7 +129,7 @@ RowLayout {
 
     Popup {
         id: mirroredMenuPopup
-        popupType: Popup.Window
+        popupType: Popup.Item
         modal: false
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         padding: 6
@@ -113,7 +141,11 @@ RowLayout {
         onClosed: {
             root.pendingMirrorIndex = -1
             root.menuLevels = []
+            root.overlayRegionsChanged([])
         }
+        onXChanged: Qt.callLater(root.reportOverlayRegions)
+        onYChanged: Qt.callLater(root.reportOverlayRegions)
+        onOpened: Qt.callLater(root.reportOverlayRegions)
 
         background: Item {}
 
@@ -250,6 +282,8 @@ RowLayout {
             }
         }
     }
+
+    onMenuLevelsChanged: Qt.callLater(reportOverlayRegions)
 
     component ExtraHit : Item {
         id: hit

@@ -246,6 +246,7 @@ int main(int argc, char *argv[])
     TaskbarController taskbarController;
     DockModel dockModel;
     AppBarController appBarController;
+    appBarController.setResizeWindowToAppBarRect(false);
     WindowEffects windowEffects;
     HoverTracker hoverTracker;
     MacCursor macCursor;
@@ -374,6 +375,7 @@ int main(int argc, char *argv[])
 
     topBarEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
+    topBarEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
     topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
     topBarEngine.rootContext()->setContextProperty("trayIconModel", &trayIconModel);
@@ -435,7 +437,7 @@ int main(int argc, char *argv[])
 
     dockModel.refresh();
 
-    auto installShellWindow = [&windowEffects](QQmlApplicationEngine& engine, bool applyGlass, bool enableHover = false) {
+    auto installShellWindow = [&windowEffects](QQmlApplicationEngine& engine, bool applyGlass, bool enableHover = false, bool enableTopBarClickThrough = false) {
         if (engine.rootObjects().isEmpty()) {
             return;
         }
@@ -446,10 +448,13 @@ int main(int argc, char *argv[])
             if (enableHover) {
                 windowEffects.enableHoverTracking(shellWindow);
             }
+            if (enableTopBarClickThrough) {
+                windowEffects.enableTopBarClickThrough(shellWindow);
+            }
         }
     };
 
-    installShellWindow(topBarEngine, false, true);
+    installShellWindow(topBarEngine, false, true, true);
     installShellWindow(dockEngine, true);
     installShellWindow(controlEngine, false);
 
@@ -477,7 +482,9 @@ int main(int argc, char *argv[])
             if (!topBarEngine.rootObjects().isEmpty()) {
                 QObject* root = topBarEngine.rootObjects().constFirst();
                 if (auto* window = qobject_cast<QWindow*>(root)) {
-                    appBarController.registerTopBar(reinterpret_cast<void*>(window->winId()), window->height());
+                    const int topBarHeight = root->property("barHeight").toInt();
+                    appBarController.registerTopBar(reinterpret_cast<void*>(window->winId()),
+                                                    topBarHeight > 0 ? topBarHeight : 26);
                 }
             }
         } else {
@@ -493,7 +500,10 @@ int main(int argc, char *argv[])
             return;
         }
         if (auto* window = qobject_cast<QWindow*>(topBarEngine.rootObjects().constFirst())) {
-            appBarController.updateTopBarRect(reinterpret_cast<void*>(window->winId()), window->height());
+            QObject* root = topBarEngine.rootObjects().constFirst();
+            const int topBarHeight = root->property("barHeight").toInt();
+            appBarController.updateTopBarRect(reinterpret_cast<void*>(window->winId()),
+                                              topBarHeight > 0 ? topBarHeight : 26);
         }
     });
 

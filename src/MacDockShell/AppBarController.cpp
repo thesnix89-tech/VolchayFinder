@@ -66,6 +66,11 @@ AppBarController::~AppBarController()
     unregisterTopBar();
 }
 
+void AppBarController::setResizeWindowToAppBarRect(bool resize)
+{
+    m_resizeWindowToAppBarRect = resize;
+}
+
 bool AppBarController::registerTopBar(void* hwnd, int height)
 {
     if (!hwnd) {
@@ -127,11 +132,17 @@ bool AppBarController::updateTopBarRect(void* hwnd, int height)
 
     SHAppBarMessage(ABM_SETPOS, &abd);
 
-    SetWindowPos(static_cast<HWND>(hwnd), HWND_TOPMOST,
-                 abd.rc.left, abd.rc.top,
-                 abd.rc.right - abd.rc.left,
-                 abd.rc.bottom - abd.rc.top,
-                 SWP_NOACTIVATE);
+    if (m_resizeWindowToAppBarRect) {
+        SetWindowPos(static_cast<HWND>(hwnd), HWND_TOPMOST,
+                     abd.rc.left, abd.rc.top,
+                     abd.rc.right - abd.rc.left,
+                     abd.rc.bottom - abd.rc.top,
+                     SWP_NOACTIVATE);
+    } else {
+        SetWindowPos(static_cast<HWND>(hwnd), HWND_TOPMOST,
+                     0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
 
     m_lastAppliedRect = proposed;
     m_hasAppliedRect = true;

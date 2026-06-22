@@ -27,6 +27,7 @@ public:
     Q_INVOKABLE void applyDockGlass(QWindow* window);
     Q_INVOKABLE void enableHoverTracking(QWindow* window);
     Q_INVOKABLE void enableDockClickThrough(QWindow* window);
+    void enableTopBarClickThrough(QWindow* window);
     // clipRegions → SetWindowRgn (draw / invisible wall). hitRegions → click targets only.
     Q_INVOKABLE void updateDockHitRegions(QWindow* window, const QVariantList& clipRegions,
                                           const QVariantList& hitRegions);
