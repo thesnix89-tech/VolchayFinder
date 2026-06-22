@@ -29,6 +29,12 @@ qt_add_executable(MacDockShell
     src/MacDockShell/DockDropTarget.h
     src/MacDockShell/ShelfController.cpp
     src/MacDockShell/ShelfController.h
+    src/MacDockShell/IconUtils.cpp
+    src/MacDockShell/IconUtils.h
+    src/MacDockShell/TrayIconEnumerator.cpp
+    src/MacDockShell/TrayIconEnumerator.h
+    src/MacDockShell/TrayIconModel.cpp
+    src/MacDockShell/TrayIconModel.h
 )
 
 qt_add_resources(MacDockShell macdockshell_resources
@@ -44,6 +50,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/MacScrollBar.qml
         src/MacDockShell/qml/components/MacPopupButton.qml
         src/MacDockShell/qml/components/MacAppearancePicker.qml
+        src/MacDockShell/qml/components/MenuBarExtrasRow.qml
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
@@ -61,6 +68,8 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/icons/appearance_auto.png
         src/MacDockShell/icons/appearance_light.png
         src/MacDockShell/icons/appearance_dark.png
+        src/MacDockShell/icons/control_center_toggles_dark.png
+        src/MacDockShell/icons/control_center_toggles_light.png
         src/MacDockShell/cursors/100/arrow.cur
         src/MacDockShell/cursors/100/pointing_hand.cur
         src/MacDockShell/cursors/100/closed_hand.cur
@@ -101,6 +110,7 @@ qt_add_translations(MacDockShell
         src/MacDockShell/qml/ControlWindow.qml
         src/MacDockShell/qml/components/StatusArea.qml
         src/MacDockShell/qml/components/ControlCenterPanel.qml
+        src/MacDockShell/qml/components/MenuBarExtrasRow.qml
 )
 
 set_target_properties(MacDockShell PROPERTIES
@@ -115,6 +125,7 @@ target_link_libraries(MacDockShell
     PRIVATE comdlg32
     PRIVATE ole32
     PRIVATE dwmapi
+    PRIVATE UIAutomationCore
 )
 
 include(GNUInstallDirs)

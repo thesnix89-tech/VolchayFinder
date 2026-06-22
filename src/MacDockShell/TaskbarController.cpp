@@ -1,10 +1,12 @@
 #include "TaskbarController.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QMetaObject>
 #include <QSettings>
 #include <QProcess>
+#include <QThread>
 #include <QTimer>
 #include <QFileInfo>
 #include <QFile>
@@ -21,6 +23,8 @@
 namespace {
 constexpr auto kTaskbarClass = TEXT("Shell_TrayWnd");
 constexpr auto kStartButtonClass = TEXT("Button");
+constexpr int kOffscreenTaskbarX = -20000;
+constexpr int kOffscreenTaskbarY = -20000;
 constexpr int kStuckRectsAutoHideByteIndex = 8;
 
 constexpr wchar_t kStuckRects3Path[] =
@@ -378,7 +382,7 @@ bool TaskbarController::hideTaskbar()
 {
     const bool changed = setTaskbarVisible(false);
     if (changed) {
-        emit shellActionLogged(QStringLiteral("Taskbar hidden."));
+        emit shellActionLogged(QStringLiteral("Taskbar relocated off-screen."));
     }
     return changed;
 }
@@ -429,6 +433,8 @@ void TaskbarController::capturePreShellTaskbarState()
 
 void TaskbarController::showTaskbarWindows()
 {
+    restoreAllTaskbarPositions();
+
     HWND taskbar = FindWindow(kTaskbarClass, nullptr);
     if (!taskbar) {
         emit shellActionLogged(QStringLiteral("Shell_TrayWnd not found."));
@@ -443,6 +449,192 @@ void TaskbarController::showTaskbarWindows()
         ShowWindow(startButton, SW_SHOW);
         EnableWindow(startButton, TRUE);
     }
+}
+
+void TaskbarController::relocateWindowOffScreen(quintptr hwndValue, bool force)
+{
+    if (!force && m_trayUiaBusy.load()) {
+        return;
+    }
+
+    HWND hwnd = reinterpret_cast<HWND>(hwndValue);
+    if (!hwnd) {
+        return;
+    }
+
+    RECT rect = {};
+    if (!GetWindowRect(hwnd, &rect)) {
+        return;
+    }
+
+    const quintptr key = reinterpret_cast<quintptr>(hwnd);
+    if (!m_savedTaskbarRects.contains(key)) {
+        m_savedTaskbarRects.insert(key, QRect(rect.left, rect.top,
+                                              rect.right - rect.left,
+                                              rect.bottom - rect.top));
+    }
+
+    ShowWindow(hwnd, SW_SHOW);
+    EnableWindow(hwnd, TRUE);
+    const int width = rect.right - rect.left;
+    const int height = rect.bottom - rect.top;
+    SetWindowPos(hwnd, HWND_BOTTOM, kOffscreenTaskbarX, kOffscreenTaskbarY,
+                 width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
+void TaskbarController::restoreWindowPosition(quintptr hwndValue)
+{
+    HWND hwnd = reinterpret_cast<HWND>(hwndValue);
+    if (!hwnd) {
+        return;
+    }
+
+    const quintptr key = reinterpret_cast<quintptr>(hwnd);
+    const auto it = m_savedTaskbarRects.constFind(key);
+    if (it == m_savedTaskbarRects.constEnd()) {
+        ShowWindow(hwnd, SW_SHOW);
+        EnableWindow(hwnd, TRUE);
+        return;
+    }
+
+    const QRect saved = it.value();
+    SetWindowPos(hwnd, HWND_TOP, saved.x(), saved.y(), saved.width(), saved.height(),
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    m_savedTaskbarRects.erase(it);
+}
+
+void TaskbarController::restoreAllTaskbarPositions()
+{
+    const QList<quintptr> keys = m_savedTaskbarRects.keys();
+    for (quintptr key : keys) {
+        restoreWindowPosition(key);
+    }
+    m_savedTaskbarRects.clear();
+}
+
+void TaskbarController::beginTrayOnScreenScope()
+{
+    m_trayScopeWasOffscreen = false;
+
+    const auto restoreTrayIfOffscreen = [this](HWND hwnd) {
+        if (!hwnd) {
+            return;
+        }
+
+        RECT rect = {};
+        if (!GetWindowRect(hwnd, &rect)) {
+            return;
+        }
+        if (rect.left >= -1000 && rect.top >= -1000) {
+            return;
+        }
+
+        m_trayScopeWasOffscreen = true;
+        restoreWindowPosition(reinterpret_cast<quintptr>(hwnd));
+        ShowWindow(hwnd, SW_SHOW);
+        EnableWindow(hwnd, TRUE);
+    };
+
+    restoreTrayIfOffscreen(FindWindow(kTaskbarClass, nullptr));
+
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        wchar_t className[256] = {};
+        if (GetClassNameW(hwnd, className, 256) == 0) {
+            return TRUE;
+        }
+        if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+            return TRUE;
+        }
+
+        auto* controller = reinterpret_cast<TaskbarController*>(lParam);
+        RECT rect = {};
+        if (!GetWindowRect(hwnd, &rect)) {
+            return TRUE;
+        }
+        if (rect.left >= -1000 && rect.top >= -1000) {
+            return TRUE;
+        }
+
+        controller->m_trayScopeWasOffscreen = true;
+        controller->restoreWindowPosition(reinterpret_cast<quintptr>(hwnd));
+        ShowWindow(hwnd, SW_SHOW);
+        EnableWindow(hwnd, TRUE);
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(this));
+
+    if (m_trayScopeWasOffscreen) {
+        Sleep(500);
+    }
+}
+
+void TaskbarController::endTrayOnScreenScope()
+{
+    if (!m_trayScopeWasOffscreen || !m_shellActive || !m_autoHideWindowsTaskbar) {
+        return;
+    }
+
+    HWND taskbar = FindWindow(kTaskbarClass, nullptr);
+    if (taskbar) {
+        relocateWindowOffScreen(reinterpret_cast<quintptr>(taskbar), true);
+    }
+
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        auto* controller = reinterpret_cast<TaskbarController*>(lParam);
+        wchar_t className[256] = {};
+        if (GetClassNameW(hwnd, className, 256) == 0) {
+            return TRUE;
+        }
+        if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+            return TRUE;
+        }
+
+        controller->relocateWindowOffScreen(reinterpret_cast<quintptr>(hwnd), true);
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(this));
+}
+
+void TaskbarController::withTrayOnScreen(const std::function<void()>& action)
+{
+    if (!action) {
+        return;
+    }
+
+    beginTrayOnScreenScope();
+    action();
+    endTrayOnScreenScope();
+}
+
+void TaskbarController::withTrayOnScreenOnGuiThread(const std::function<void()>& action)
+{
+    if (!action) {
+        return;
+    }
+
+    const auto runOnGui = [this](const std::function<void()>& fn) {
+        if (QThread::currentThread() == thread()) {
+            fn();
+            return;
+        }
+
+        const std::function<void()> fnCopy = fn;
+        QMetaObject::invokeMethod(this, [fnCopy]() {
+            fnCopy();
+        }, Qt::BlockingQueuedConnection);
+    };
+
+    runOnGui([this]() { beginTrayOnScreenScope(); });
+    action();
+    runOnGui([this]() { endTrayOnScreenScope(); });
+}
+
+void TaskbarController::setTrayUiaBusy(bool busy)
+{
+    m_trayUiaBusy.store(busy);
+}
+
+bool TaskbarController::trayUiaBusy() const
+{
+    return m_trayUiaBusy.load();
 }
 
 void TaskbarController::restoreTaskbarRegistrySettings()
@@ -498,6 +690,8 @@ void TaskbarController::setTaskbarRegistryAutoHide(bool enabled)
 
 void TaskbarController::restoreShell()
 {
+    restoreAllTaskbarPositions();
+
     if (m_keepTaskbarAutoHideOnExit) {
         showTaskbarWindows();
 
@@ -708,24 +902,35 @@ void TaskbarController::updateFullscreenState()
 
 void TaskbarController::enforceTaskbarHidden()
 {
-    if (!m_shellActive || !m_autoHideWindowsTaskbar) {
+    if (!m_shellActive || !m_autoHideWindowsTaskbar || m_trayUiaBusy.load()) {
         return;
     }
 
     bool restored = false;
 
-    auto hideIfVisible = [&](HWND hwnd) {
-        if (!hwnd || !IsWindowVisible(hwnd)) {
+    auto relocateIfOnScreen = [&](HWND hwnd) {
+        if (!hwnd) {
             return;
         }
-        ShowWindow(hwnd, SW_HIDE);
-        EnableWindow(hwnd, FALSE);
-        restored = true;
+        RECT rect = {};
+        if (!GetWindowRect(hwnd, &rect)) {
+            return;
+        }
+        if (rect.left >= -1000 && rect.top >= -1000) {
+            relocateWindowOffScreen(reinterpret_cast<quintptr>(hwnd));
+            restored = true;
+        }
     };
 
-    hideIfVisible(FindWindow(kTaskbarClass, nullptr));
+    relocateIfOnScreen(FindWindow(kTaskbarClass, nullptr));
 
+    struct SecondaryTrayContext {
+        TaskbarController* controller = nullptr;
+        bool* restored = nullptr;
+    };
+    SecondaryTrayContext secondaryContext = { this, &restored };
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        auto* context = reinterpret_cast<SecondaryTrayContext*>(lParam);
         wchar_t className[256] = {};
         if (GetClassNameW(hwnd, className, 256) == 0) {
             return TRUE;
@@ -733,17 +938,20 @@ void TaskbarController::enforceTaskbarHidden()
         if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
             return TRUE;
         }
-        if (!IsWindowVisible(hwnd)) {
-            return TRUE;
+        RECT rect = {};
+        if (GetWindowRect(hwnd, &rect) && rect.left >= -1000 && rect.top >= -1000) {
+            context->controller->relocateWindowOffScreen(reinterpret_cast<quintptr>(hwnd));
+            *context->restored = true;
         }
-        ShowWindow(hwnd, SW_HIDE);
-        EnableWindow(hwnd, FALSE);
-        *reinterpret_cast<bool*>(lParam) = true;
         return TRUE;
-    }, reinterpret_cast<LPARAM>(&restored));
+    }, reinterpret_cast<LPARAM>(&secondaryContext));
 
     HWND startButton = FindWindow(kStartButtonClass, nullptr);
-    hideIfVisible(startButton);
+    if (startButton && IsWindowVisible(startButton)) {
+        ShowWindow(startButton, SW_HIDE);
+        EnableWindow(startButton, FALSE);
+        restored = true;
+    }
 
     if (!restored) {
         return;
@@ -765,7 +973,11 @@ void TaskbarController::enforceTaskbarHidden()
         emit taskbarHiddenChanged();
     }
 
-    emit shellActionLogged(QStringLiteral("Taskbar re-hidden after Windows shell interruption."));
+    const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (nowMs - m_lastTaskbarRelocateLogMs >= 3000) {
+        m_lastTaskbarRelocateLogMs = nowMs;
+        emit shellActionLogged(QStringLiteral("Taskbar re-hidden after Windows shell interruption."));
+    }
     emit shellLayoutRestoreNeeded();
 }
 
@@ -777,8 +989,42 @@ bool TaskbarController::setTaskbarVisible(bool visible)
         return false;
     }
 
-    ShowWindow(taskbar, visible ? SW_SHOW : SW_HIDE);
-    EnableWindow(taskbar, visible ? TRUE : FALSE);
+    if (visible) {
+        restoreWindowPosition(reinterpret_cast<quintptr>(taskbar));
+        ShowWindow(taskbar, SW_SHOW);
+        EnableWindow(taskbar, TRUE);
+
+        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+            Q_UNUSED(lParam);
+            wchar_t className[256] = {};
+            if (GetClassNameW(hwnd, className, 256) == 0) {
+                return TRUE;
+            }
+            if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+                return TRUE;
+            }
+            auto* controller = reinterpret_cast<TaskbarController*>(lParam);
+            controller->restoreWindowPosition(reinterpret_cast<quintptr>(hwnd));
+            ShowWindow(hwnd, SW_SHOW);
+            EnableWindow(hwnd, TRUE);
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(this));
+    } else {
+        relocateWindowOffScreen(reinterpret_cast<quintptr>(taskbar));
+
+        EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+            auto* controller = reinterpret_cast<TaskbarController*>(lParam);
+            wchar_t className[256] = {};
+            if (GetClassNameW(hwnd, className, 256) == 0) {
+                return TRUE;
+            }
+            if (wcscmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+                return TRUE;
+            }
+            controller->relocateWindowOffScreen(reinterpret_cast<quintptr>(hwnd));
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(this));
+    }
 
     HWND startButton = FindWindow(kStartButtonClass, nullptr);
     if (startButton) {
@@ -1285,6 +1531,37 @@ void TaskbarController::setShowDownloadsInDock(bool show)
     emit showDownloadsInDockChanged();
 }
 
+bool TaskbarController::showMenuBarExtras() const
+{
+    return m_showMenuBarExtras;
+}
+
+void TaskbarController::setShowMenuBarExtras(bool show)
+{
+    if (m_showMenuBarExtras == show) {
+        return;
+    }
+    m_showMenuBarExtras = show;
+    saveSettings();
+    emit showMenuBarExtrasChanged();
+}
+
+int TaskbarController::trayExtrasRefreshMs() const
+{
+    return m_trayExtrasRefreshMs;
+}
+
+void TaskbarController::setTrayExtrasRefreshMs(int intervalMs)
+{
+    const int clamped = qBound(500, intervalMs, 10000);
+    if (m_trayExtrasRefreshMs == clamped) {
+        return;
+    }
+    m_trayExtrasRefreshMs = clamped;
+    saveSettings();
+    emit trayExtrasRefreshMsChanged();
+}
+
 void TaskbarController::loadSettings()
 {
     QSettings settings;
@@ -1315,6 +1592,8 @@ void TaskbarController::loadSettings()
     setMenuBarIconStyle(settings.value(QStringLiteral("shell/menuBarIconStyle"), QStringLiteral("apple")).toString());
     m_menuBarCustomIconPath = settings.value(QStringLiteral("shell/menuBarCustomIconPath")).toString();
     m_showDownloadsInDock = settings.value(QStringLiteral("shell/showDownloadsInDock"), true).toBool();
+    m_showMenuBarExtras = settings.value(QStringLiteral("shell/showMenuBarExtras"), true).toBool();
+    m_trayExtrasRefreshMs = qBound(500, settings.value(QStringLiteral("shell/trayExtrasRefreshMs"), 1500).toInt(), 10000);
     m_uiLanguage = normalizeUiLanguage(settings.value(QStringLiteral("shell/uiLanguage"), QStringLiteral("system")).toString());
     reconcileWindowsStartup();
 }
@@ -1338,6 +1617,8 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/menuBarIconStyle"), m_menuBarIconStyle);
     settings.setValue(QStringLiteral("shell/menuBarCustomIconPath"), m_menuBarCustomIconPath);
     settings.setValue(QStringLiteral("shell/showDownloadsInDock"), m_showDownloadsInDock);
+    settings.setValue(QStringLiteral("shell/showMenuBarExtras"), m_showMenuBarExtras);
+    settings.setValue(QStringLiteral("shell/trayExtrasRefreshMs"), m_trayExtrasRefreshMs);
     settings.setValue(QStringLiteral("shell/uiLanguage"), m_uiLanguage);
 }
 
@@ -1350,7 +1631,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1367,6 +1648,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setTrashIconStyle(trashIconStyle);
     setMenuBarIconStyle(menuBarIconStyle);
     setShowDownloadsInDock(showDownloadsInDock);
+    setShowMenuBarExtras(showMenuBarExtras);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);

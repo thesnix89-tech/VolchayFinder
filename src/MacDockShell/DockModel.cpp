@@ -1,5 +1,6 @@
 #include "DockModel.h"
 #include "PinnedTaskbarResolver.h"
+#include "IconUtils.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -265,36 +266,6 @@ BOOL CALLBACK enumWindowsProc(HWND hwnd, LPARAM lParam)
 
     context->entries.push_back(entry);
     return TRUE;
-}
-
-QImage hiconToImage(HICON hIcon)
-{
-    ICONINFO iconInfo;
-    if (!GetIconInfo(hIcon, &iconInfo)) {
-        return {};
-    }
-
-    BITMAP bmp = {};
-    GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp);
-
-    BITMAPINFO bmi = {};
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = bmp.bmWidth;
-    bmi.bmiHeader.biHeight = -bmp.bmHeight;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-
-    QImage image(bmp.bmWidth, bmp.bmHeight, QImage::Format_ARGB32);
-    image.fill(Qt::transparent);
-
-    HDC hdc = GetDC(nullptr);
-    GetDIBits(hdc, iconInfo.hbmColor, 0, bmp.bmHeight, image.bits(), &bmi, DIB_RGB_COLORS);
-    ReleaseDC(nullptr, hdc);
-
-    DeleteObject(iconInfo.hbmColor);
-    DeleteObject(iconInfo.hbmMask);
-    return image;
 }
 
 } // namespace
@@ -1813,14 +1784,9 @@ QString DockModel::labelFromPath(const QString& path) const
     return QFileInfo(path).completeBaseName();
 }
 
-QPixmap pixmapFromHicon(HICON hIcon)
+QPixmap pixmapFromHiconLocal(HICON hIcon)
 {
-    if (!hIcon) {
-        return {};
-    }
-    const QImage image = hiconToImage(hIcon);
-    DestroyIcon(hIcon);
-    return image.isNull() ? QPixmap() : QPixmap::fromImage(image);
+    return pixmapFromHicon(hIcon);
 }
 
 QPixmap DockModel::extractFileIcon(const QString& exePath) const
@@ -1851,7 +1817,7 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
                 continue;
             }
 
-            const QPixmap pixmap = pixmapFromHicon(hIcon);
+            const QPixmap pixmap = pixmapFromHiconLocal(hIcon);
             if (!pixmap.isNull() && pixmap.width() >= 48) {
                 return pixmap;
             }
@@ -1862,7 +1828,7 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
     HICON largeIcon = nullptr;
     const UINT extracted = ExtractIconExW(pathW, 0, &largeIcon, nullptr, 1);
     if (extracted > 0 && largeIcon) {
-        const QPixmap pixmap = pixmapFromHicon(largeIcon);
+        const QPixmap pixmap = pixmapFromHiconLocal(largeIcon);
         if (!pixmap.isNull()) {
             return pixmap;
         }
@@ -1870,7 +1836,7 @@ QPixmap DockModel::extractFileIcon(const QString& exePath) const
 
     SHFILEINFOW sfiLarge = {};
     if (SHGetFileInfoW(pathW, 0, &sfiLarge, sizeof(sfiLarge), SHGFI_ICON | SHGFI_LARGEICON)) {
-        return pixmapFromHicon(sfiLarge.hIcon);
+        return pixmapFromHiconLocal(sfiLarge.hIcon);
     }
 
     return {};

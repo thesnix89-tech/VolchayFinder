@@ -1,9 +1,14 @@
 #pragma once
 
 #include <QByteArray>
+#include <QHash>
 #include <QObject>
+#include <QRect>
 #include <QString>
 #include <QStringList>
+
+#include <functional>
+#include <atomic>
 
 class QTimer;
 
@@ -33,6 +38,8 @@ class TaskbarController : public QObject
     Q_PROPERTY(QString menuBarIconStyle READ menuBarIconStyle WRITE setMenuBarIconStyle NOTIFY menuBarIconStyleChanged)
     Q_PROPERTY(QString menuBarCustomIconPath READ menuBarCustomIconPath NOTIFY menuBarCustomIconPathChanged)
     Q_PROPERTY(bool showDownloadsInDock READ showDownloadsInDock WRITE setShowDownloadsInDock NOTIFY showDownloadsInDockChanged)
+    Q_PROPERTY(bool showMenuBarExtras READ showMenuBarExtras WRITE setShowMenuBarExtras NOTIFY showMenuBarExtrasChanged)
+    Q_PROPERTY(int trayExtrasRefreshMs READ trayExtrasRefreshMs WRITE setTrayExtrasRefreshMs NOTIFY trayExtrasRefreshMsChanged)
     Q_PROPERTY(QString uiLanguage READ uiLanguage WRITE setUiLanguage NOTIFY languageChanged)
 
 public:
@@ -43,7 +50,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras);
     Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
     Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style, bool darkTheme = false) const;
     Q_INVOKABLE bool importCustomMenuBarIcon();
@@ -95,8 +102,16 @@ public:
     QString menuBarCustomIconPath() const;
     bool showDownloadsInDock() const;
     void setShowDownloadsInDock(bool show);
+    bool showMenuBarExtras() const;
+    void setShowMenuBarExtras(bool show);
+    int trayExtrasRefreshMs() const;
+    void setTrayExtrasRefreshMs(int intervalMs);
     QString uiLanguage() const;
     QString effectiveLanguage() const;
+    void withTrayOnScreen(const std::function<void()>& action);
+    void withTrayOnScreenOnGuiThread(const std::function<void()>& action);
+    void setTrayUiaBusy(bool busy);
+    bool trayUiaBusy() const;
 
 signals:
     void taskbarHiddenChanged();
@@ -123,6 +138,8 @@ signals:
     void menuBarIconStyleChanged();
     void menuBarCustomIconPathChanged();
     void showDownloadsInDockChanged();
+    void showMenuBarExtrasChanged();
+    void trayExtrasRefreshMsChanged();
     void shellLayoutRestoreNeeded();
     void languageChanged();
 
@@ -150,6 +167,11 @@ private:
     QString normalizeUiLanguage(const QString& language) const;
     void syncWindowsStartup(bool enabled);
     void reconcileWindowsStartup();
+    void relocateWindowOffScreen(quintptr hwndValue, bool force = false);
+    void restoreWindowPosition(quintptr hwndValue);
+    void restoreAllTaskbarPositions();
+    void beginTrayOnScreenScope();
+    void endTrayOnScreenScope();
 
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
@@ -181,7 +203,13 @@ private:
     QString m_menuBarIconStyle = QStringLiteral("apple");
     QString m_menuBarCustomIconPath;
     bool m_showDownloadsInDock = true;
+    bool m_showMenuBarExtras = true;
+    int m_trayExtrasRefreshMs = 1500;
     QString m_uiLanguage = QStringLiteral("system");
+    QHash<quintptr, QRect> m_savedTaskbarRects;
+    qint64 m_lastTaskbarRelocateLogMs = 0;
+    std::atomic_bool m_trayUiaBusy { false };
+    bool m_trayScopeWasOffscreen = false;
     QTimer* m_fullscreenTimer = nullptr;
     QTimer* m_appearanceTimer = nullptr;
 };

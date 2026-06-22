@@ -134,6 +134,16 @@
         <translation>Displays the status bar at the top of the screen</translation>
     </message>
     <message>
+        <location filename="../src/MacDockShell/qml/ControlWindow.qml" line="763" />
+        <source>Menu bar extras</source>
+        <translation>Menu bar extras</translation>
+    </message>
+    <message>
+        <location filename="../src/MacDockShell/qml/ControlWindow.qml" line="771" />
+        <source>Show apps from the notification area in the menu bar</source>
+        <translation>Show apps from the notification area in the menu bar</translation>
+    </message>
+    <message>
         <location filename="../src/MacDockShell/qml/ControlWindow.qml" line="748" />
         <source>Dock icon size</source>
         <translation>Dock icon size</translation>
@@ -503,6 +513,14 @@
         <location filename="../src/MacDockShell/qml/TopBarWindow.qml" line="237" />
         <source>Quit</source>
         <translation>Quit</translation>
+    </message>
+</context>
+<context>
+    <name>MenuBarExtrasRow</name>
+    <message>
+        <location filename="../src/MacDockShell/qml/components/MenuBarExtrasRow.qml" line="122" />
+        <source>More menu bar extras</source>
+        <translation>More menu bar extras</translation>
     </message>
 </context>
 </TS>

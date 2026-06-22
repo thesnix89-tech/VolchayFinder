@@ -167,9 +167,17 @@ Window {
 
             Item { Layout.fillWidth: true }
 
-            StatusArea {
-                darkTheme: topBarWindow.darkTheme
+            RowLayout {
+                spacing: 8
                 Layout.alignment: Qt.AlignVCenter
+
+                MenuBarExtrasRow {
+                    darkTheme: topBarWindow.darkTheme
+                }
+
+                StatusArea {
+                    darkTheme: topBarWindow.darkTheme
+                }
             }
         }
     }

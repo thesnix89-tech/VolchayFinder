@@ -11,3 +11,4 @@ MacToggle 1.0 MacToggle.qml
 MacScrollBar 1.0 MacScrollBar.qml
 MacPopupButton 1.0 MacPopupButton.qml
 MacAppearancePicker 1.0 MacAppearancePicker.qml
+MenuBarExtrasRow 1.0 MenuBarExtrasRow.qml

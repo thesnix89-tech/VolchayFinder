@@ -13,6 +13,7 @@
 #include <QQmlContext>
 #include <QWindow>
 #include <QTimer>
+#include <QThread>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLocale>
@@ -28,6 +29,7 @@
 #include "MacCursor.h"
 #include "DockDropTarget.h"
 #include "ShelfController.h"
+#include "TrayIconModel.h"
 
 namespace {
 
@@ -249,6 +251,7 @@ int main(int argc, char *argv[])
     MacCursor macCursor;
     DockDropTarget dockDropTarget(&dockModel, &windowEffects);
     ShelfController shelfController;
+    TrayIconModel trayIconModel;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -263,6 +266,53 @@ int main(int argc, char *argv[])
         appendLine(QString("[ShelfController] %1").arg(message));
     });
     QObject::connect(&shelfController, &ShelfController::recycleBinChanged, &dockModel, &DockModel::refresh);
+    QObject::connect(&trayIconModel, &TrayIconModel::logMessage, [](const QString& message) {
+        appendLine(QString("[TrayIconModel] %1").arg(message));
+    });
+    QObject::connect(&taskbarController, &TaskbarController::showMenuBarExtrasChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
+                                 && taskbarController.shellActive()
+                                 && taskbarController.showTopBar());
+    });
+    QObject::connect(&taskbarController, &TaskbarController::trayExtrasRefreshMsChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        trayIconModel.setRefreshIntervalMs(taskbarController.trayExtrasRefreshMs());
+    });
+    QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
+                                 && taskbarController.shellActive()
+                                 && taskbarController.showTopBar());
+    });
+    QObject::connect(&taskbarController, &TaskbarController::showTopBarChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
+                                 && taskbarController.shellActive()
+                                 && taskbarController.showTopBar());
+    });
+    trayIconModel.setRefreshIntervalMs(taskbarController.trayExtrasRefreshMs());
+    trayIconModel.setTrayOnScreenScope([&taskbarController](const std::function<void()>& action) {
+        taskbarController.withTrayOnScreenOnGuiThread(action);
+    });
+    trayIconModel.setGuiInvoker([&taskbarController](const std::function<void()>& action) {
+        if (QThread::currentThread() == taskbarController.thread()) {
+            action();
+            return;
+        }
+
+        const std::function<void()> actionCopy = action;
+        QMetaObject::invokeMethod(&taskbarController, [actionCopy]() {
+            actionCopy();
+        }, Qt::BlockingQueuedConnection);
+    });
+    trayIconModel.setTrayUiaBusyScope([&taskbarController](bool busy) {
+        taskbarController.setTrayUiaBusy(busy);
+    });
+    QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        if (taskbarController.shellActive()) {
+            trayIconModel.resetOverflowBootstrap();
+        }
+    });
+    trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
+                             && taskbarController.shellActive()
+                             && taskbarController.showTopBar());
     QObject::connect(&taskbarController, &TaskbarController::explorerIconStyleChanged, &dockModel, [&dockModel, &taskbarController]() {
         dockModel.setExplorerIconStyle(taskbarController.explorerIconStyle());
     });
@@ -326,6 +376,7 @@ int main(int argc, char *argv[])
     topBarEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
+    topBarEngine.rootContext()->setContextProperty("trayIconModel", &trayIconModel);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);
