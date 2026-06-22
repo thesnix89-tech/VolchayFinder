@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTimer>
+#include <QVariantList>
 #include <QVector>
 #include <atomic>
 
@@ -44,6 +45,8 @@ public:
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void activate(int index);
     Q_INVOKABLE void showMenu(int index);
+    Q_INVOKABLE void requestMirroredMenu(int index, int anchorX, int anchorY);
+    Q_INVOKABLE void invokeMirroredMenuItem(int sessionId, const QVariantList& path);
 
     int visibleCount() const;
     int overflowCount() const;
@@ -63,6 +66,8 @@ signals:
     void overflowCountChanged();
     void maxVisibleIconsChanged();
     void enabledChanged();
+    void mirroredMenuReady(int sessionId, const QVariantList& items, int anchorX, int anchorY);
+    void mirroredMenuFailed(int index);
 
 private:
     struct TrayEntry
@@ -74,7 +79,14 @@ private:
         int overflowIndex = -1;
     };
 
+    struct MirroredMenuSession
+    {
+        TrayIconInfo info;
+        QString label;
+    };
+
     void scheduleRefresh();
+    void showNativeMenuForInfo(const TrayIconInfo& info, const QString& label);
     void applyEntries(const QVector<TrayIconInfo>& icons);
     QVector<TrayEntry> buildEntries(const QVector<TrayIconInfo>& icons, QStringList* iconSourceLog = nullptr) const;
     QString iconUrlForInfo(const TrayIconInfo& info, QString* sourceOut = nullptr) const;
@@ -82,9 +94,11 @@ private:
     bool entryAtModelIndex(int index, TrayEntry* entry, int* storageIndex = nullptr) const;
     QString manifestFilePath() const;
     void saveLastGoodIconsManifest(const QVector<TrayIconInfo>& icons) const;
+    QVariantList mirroredMenuItemsToVariantList(const QVector<MirroredTrayMenuItem>& items) const;
 
     TrayIconEnumerator m_enumerator;
     QVector<TrayEntry> m_entries;
+    QHash<int, MirroredMenuSession> m_mirroredMenuSessions;
     mutable QHash<QString, QString> m_iconUrlByStableId;
     QString m_iconCacheDir;
     QTimer m_refreshTimer;
@@ -94,6 +108,7 @@ private:
     TrayIconEnumerator::GuiInvoker m_guiInvoker;
     std::function<void(bool)> m_trayUiaBusyScope;
     int m_maxVisibleIcons = 8;
+    int m_nextMirroredMenuSessionId = 1;
     int m_debugRefreshesRemaining = 0;
     bool m_enabled = false;
 };

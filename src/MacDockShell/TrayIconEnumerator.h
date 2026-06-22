@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QSet>
 #include <QVector>
 #include <QRect>
 
@@ -24,6 +25,17 @@ struct TrayIconInfo
     QVector<int> runtimeId;
 };
 
+struct MirroredTrayMenuItem
+{
+    QString text;
+    bool separator = false;
+    bool enabled = true;
+    bool checked = false;
+    bool hasSubmenu = false;
+    bool nativeFallback = false;
+    QVector<MirroredTrayMenuItem> children;
+};
+
 class TrayIconEnumerator
 {
 public:
@@ -41,9 +53,12 @@ public:
     QVector<TrayIconInfo> enumerateOverflow();
     bool activate(const TrayIconInfo& icon);
     bool showContextMenu(const TrayIconInfo& icon);
+    QVector<MirroredTrayMenuItem> captureContextMenu(const TrayIconInfo& icon);
+    bool invokeMirroredItem(const TrayIconInfo& icon, const QVector<int>& path);
     QString lastEnumerateLog() const;
     QString lastDebugLog() const;
     QString lastInteractionDetail() const;
+    QString lastMirrorDetail() const;
 
 private:
     struct TrayUiaState;
@@ -75,6 +90,8 @@ private:
     IUIAutomationElement* findVisibleTrayIconElement(const TrayIconInfo& icon);
     bool interactWithElement(IUIAutomationElement* element, bool rightButton, bool inOverflow);
     bool interactWithIcon(const TrayIconInfo& icon, bool rightButton);
+    QVector<MirroredTrayMenuItem> captureOpenMenuLevel(int depth, QSet<quintptr>* visitedMenus);
+    bool replayOpenMenuPath(const QVector<int>& path);
 
     TrayUiaState* m_uia = nullptr;
     TrayOnScreenScope m_trayOnScreenScope;
@@ -83,6 +100,7 @@ private:
     QString m_lastDebugLog;
     QString m_overflowEnumerateDetail;
     QString m_lastInteractionDetail;
+    QString m_lastMirrorDetail;
     bool m_debugEnabled = false;
     bool m_lastChevronLocated = false;
     bool m_lastOverflowPanelOpen = false;

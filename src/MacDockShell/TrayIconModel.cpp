@@ -15,6 +15,7 @@
 #include <QPixmap>
 #include <QSet>
 #include <QThreadPool>
+#include <QVariantMap>
 
 #include <objbase.h>
 #include <windows.h>
@@ -82,10 +83,13 @@ bool canQueryIconFromHwnd(const TrayIconInfo& info)
     }
 
     static const QStringList kAllowedClasses = {
+        QStringLiteral("QTrayIconMessageWindow"),
         QStringLiteral("Electron_NotifyIconHostWindow"),
         QStringLiteral("Chrome_StatusTrayWindow"),
         QStringLiteral("Qt51519TrayIconMessageWindowClass"),
         QStringLiteral("Qt6TrayIconMessageWindowClass"),
+        QStringLiteral("Qt5TrayIconMessageWindowClass"),
+        QStringLiteral("Qt4TrayIconMessageWindowClass"),
     };
     for (const QString& allowed : kAllowedClasses) {
         if (windowClass.contains(allowed, Qt::CaseInsensitive)) {
@@ -496,6 +500,26 @@ bool TrayIconModel::entryAtModelIndex(int index, TrayEntry* entry, int* storageI
     return true;
 }
 
+QVariantList TrayIconModel::mirroredMenuItemsToVariantList(const QVector<MirroredTrayMenuItem>& items) const
+{
+    QVariantList result;
+    result.reserve(items.size());
+    for (int i = 0; i < items.size(); ++i) {
+        const MirroredTrayMenuItem& item = items.at(i);
+        QVariantMap map;
+        map.insert(QStringLiteral("index"), i);
+        map.insert(QStringLiteral("text"), item.text);
+        map.insert(QStringLiteral("separator"), item.separator);
+        map.insert(QStringLiteral("enabled"), item.enabled);
+        map.insert(QStringLiteral("checked"), item.checked);
+        map.insert(QStringLiteral("hasSubmenu"), item.hasSubmenu);
+        map.insert(QStringLiteral("nativeFallback"), item.nativeFallback);
+        map.insert(QStringLiteral("children"), mirroredMenuItemsToVariantList(item.children));
+        result.push_back(map);
+    }
+    return result;
+}
+
 void TrayIconModel::activate(int index)
 {
     TrayEntry entry;
@@ -527,10 +551,11 @@ void TrayIconModel::activate(int index)
     });
 }
 
-void TrayIconModel::showMenu(int index)
+void TrayIconModel::requestMirroredMenu(int index, int anchorX, int anchorY)
 {
     TrayEntry entry;
     if (!entryAtModelIndex(index, &entry)) {
+        emit mirroredMenuFailed(index);
         return;
     }
 
@@ -539,6 +564,82 @@ void TrayIconModel::showMenu(int index)
         : entry.info.automationId;
     const TrayIconInfo info = entry.info;
 
+    QThreadPool::globalInstance()->start([this, info, label, index, anchorX, anchorY]() {
+        QMutexLocker lock(&m_trayOpMutex);
+        CoInitScope coInit;
+        TrayUiaBusyScope busyScope(m_trayUiaBusyScope);
+        TrayIconEnumerator enumerator;
+        enumerator.setTrayOnScreenScope(m_trayOnScreenScope);
+        enumerator.setGuiInvoker(m_guiInvoker);
+        const QVector<MirroredTrayMenuItem> items = enumerator.captureContextMenu(info);
+        const QString detail = enumerator.lastMirrorDetail();
+        const QVariantList variantItems = mirroredMenuItemsToVariantList(items);
+
+        QMetaObject::invokeMethod(this, [this, info, label, index, anchorX, anchorY, variantItems, detail]() {
+            if (variantItems.isEmpty()) {
+                emit logMessage(QStringLiteral("Mirror tray menu \"%1\": failed (%2); falling back to native menu")
+                                .arg(label, detail));
+                emit mirroredMenuFailed(index);
+                return;
+            }
+
+            const int sessionId = m_nextMirroredMenuSessionId++;
+            m_mirroredMenuSessions.insert(sessionId, MirroredMenuSession { info, label });
+            emit logMessage(QStringLiteral("Mirror tray menu \"%1\": %2").arg(label, detail));
+            emit mirroredMenuReady(sessionId, variantItems, anchorX, anchorY);
+        }, Qt::QueuedConnection);
+    });
+}
+
+void TrayIconModel::invokeMirroredMenuItem(int sessionId, const QVariantList& path)
+{
+    const MirroredMenuSession session = m_mirroredMenuSessions.value(sessionId);
+    if (session.info.stableId.isEmpty() && session.info.nativeWindowHandle == 0) {
+        emit logMessage(QStringLiteral("Mirror tray menu invoke: missing session %1").arg(sessionId));
+        return;
+    }
+
+    QVector<int> nativePath;
+    nativePath.reserve(path.size());
+    for (const QVariant& value : path) {
+        bool ok = false;
+        const int index = value.toInt(&ok);
+        if (!ok || index < 0) {
+            emit logMessage(QStringLiteral("Mirror tray menu \"%1\": invalid item path").arg(session.label));
+            return;
+        }
+        nativePath.push_back(index);
+    }
+
+    if (nativePath.isEmpty()) {
+        return;
+    }
+
+    QThreadPool::globalInstance()->start([this, session, nativePath]() {
+        QMutexLocker lock(&m_trayOpMutex);
+        CoInitScope coInit;
+        TrayUiaBusyScope busyScope(m_trayUiaBusyScope);
+        TrayIconEnumerator enumerator;
+        enumerator.setTrayOnScreenScope(m_trayOnScreenScope);
+        enumerator.setGuiInvoker(m_guiInvoker);
+        const bool ok = enumerator.invokeMirroredItem(session.info, nativePath);
+        const QString detail = enumerator.lastMirrorDetail();
+
+        QMetaObject::invokeMethod(this, [this, session, ok, detail]() {
+            if (ok) {
+                emit logMessage(QStringLiteral("Mirror tray menu \"%1\": invoked (%2)")
+                                .arg(session.label, detail));
+            } else {
+                emit logMessage(QStringLiteral("Mirror tray menu \"%1\": invoke failed (%2); opening native menu")
+                                .arg(session.label, detail));
+                showNativeMenuForInfo(session.info, session.label);
+            }
+        }, Qt::QueuedConnection);
+    });
+}
+
+void TrayIconModel::showNativeMenuForInfo(const TrayIconInfo& info, const QString& label)
+{
     QThreadPool::globalInstance()->start([this, info, label]() {
         QMutexLocker lock(&m_trayOpMutex);
         CoInitScope coInit;
@@ -556,4 +657,17 @@ void TrayIconModel::showMenu(int index)
             }
         }, Qt::QueuedConnection);
     });
+}
+
+void TrayIconModel::showMenu(int index)
+{
+    TrayEntry entry;
+    if (!entryAtModelIndex(index, &entry)) {
+        return;
+    }
+
+    const QString label = !entry.info.tooltip.isEmpty()
+        ? entry.info.tooltip.section(QLatin1Char('\n'), 0, 0).trimmed()
+        : entry.info.automationId;
+    showNativeMenuForInfo(entry.info, label);
 }
