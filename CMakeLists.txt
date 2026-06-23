@@ -35,6 +35,8 @@ qt_add_executable(MacDockShell
     src/MacDockShell/TrayIconEnumerator.h
     src/MacDockShell/TrayIconModel.cpp
     src/MacDockShell/TrayIconModel.h
+    src/MacDockShell/SpotlightModel.cpp
+    src/MacDockShell/SpotlightModel.h
 )
 
 qt_add_resources(MacDockShell macdockshell_resources
@@ -51,6 +53,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/MacPopupButton.qml
         src/MacDockShell/qml/components/MacAppearancePicker.qml
         src/MacDockShell/qml/components/MenuBarExtrasRow.qml
+        src/MacDockShell/qml/components/SpotlightPanel.qml
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
@@ -111,6 +114,7 @@ qt_add_translations(MacDockShell
         src/MacDockShell/qml/components/StatusArea.qml
         src/MacDockShell/qml/components/ControlCenterPanel.qml
         src/MacDockShell/qml/components/MenuBarExtrasRow.qml
+        src/MacDockShell/qml/components/SpotlightPanel.qml
 )
 
 set_target_properties(MacDockShell PROPERTIES

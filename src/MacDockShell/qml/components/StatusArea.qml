@@ -5,7 +5,10 @@ RowLayout {
     id: root
     spacing: 4
 
+    signal spotlightRequested()
+
     property bool darkTheme: false
+    property bool spotlightOpen: false
     readonly property color iconColor: darkTheme ? "#F2F2F7" : "#1D1D1F"
     // Neutral gray pills — macOS menu bar extras, not warm/yellow white overlays.
     readonly property color hoverFill: darkTheme ? "#5A5A5E" : "#DADADC"
@@ -165,6 +168,13 @@ RowLayout {
 
     // Spotlight
     StatusHit {
+        id: spotlightHit
+        hitW: 22
+        hitH: 20
+        active: root.spotlightOpen
+
+        onClicked: root.spotlightRequested()
+
         Canvas {
             width: 16
             height: 16

@@ -30,6 +30,7 @@
 #include "DockDropTarget.h"
 #include "ShelfController.h"
 #include "TrayIconModel.h"
+#include "SpotlightModel.h"
 
 namespace {
 
@@ -253,6 +254,7 @@ int main(int argc, char *argv[])
     DockDropTarget dockDropTarget(&dockModel, &windowEffects);
     ShelfController shelfController;
     TrayIconModel trayIconModel;
+    SpotlightModel spotlightModel;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -269,6 +271,9 @@ int main(int argc, char *argv[])
     QObject::connect(&shelfController, &ShelfController::recycleBinChanged, &dockModel, &DockModel::refresh);
     QObject::connect(&trayIconModel, &TrayIconModel::logMessage, [](const QString& message) {
         appendLine(QString("[TrayIconModel] %1").arg(message));
+    });
+    QObject::connect(&spotlightModel, &SpotlightModel::logMessage, [](const QString& message) {
+        appendLine(QString("[SpotlightModel] %1").arg(message));
     });
     QObject::connect(&taskbarController, &TaskbarController::showMenuBarExtrasChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
         trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
@@ -383,6 +388,7 @@ int main(int argc, char *argv[])
     topBarEngine.rootContext()->setContextProperty("macCursor", &macCursor);
     topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
     topBarEngine.rootContext()->setContextProperty("trayIconModel", &trayIconModel);
+    topBarEngine.rootContext()->setContextProperty("spotlightModel", &spotlightModel);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);

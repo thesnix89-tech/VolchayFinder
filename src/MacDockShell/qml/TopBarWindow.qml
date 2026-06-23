@@ -198,9 +198,16 @@ Window {
 
                 StatusArea {
                     darkTheme: topBarWindow.darkTheme
+                    spotlightOpen: spotlightPanel.opened
+                    onSpotlightRequested: spotlightPanel.toggleCentered(topBarWindow)
                 }
             }
         }
+    }
+
+    SpotlightPanel {
+        id: spotlightPanel
+        darkTheme: topBarWindow.darkTheme
     }
 
     // Separate popup window — default Menu rendered inline in the menu bar (broken white strip).
