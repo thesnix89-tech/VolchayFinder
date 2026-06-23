@@ -399,6 +399,7 @@ Item {
             }
 
             Text {
+                id: emptyRecentText
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: 50
                 width: parent.width - 34
@@ -406,8 +407,26 @@ Item {
                 text: qsTr("No recent notifications")
                 color: root.textColor
                 font.pixelSize: 14
-                font.weight: Font.DemiBold
+                font.family: "SF Pro Text"
+                font.bold: true
+                font.weight: Font.Black
                 horizontalAlignment: Text.AlignHCenter
+            }
+
+            Text {
+                anchors.left: emptyRecentText.left
+                anchors.top: emptyRecentText.top
+                width: emptyRecentText.width
+                visible: emptyRecentText.visible
+                text: emptyRecentText.text
+                color: emptyRecentText.color
+                opacity: 0.72
+                font.pixelSize: emptyRecentText.font.pixelSize
+                font.family: emptyRecentText.font.family
+                font.bold: true
+                font.weight: Font.Black
+                horizontalAlignment: Text.AlignHCenter
+                x: emptyRecentText.x + 0.45
             }
         }
     }

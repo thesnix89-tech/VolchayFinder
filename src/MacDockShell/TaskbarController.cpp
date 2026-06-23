@@ -973,6 +973,18 @@ bool TaskbarController::toggleShowDesktop()
     return ok;
 }
 
+QString TaskbarController::controlCenterLayout() const
+{
+    QSettings settings;
+    return settings.value(QStringLiteral("controlCenter/layout")).toString();
+}
+
+void TaskbarController::setControlCenterLayout(const QString& layoutJson)
+{
+    QSettings settings;
+    settings.setValue(QStringLiteral("controlCenter/layout"), layoutJson);
+}
+
 bool TaskbarController::detectForegroundOccupiesScreen() const
 {
     HWND hwnd = GetForegroundWindow();

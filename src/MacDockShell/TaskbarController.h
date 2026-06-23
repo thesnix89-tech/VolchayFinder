@@ -66,6 +66,8 @@ public:
     Q_INVOKABLE void setAppearanceMode(const QString& mode);
     Q_INVOKABLE void setUiLanguage(const QString& language);
     Q_INVOKABLE bool toggleShowDesktop();
+    Q_INVOKABLE QString controlCenterLayout() const;
+    Q_INVOKABLE void setControlCenterLayout(const QString& layoutJson);
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;

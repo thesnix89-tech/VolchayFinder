@@ -222,13 +222,13 @@ RowLayout {
         }
 
         onClicked: {
-            controlCenterPanel.darkTheme = root.darkTheme
             if (controlCenterPanel.visible) {
                 controlCenterPanel.close()
             } else {
-                controlCenterPanel.open(controlCenterHit,
-                    -controlCenterPanel.width + controlCenterHit.width,
-                    controlCenterHit.height + 6)
+                var panelPos = controlCenterHit.mapToItem(root, 0, controlCenterHit.height + 14)
+                controlCenterPanel.x = panelPos.x - controlCenterPanel.width + controlCenterHit.width
+                controlCenterPanel.y = panelPos.y
+                controlCenterPanel.open()
             }
         }
     }
