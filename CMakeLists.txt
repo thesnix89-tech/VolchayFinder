@@ -37,6 +37,8 @@ qt_add_executable(MacDockShell
     src/MacDockShell/TrayIconModel.h
     src/MacDockShell/SpotlightModel.cpp
     src/MacDockShell/SpotlightModel.h
+    src/MacDockShell/NotificationCenterModel.cpp
+    src/MacDockShell/NotificationCenterModel.h
 )
 
 qt_add_resources(MacDockShell macdockshell_resources
@@ -54,6 +56,7 @@ qt_add_resources(MacDockShell macdockshell_resources
         src/MacDockShell/qml/components/MacAppearancePicker.qml
         src/MacDockShell/qml/components/MenuBarExtrasRow.qml
         src/MacDockShell/qml/components/SpotlightPanel.qml
+        src/MacDockShell/qml/components/NotificationCenterPanel.qml
         src/MacDockShell/qml/components/qmldir
         src/MacDockShell/qml/apple_logo.svg
         src/MacDockShell/qml/apple_logo_white.svg
@@ -115,6 +118,7 @@ qt_add_translations(MacDockShell
         src/MacDockShell/qml/components/ControlCenterPanel.qml
         src/MacDockShell/qml/components/MenuBarExtrasRow.qml
         src/MacDockShell/qml/components/SpotlightPanel.qml
+        src/MacDockShell/qml/components/NotificationCenterPanel.qml
 )
 
 set_target_properties(MacDockShell PROPERTIES
@@ -128,8 +132,13 @@ target_link_libraries(MacDockShell
     PRIVATE shell32
     PRIVATE comdlg32
     PRIVATE ole32
+    PRIVATE windowsapp
     PRIVATE dwmapi
     PRIVATE UIAutomationCore
+)
+
+target_compile_definitions(MacDockShell
+    PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
 )
 
 include(GNUInstallDirs)

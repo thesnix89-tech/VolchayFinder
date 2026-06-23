@@ -41,6 +41,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool showDownloadsInDock READ showDownloadsInDock WRITE setShowDownloadsInDock NOTIFY showDownloadsInDockChanged)
     Q_PROPERTY(bool showMenuBarExtras READ showMenuBarExtras WRITE setShowMenuBarExtras NOTIFY showMenuBarExtrasChanged)
     Q_PROPERTY(bool blackWhiteTrayIcons READ blackWhiteTrayIcons WRITE setBlackWhiteTrayIcons NOTIFY blackWhiteTrayIconsChanged)
+    Q_PROPERTY(bool transparentNotificationCenter READ transparentNotificationCenter WRITE setTransparentNotificationCenter NOTIFY transparentNotificationCenterChanged)
     Q_PROPERTY(int trayExtrasRefreshMs READ trayExtrasRefreshMs WRITE setTrayExtrasRefreshMs NOTIFY trayExtrasRefreshMsChanged)
     Q_PROPERTY(QString uiLanguage READ uiLanguage WRITE setUiLanguage NOTIFY languageChanged)
     Q_PROPERTY(bool showDesktopActive READ showDesktopActive NOTIFY showDesktopActiveChanged)
@@ -53,7 +54,7 @@ public:
     Q_INVOKABLE bool showTaskbar();
     Q_INVOKABLE void restoreShell();
     Q_INVOKABLE void quitApplication();
-    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras, bool blackWhiteTrayIcons);
+    Q_INVOKABLE void apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras, bool blackWhiteTrayIcons, bool transparentNotificationCenter);
     Q_INVOKABLE QString menuBarIconUrl(bool darkTheme) const;
     Q_INVOKABLE QString menuBarIconPreviewUrl(const QString& style, bool darkTheme = false) const;
     Q_INVOKABLE bool importCustomMenuBarIcon();
@@ -110,6 +111,8 @@ public:
     void setShowMenuBarExtras(bool show);
     bool blackWhiteTrayIcons() const;
     void setBlackWhiteTrayIcons(bool enabled);
+    bool transparentNotificationCenter() const;
+    void setTransparentNotificationCenter(bool enabled);
     int trayExtrasRefreshMs() const;
     void setTrayExtrasRefreshMs(int intervalMs);
     QString uiLanguage() const;
@@ -147,6 +150,7 @@ signals:
     void showDownloadsInDockChanged();
     void showMenuBarExtrasChanged();
     void blackWhiteTrayIconsChanged();
+    void transparentNotificationCenterChanged();
     void trayExtrasRefreshMsChanged();
     void shellLayoutRestoreNeeded();
     void languageChanged();
@@ -224,6 +228,7 @@ private:
     bool m_showDownloadsInDock = true;
     bool m_showMenuBarExtras = true;
     bool m_blackWhiteTrayIcons = false;
+    bool m_transparentNotificationCenter = false;
     int m_trayExtrasRefreshMs = 1500;
     QString m_uiLanguage = QStringLiteral("system");
     QHash<quintptr, QRect> m_savedTaskbarRects;

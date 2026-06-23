@@ -823,6 +823,44 @@ Window {
                         }
                     }
 
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: settingsWindow.groupDivider
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Прозрачная боковая панель уведомлений macOS")
+                                color: settingsWindow.primaryText
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: qsTr("Показывает боковую панель уведомлений простым прозрачным слоем как на macOS")
+                                color: settingsWindow.secondaryText
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: transparentNotificationCenterToggle
+                            darkTheme: settingsWindow.darkTheme
+                            checked: taskbarController.transparentNotificationCenter
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: transparentNotificationCenterToggle.checked = !transparentNotificationCenterToggle.checked
+                        }
+                    }
+
                     // Separator 2
                     Rectangle {
                         Layout.fillWidth: true
@@ -1527,7 +1565,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, taskbarController.darkTheme, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle, showMenuBarExtrasToggle.checked, blackWhiteTrayIconsToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, taskbarController.darkTheme, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle, showMenuBarExtrasToggle.checked, blackWhiteTrayIconsToggle.checked, transparentNotificationCenterToggle.checked);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false

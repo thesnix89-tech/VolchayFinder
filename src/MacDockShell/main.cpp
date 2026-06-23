@@ -20,6 +20,7 @@
 #include <QTranslator>
 
 #include <objbase.h>
+#include <winrt/base.h>
 
 #include "TaskbarController.h"
 #include "DockModel.h"
@@ -31,6 +32,7 @@
 #include "ShelfController.h"
 #include "TrayIconModel.h"
 #include "SpotlightModel.h"
+#include "NotificationCenterModel.h"
 
 namespace {
 
@@ -231,6 +233,14 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon());
+    try {
+        winrt::init_apartment(winrt::apartment_type::single_threaded);
+        appendLine("WinRT apartment initialized.");
+    } catch (const winrt::hresult_error& error) {
+        appendLine(QString("WinRT apartment initialization failed: 0x%1 %2")
+            .arg(static_cast<uint32_t>(error.code()), 8, 16, QLatin1Char('0'))
+            .arg(QString::fromWCharArray(error.message().c_str())));
+    }
     OleInitialize(nullptr);
     loadBundledFonts();
 
@@ -255,6 +265,7 @@ int main(int argc, char *argv[])
     ShelfController shelfController;
     TrayIconModel trayIconModel;
     SpotlightModel spotlightModel;
+    NotificationCenterModel notificationCenterModel;
     QTimer dockRefreshTimer;
     dockRefreshTimer.setInterval(1000);
     dockRefreshTimer.setSingleShot(false);
@@ -274,6 +285,9 @@ int main(int argc, char *argv[])
     });
     QObject::connect(&spotlightModel, &SpotlightModel::logMessage, [](const QString& message) {
         appendLine(QString("[SpotlightModel] %1").arg(message));
+    });
+    QObject::connect(&notificationCenterModel, &NotificationCenterModel::logMessage, [](const QString& message) {
+        appendLine(QString("[NotificationCenterModel] %1").arg(message));
     });
     QObject::connect(&taskbarController, &TaskbarController::showMenuBarExtrasChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
         trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
@@ -389,6 +403,7 @@ int main(int argc, char *argv[])
     topBarEngine.rootContext()->setContextProperty("hoverTracker", &hoverTracker);
     topBarEngine.rootContext()->setContextProperty("trayIconModel", &trayIconModel);
     topBarEngine.rootContext()->setContextProperty("spotlightModel", &spotlightModel);
+    topBarEngine.rootContext()->setContextProperty("notificationCenterModel", &notificationCenterModel);
     dockEngine.rootContext()->setContextProperty("taskbarController", &taskbarController);
     dockEngine.rootContext()->setContextProperty("dockModel", &dockModel);
     dockEngine.rootContext()->setContextProperty("windowEffects", &windowEffects);

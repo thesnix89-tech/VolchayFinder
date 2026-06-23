@@ -12,6 +12,7 @@ Window {
     readonly property int appleSize: 17
     readonly property string uiFontFamily: "SF Pro Text"
     property var menuOverlayRegions: []
+    property var notificationOverlayRegions: []
     x: 0
     y: 0
     visible: taskbarController.shellActive && taskbarController.showTopBar
@@ -33,6 +34,8 @@ Window {
         var regions = [Qt.rect(0, 0, topBarWindow.width, topBarWindow.barHeight)]
         for (var i = 0; i < topBarWindow.menuOverlayRegions.length; ++i)
             regions.push(topBarWindow.menuOverlayRegions[i])
+        for (var j = 0; j < topBarWindow.notificationOverlayRegions.length; ++j)
+            regions.push(topBarWindow.notificationOverlayRegions[j])
         windowEffects.updateDockHitRegions(topBarWindow, regions, regions)
     }
 
@@ -41,6 +44,7 @@ Window {
     onHeightChanged: Qt.callLater(syncHitRegions)
     onVisibleChanged: Qt.callLater(syncHitRegions)
     onMenuOverlayRegionsChanged: Qt.callLater(syncHitRegions)
+    onNotificationOverlayRegionsChanged: Qt.callLater(syncHitRegions)
 
     // Frameless tool windows on Windows often skip hover until the surface is "woken up".
     MouseArea {
@@ -199,7 +203,9 @@ Window {
                 StatusArea {
                     darkTheme: topBarWindow.darkTheme
                     spotlightOpen: spotlightPanel.opened
+                    notificationCenterOpen: notificationCenterPanel.opened
                     onSpotlightRequested: spotlightPanel.toggleCentered(topBarWindow)
+                    onNotificationCenterRequested: notificationCenterPanel.togglePanel(topBarWindow)
                 }
             }
         }
@@ -208,6 +214,15 @@ Window {
     SpotlightPanel {
         id: spotlightPanel
         darkTheme: topBarWindow.darkTheme
+    }
+
+    NotificationCenterPanel {
+        id: notificationCenterPanel
+        darkTheme: topBarWindow.darkTheme
+        transparentMode: taskbarController.transparentNotificationCenter
+        onOverlayRegionRectsChanged: function(regions) {
+            topBarWindow.notificationOverlayRegions = regions
+        }
     }
 
     // Separate popup window — default Menu rendered inline in the menu bar (broken white strip).

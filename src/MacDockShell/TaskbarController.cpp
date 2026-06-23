@@ -1760,6 +1760,21 @@ void TaskbarController::setBlackWhiteTrayIcons(bool enabled)
     emit blackWhiteTrayIconsChanged();
 }
 
+bool TaskbarController::transparentNotificationCenter() const
+{
+    return m_transparentNotificationCenter;
+}
+
+void TaskbarController::setTransparentNotificationCenter(bool enabled)
+{
+    if (m_transparentNotificationCenter == enabled) {
+        return;
+    }
+    m_transparentNotificationCenter = enabled;
+    saveSettings();
+    emit transparentNotificationCenterChanged();
+}
+
 int TaskbarController::trayExtrasRefreshMs() const
 {
     return m_trayExtrasRefreshMs;
@@ -1810,6 +1825,7 @@ void TaskbarController::loadSettings()
     m_blackWhiteTrayIcons = settings.value(
         QStringLiteral("shell/blackWhiteTrayIcons"),
         settings.value(QStringLiteral("shell/monochromeTrayIcons"), false)).toBool();
+    m_transparentNotificationCenter = settings.value(QStringLiteral("shell/transparentNotificationCenter"), false).toBool();
     m_trayExtrasRefreshMs = qBound(500, settings.value(QStringLiteral("shell/trayExtrasRefreshMs"), 1500).toInt(), 10000);
     m_uiLanguage = normalizeUiLanguage(settings.value(QStringLiteral("shell/uiLanguage"), QStringLiteral("system")).toString());
     reconcileWindowsStartup();
@@ -1836,6 +1852,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/showDownloadsInDock"), m_showDownloadsInDock);
     settings.setValue(QStringLiteral("shell/showMenuBarExtras"), m_showMenuBarExtras);
     settings.setValue(QStringLiteral("shell/blackWhiteTrayIcons"), m_blackWhiteTrayIcons);
+    settings.setValue(QStringLiteral("shell/transparentNotificationCenter"), m_transparentNotificationCenter);
     settings.setValue(QStringLiteral("shell/trayExtrasRefreshMs"), m_trayExtrasRefreshMs);
     settings.setValue(QStringLiteral("shell/uiLanguage"), m_uiLanguage);
 }
@@ -1849,7 +1866,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras, bool blackWhiteTrayIcons)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras, bool blackWhiteTrayIcons, bool transparentNotificationCenter)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1868,6 +1885,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setShowDownloadsInDock(showDownloadsInDock);
     setShowMenuBarExtras(showMenuBarExtras);
     setBlackWhiteTrayIcons(blackWhiteTrayIcons);
+    setTransparentNotificationCenter(transparentNotificationCenter);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);

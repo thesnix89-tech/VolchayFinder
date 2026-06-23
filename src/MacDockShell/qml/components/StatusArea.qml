@@ -6,9 +6,11 @@ RowLayout {
     spacing: 4
 
     signal spotlightRequested()
+    signal notificationCenterRequested()
 
     property bool darkTheme: false
     property bool spotlightOpen: false
+    property bool notificationCenterOpen: false
     readonly property color iconColor: darkTheme ? "#F2F2F7" : "#1D1D1F"
     // Neutral gray pills — macOS menu bar extras, not warm/yellow white overlays.
     readonly property color hoverFill: darkTheme ? "#5A5A5E" : "#DADADC"
@@ -238,9 +240,11 @@ RowLayout {
 
     // Date & time
     StatusHit {
-        interactive: false
+        active: root.notificationCenterOpen
         hitW: clockTextItem.implicitWidth + 12
         hitH: 22
+        onClicked: root.notificationCenterRequested()
+
         Text {
             id: clockTextItem
             text: root.clockText
