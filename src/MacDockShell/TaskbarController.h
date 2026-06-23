@@ -6,6 +6,7 @@
 #include <QRect>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 
 #include <functional>
 #include <atomic>
@@ -41,6 +42,7 @@ class TaskbarController : public QObject
     Q_PROPERTY(bool showMenuBarExtras READ showMenuBarExtras WRITE setShowMenuBarExtras NOTIFY showMenuBarExtrasChanged)
     Q_PROPERTY(int trayExtrasRefreshMs READ trayExtrasRefreshMs WRITE setTrayExtrasRefreshMs NOTIFY trayExtrasRefreshMsChanged)
     Q_PROPERTY(QString uiLanguage READ uiLanguage WRITE setUiLanguage NOTIFY languageChanged)
+    Q_PROPERTY(bool showDesktopActive READ showDesktopActive NOTIFY showDesktopActiveChanged)
 
 public:
     explicit TaskbarController(QObject* parent = nullptr);
@@ -61,6 +63,7 @@ public:
     Q_INVOKABLE void refreshMenuBar();
     Q_INVOKABLE void setAppearanceMode(const QString& mode);
     Q_INVOKABLE void setUiLanguage(const QString& language);
+    Q_INVOKABLE bool toggleShowDesktop();
 
     bool taskbarHidden() const;
     bool dockAutoHidden() const;
@@ -112,6 +115,7 @@ public:
     void withTrayOnScreenOnGuiThread(const std::function<void()>& action);
     void setTrayUiaBusy(bool busy);
     bool trayUiaBusy() const;
+    bool showDesktopActive() const;
 
 signals:
     void taskbarHiddenChanged();
@@ -142,8 +146,15 @@ signals:
     void trayExtrasRefreshMsChanged();
     void shellLayoutRestoreNeeded();
     void languageChanged();
+    void showDesktopActiveChanged();
 
 private:
+    struct DesktopPeekWindow
+    {
+        quintptr hwndValue = 0;
+        QByteArray placement;
+    };
+
     QString normalizeMenuBarIconStyle(const QString& style) const;
     QString normalizeDockLightStyle(const QString& style) const;
     QString bundledMenuBarIconResource(const QString& style, bool darkTheme) const;
@@ -172,6 +183,10 @@ private:
     void restoreAllTaskbarPositions();
     void beginTrayOnScreenScope();
     void endTrayOnScreenScope();
+    QVector<DesktopPeekWindow> collectDesktopPeekWindows() const;
+    void restoreDesktopPeekWindows();
+    bool minimizeDesktopPeekWindows(bool persistent);
+    bool tryShellToggleDesktop();
 
     bool m_taskbarHidden = false;
     unsigned long m_originalTaskbarState = 0;
@@ -207,9 +222,12 @@ private:
     int m_trayExtrasRefreshMs = 1500;
     QString m_uiLanguage = QStringLiteral("system");
     QHash<quintptr, QRect> m_savedTaskbarRects;
+    QVector<DesktopPeekWindow> m_desktopPeekWindows;
+    quintptr m_desktopPeekForeground = 0;
     qint64 m_lastTaskbarRelocateLogMs = 0;
     std::atomic_bool m_trayUiaBusy { false };
     bool m_trayScopeWasOffscreen = false;
+    bool m_showDesktopActive = false;
     QTimer* m_fullscreenTimer = nullptr;
     QTimer* m_appearanceTimer = nullptr;
 };

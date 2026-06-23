@@ -728,13 +728,10 @@ bool openOverflowViaKeyboardImpl(IUIAutomation* automation, IUIAutomationElement
 bool isNotifyIconHostClassName(const QString& windowClass)
 {
     static const QStringList kHostClasses = {
-        QStringLiteral("QTrayIconMessageWindow"),
         QStringLiteral("Electron_NotifyIconHostWindow"),
         QStringLiteral("Chrome_StatusTrayWindow"),
         QStringLiteral("Qt51519TrayIconMessageWindowClass"),
         QStringLiteral("Qt6TrayIconMessageWindowClass"),
-        QStringLiteral("Qt5TrayIconMessageWindowClass"),
-        QStringLiteral("Qt4TrayIconMessageWindowClass"),
     };
     for (const QString& hostClass : kHostClasses) {
         if (windowClass.contains(hostClass, Qt::CaseInsensitive)) {
@@ -768,67 +765,6 @@ TrayIconInfo infoFromNotifyHostHwnd(HWND hwnd)
     info.automationId = QStringLiteral("SystemTrayIcon");
     info.stableId = QStringLiteral("hwnd:%1").arg(info.nativeWindowHandle);
     return info;
-}
-
-struct EnumHostContext {
-    QVector<TrayIconInfo>* icons = nullptr;
-};
-
-struct LegacyNotifyData
-{
-    HWND hwnd = nullptr;
-    UINT id = 0;
-    UINT callbackMessage = 0;
-    DWORD reserved0 = 0;
-    DWORD reserved1 = 0;
-    HICON icon = nullptr;
-};
-
-void appendNotifyHostWindow(HWND hwnd, EnumHostContext* context, const QString& source)
-{
-    if (!context || !context->icons) {
-        return;
-    }
-
-    wchar_t className[256] = {};
-    if (GetClassNameW(hwnd, className, 256) == 0) {
-        return;
-    }
-
-    const QString windowClass = QString::fromWCharArray(className);
-    if (!isNotifyIconHostClassName(windowClass)) {
-        if (gTrayDebugStats
-            && (windowClass.contains(QStringLiteral("Tray"), Qt::CaseInsensitive)
-                || windowClass.contains(QStringLiteral("Notify"), Qt::CaseInsensitive)
-                || windowClass.contains(QStringLiteral("Icon"), Qt::CaseInsensitive)
-                || windowClass.contains(QStringLiteral("Qt"), Qt::CaseInsensitive)
-                || windowClass.contains(QStringLiteral("Q"), Qt::CaseInsensitive))) {
-            ++gTrayDebugStats->skippedUnknownHost;
-        }
-        return;
-    }
-
-    if (gTrayDebugStats) {
-        ++gTrayDebugStats->win32Hosts;
-    }
-    TrayIconInfo info = infoFromNotifyHostHwnd(hwnd);
-    if (info.nativeWindowHandle == 0) {
-        recordSkipReason(gTrayDebugStats, QStringLiteral("empty"));
-        return;
-    }
-    const QString skipReason = skipReasonForTrayCandidate(info);
-    if (!skipReason.isEmpty()) {
-        recordSkipReason(gTrayDebugStats, skipReason);
-        if (gTrayDebugStats) {
-            gTrayDebugStats->recordCandidate(source, info, false, skipReason);
-        }
-        return;
-    }
-
-    if (gTrayDebugStats) {
-        gTrayDebugStats->recordCandidate(source, info, true, {});
-    }
-    context->icons->push_back(info);
 }
 
 QVector<TrayIconInfo> enumerateElementsByAutomationId(IUIAutomation* automation,
@@ -1049,20 +985,11 @@ QVector<TrayIconInfo> deduplicateIcons(const QVector<TrayIconInfo>& icons)
 {
     QVector<TrayIconInfo> unique;
     QSet<QString> seen;
-    QSet<quintptr> seenNativeHandles;
     for (const TrayIconInfo& info : icons) {
-        if (!info.stableId.isEmpty() && seen.contains(info.stableId)) {
+        if (seen.contains(info.stableId)) {
             continue;
         }
-        if (info.nativeWindowHandle != 0 && seenNativeHandles.contains(info.nativeWindowHandle)) {
-            continue;
-        }
-        if (!info.stableId.isEmpty()) {
-            seen.insert(info.stableId);
-        }
-        if (info.nativeWindowHandle != 0) {
-            seenNativeHandles.insert(info.nativeWindowHandle);
-        }
+        seen.insert(info.stableId);
         unique.push_back(info);
     }
     return unique;
@@ -1163,13 +1090,10 @@ bool canQueryIconFromNotifyHwnd(const TrayIconInfo& info)
     }
 
     static const QStringList kAllowedClasses = {
-        QStringLiteral("QTrayIconMessageWindow"),
         QStringLiteral("Electron_NotifyIconHostWindow"),
         QStringLiteral("Chrome_StatusTrayWindow"),
         QStringLiteral("Qt51519TrayIconMessageWindowClass"),
         QStringLiteral("Qt6TrayIconMessageWindowClass"),
-        QStringLiteral("Qt5TrayIconMessageWindowClass"),
-        QStringLiteral("Qt4TrayIconMessageWindowClass"),
     };
     for (const QString& allowed : kAllowedClasses) {
         if (windowClass.contains(allowed, Qt::CaseInsensitive)) {
@@ -1281,207 +1205,6 @@ QString resolveExePathFromTooltip(const QString& tooltip)
 
     CloseHandle(snapshot);
     return bestMatch;
-}
-
-QString windowClassName(HWND hwnd)
-{
-    wchar_t className[256] = {};
-    if (!hwnd || GetClassNameW(hwnd, className, 256) == 0) {
-        return {};
-    }
-    return QString::fromWCharArray(className);
-}
-
-bool isPopupMenuWindow(HWND hwnd)
-{
-    if (!hwnd || !IsWindowVisible(hwnd)) {
-        return false;
-    }
-    return windowClassName(hwnd) == QLatin1String("#32768");
-}
-
-QVector<HWND> visiblePopupMenuWindows()
-{
-    QVector<HWND> menus;
-    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
-        auto* out = reinterpret_cast<QVector<HWND>*>(lParam);
-        if (isPopupMenuWindow(hwnd)) {
-            out->push_back(hwnd);
-        }
-        return TRUE;
-    }, reinterpret_cast<LPARAM>(&menus));
-    return menus;
-}
-
-HWND firstUnvisitedPopupMenu(const QSet<quintptr>& visitedMenus)
-{
-    const QVector<HWND> menus = visiblePopupMenuWindows();
-    for (HWND hwnd : menus) {
-        const quintptr key = reinterpret_cast<quintptr>(hwnd);
-        if (!visitedMenus.contains(key)) {
-            return hwnd;
-        }
-    }
-    return nullptr;
-}
-
-IUIAutomationElementArray* directMenuChildren(IUIAutomation* automation, IUIAutomationElement* menuRoot)
-{
-    if (!automation || !menuRoot) {
-        return nullptr;
-    }
-
-    IUIAutomationCondition* trueCondition = nullptr;
-    if (FAILED(automation->CreateTrueCondition(&trueCondition)) || !trueCondition) {
-        return nullptr;
-    }
-
-    IUIAutomationElementArray* children = nullptr;
-    if (FAILED(menuRoot->FindAll(TreeScope_Children, trueCondition, &children))) {
-        trueCondition->Release();
-        return nullptr;
-    }
-
-    trueCondition->Release();
-    return children;
-}
-
-QString elementStringProperty(IUIAutomationElement* element, PROPERTYID propertyId)
-{
-    VARIANT value;
-    VariantInit(&value);
-    QString result;
-    if (element && SUCCEEDED(element->GetCurrentPropertyValue(propertyId, &value))) {
-        result = variantToQString(value);
-    }
-    VariantClear(&value);
-    return result;
-}
-
-int elementIntProperty(IUIAutomationElement* element, PROPERTYID propertyId, int fallback = 0)
-{
-    VARIANT value;
-    VariantInit(&value);
-    int result = fallback;
-    if (element && SUCCEEDED(element->GetCurrentPropertyValue(propertyId, &value))) {
-        if (value.vt == VT_I4) {
-            result = value.lVal;
-        } else if (value.vt == VT_INT) {
-            result = value.intVal;
-        }
-    }
-    VariantClear(&value);
-    return result;
-}
-
-bool elementBoolProperty(IUIAutomationElement* element, PROPERTYID propertyId, bool fallback = false)
-{
-    VARIANT value;
-    VariantInit(&value);
-    bool result = fallback;
-    if (element && SUCCEEDED(element->GetCurrentPropertyValue(propertyId, &value))) {
-        if (value.vt == VT_BOOL) {
-            result = value.boolVal == VARIANT_TRUE;
-        } else if (value.vt == VT_I4) {
-            result = value.lVal != 0;
-        }
-    }
-    VariantClear(&value);
-    return result;
-}
-
-QRect elementRectProperty(IUIAutomationElement* element)
-{
-    VARIANT value;
-    VariantInit(&value);
-    QRect result;
-    if (element && SUCCEEDED(element->GetCurrentPropertyValue(UIA_BoundingRectanglePropertyId, &value))) {
-        result = rectFromVariant(value);
-    }
-    VariantClear(&value);
-    return result;
-}
-
-bool hasUsableExpandPattern(IUIAutomationElement* element)
-{
-    if (!element) {
-        return false;
-    }
-
-    IUnknown* patternObject = nullptr;
-    if (FAILED(element->GetCurrentPattern(UIA_ExpandCollapsePatternId, &patternObject)) || !patternObject) {
-        return false;
-    }
-
-    IUIAutomationExpandCollapsePattern* expand = nullptr;
-    const HRESULT qi = patternObject->QueryInterface(__uuidof(IUIAutomationExpandCollapsePattern),
-                                                     reinterpret_cast<void**>(&expand));
-    patternObject->Release();
-    if (FAILED(qi) || !expand) {
-        return false;
-    }
-
-    ExpandCollapseState state = ExpandCollapseState_LeafNode;
-    expand->get_CurrentExpandCollapseState(&state);
-    expand->Release();
-    return state != ExpandCollapseState_LeafNode;
-}
-
-bool expandMenuItem(IUIAutomationElement* element)
-{
-    if (!element) {
-        return false;
-    }
-
-    bool expanded = false;
-    IUnknown* patternObject = nullptr;
-    if (SUCCEEDED(element->GetCurrentPattern(UIA_ExpandCollapsePatternId, &patternObject)) && patternObject) {
-        IUIAutomationExpandCollapsePattern* expand = nullptr;
-        if (SUCCEEDED(patternObject->QueryInterface(__uuidof(IUIAutomationExpandCollapsePattern),
-                                                    reinterpret_cast<void**>(&expand)))
-            && expand) {
-            expanded = SUCCEEDED(expand->Expand());
-            expand->Release();
-        }
-        patternObject->Release();
-    }
-
-    const QRect rect = elementRectProperty(element);
-    if (!rect.isEmpty()) {
-        SetCursorPos(rect.center().x(), rect.center().y());
-        expanded = true;
-    }
-
-    Sleep(220);
-    return expanded;
-}
-
-bool activateMenuItemElement(IUIAutomationElement* element)
-{
-    if (tryActivateElement(element)) {
-        return true;
-    }
-
-    const QRect rect = elementRectProperty(element);
-    if (rect.isEmpty()) {
-        return false;
-    }
-
-    SetCursorPos(rect.center().x(), rect.center().y());
-    INPUT inputs[2] = {};
-    inputs[0].type = INPUT_MOUSE;
-    inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-    inputs[1].type = INPUT_MOUSE;
-    inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    return SendInput(2, inputs, sizeof(INPUT)) == 2;
-}
-
-void closeOpenPopupMenus()
-{
-    for (int i = 0; i < 8 && !visiblePopupMenuWindows().isEmpty(); ++i) {
-        sendVirtualKeyPress(VK_ESCAPE);
-        Sleep(60);
-    }
 }
 
 } // namespace
@@ -1751,30 +1474,22 @@ QVector<TrayIconInfo> TrayIconEnumerator::enumerateWin32TrayIcons()
             recordSkipReason(gTrayDebugStats, QStringLiteral("empty"));
             return;
         }
-        TrayIconInfo info = candidate;
-        if (info.exePath.isEmpty()) {
-            info.exePath = resolveExePathForIcon(info);
-        }
         QString skipReason = skipReasonForTrayCandidate(candidate);
         if (skipReason.isEmpty()
-            && source == QLatin1String("win32Toolbar")
-            && info.exePath.isEmpty()) {
-            skipReason = QStringLiteral("empty");
-        }
-        if (skipReason.isEmpty()
             && candidate.tooltip.isEmpty()
-            && info.exePath.isEmpty()
             && !isNotifyIconHostClassName(candidate.className)) {
             skipReason = QStringLiteral("empty");
         }
         if (!skipReason.isEmpty()) {
             recordSkipReason(gTrayDebugStats, skipReason);
             if (gTrayDebugStats) {
-                gTrayDebugStats->recordCandidate(source, info, false, skipReason);
+                gTrayDebugStats->recordCandidate(source, candidate, false, skipReason);
             }
             return;
         }
 
+        TrayIconInfo info = candidate;
+        info.exePath = resolveExePathForIcon(info);
         if (gTrayDebugStats) {
             gTrayDebugStats->recordCandidate(source, info, true, {});
         }
@@ -1787,124 +1502,87 @@ QVector<TrayIconInfo> TrayIconEnumerator::enumerateWin32TrayIcons()
         HWND pager = notify ? FindWindowExW(notify, nullptr, L"SysPager", nullptr) : nullptr;
         HWND toolbar = pager ? FindWindowExW(pager, nullptr, L"ToolbarWindow32", nullptr) : nullptr;
         if (toolbar) {
-            DWORD toolbarProcessId = 0;
-            GetWindowThreadProcessId(toolbar, &toolbarProcessId);
-            HANDLE toolbarProcess = toolbarProcessId == 0
-                ? nullptr
-                : OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_LIMITED_INFORMATION,
-                              FALSE,
-                              toolbarProcessId);
-            if (toolbarProcess) {
-                constexpr SIZE_T kRemoteTextBytes = 512 * sizeof(wchar_t);
-                void* remoteButton = VirtualAllocEx(toolbarProcess, nullptr, sizeof(TBBUTTON),
-                                                    MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-                void* remoteText = VirtualAllocEx(toolbarProcess, nullptr, kRemoteTextBytes,
-                                                  MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-                const LRESULT buttonCount = SendMessageW(toolbar, TB_BUTTONCOUNT, 0, 0);
-                for (LRESULT i = 0; remoteButton && remoteText && i < buttonCount; ++i) {
-                    if (SendMessageW(toolbar, TB_GETBUTTON, static_cast<WPARAM>(i),
-                                     reinterpret_cast<LPARAM>(remoteButton)) == FALSE) {
-                        continue;
-                    }
-
-                    TBBUTTON button = {};
-                    SIZE_T bytesRead = 0;
-                    if (!ReadProcessMemory(toolbarProcess, remoteButton, &button, sizeof(button), &bytesRead)
-                        || bytesRead != sizeof(button)) {
-                        continue;
-                    }
-
-                    QString tooltip;
-                    const LRESULT textLen = SendMessageW(toolbar, TB_GETBUTTONTEXTW,
-                                                         static_cast<WPARAM>(button.idCommand),
-                                                         reinterpret_cast<LPARAM>(remoteText));
-                    if (textLen > 0) {
-                        QVector<wchar_t> textBuffer(static_cast<int>(qMin<LRESULT>(textLen, 511)) + 1);
-                        SIZE_T textBytesRead = 0;
-                        if (ReadProcessMemory(toolbarProcess,
-                                              remoteText,
-                                              textBuffer.data(),
-                                              qMin<SIZE_T>(kRemoteTextBytes, textBuffer.size() * sizeof(wchar_t)),
-                                              &textBytesRead)
-                            && textBytesRead >= sizeof(wchar_t)) {
-                            tooltip = QString::fromWCharArray(textBuffer.constData()).trimmed();
-                        }
-                    }
-
-                    LegacyNotifyData notifyData = {};
-                    HWND ownerHwnd = nullptr;
-                    if (button.dwData != 0
-                        && ReadProcessMemory(toolbarProcess,
-                                             reinterpret_cast<LPCVOID>(button.dwData),
-                                             &notifyData,
-                                             sizeof(notifyData),
-                                             &bytesRead)
-                        && bytesRead >= sizeof(HWND)
-                        && notifyData.hwnd
-                        && IsWindow(notifyData.hwnd)) {
-                        ownerHwnd = notifyData.hwnd;
-                    }
-
-                    if (gTrayDebugStats) {
-                        ++gTrayDebugStats->win32Toolbar;
-                    }
-
-                    TrayIconInfo info;
-                    info.nativeWindowHandle = reinterpret_cast<quintptr>(ownerHwnd ? ownerHwnd : toolbar);
-                    info.tooltip = tooltip;
-                    info.automationId = QStringLiteral("ToolbarButton");
-                    info.className = QStringLiteral("ToolbarWindow32");
-                    if (ownerHwnd) {
-                        DWORD ownerProcessId = 0;
-                        GetWindowThreadProcessId(ownerHwnd, &ownerProcessId);
-                        info.processId = ownerProcessId;
-                        wchar_t ownerClass[256] = {};
-                        if (GetClassNameW(ownerHwnd, ownerClass, 256) > 0) {
-                            info.className = QString::fromWCharArray(ownerClass);
-                        }
-                        info.exePath = processExePath(ownerProcessId);
-                    } else {
-                        info.processId = toolbarProcessId;
-                    }
-                    info.stableId = ownerHwnd
-                        ? QStringLiteral("toolbar-owner:%1:%2")
-                              .arg(reinterpret_cast<quintptr>(ownerHwnd))
-                              .arg(static_cast<qulonglong>(info.processId))
-                        : QStringLiteral("toolbar:%1:%2").arg(i).arg(button.idCommand);
-
-                    appendIfValid(info, QStringLiteral("win32Toolbar"));
+            const LRESULT buttonCount = SendMessageW(toolbar, TB_BUTTONCOUNT, 0, 0);
+            for (LRESULT i = 0; i < buttonCount; ++i) {
+                TBBUTTONINFOW buttonInfo = {};
+                buttonInfo.cbSize = sizeof(TBBUTTONINFOW);
+                if (SendMessageW(toolbar, TB_GETBUTTONINFOW, static_cast<WPARAM>(i),
+                                 reinterpret_cast<LPARAM>(&buttonInfo))
+                    == FALSE) {
+                    continue;
                 }
 
-                if (remoteButton) {
-                    VirtualFreeEx(toolbarProcess, remoteButton, 0, MEM_RELEASE);
+                wchar_t text[512] = {};
+                const LRESULT textLen = SendMessageW(toolbar, TB_GETBUTTONTEXTW, static_cast<WPARAM>(i),
+                                                     reinterpret_cast<LPARAM>(text));
+                if (textLen <= 0) {
+                    continue;
                 }
-                if (remoteText) {
-                    VirtualFreeEx(toolbarProcess, remoteText, 0, MEM_RELEASE);
+
+                if (gTrayDebugStats) {
+                    ++gTrayDebugStats->win32Toolbar;
                 }
-                CloseHandle(toolbarProcess);
+                TrayIconInfo info;
+                info.nativeWindowHandle = reinterpret_cast<quintptr>(toolbar);
+                info.tooltip = QString::fromWCharArray(text).trimmed();
+                info.automationId = QStringLiteral("ToolbarButton");
+                info.className = QStringLiteral("ToolbarWindow32");
+                info.stableId = QStringLiteral("toolbar:%1:%2").arg(i).arg(info.tooltip);
+                appendIfValid(info, QStringLiteral("win32Toolbar"));
             }
         }
     }
 
+    struct EnumHostContext {
+        QVector<TrayIconInfo>* icons = nullptr;
+    };
     EnumHostContext hostContext = { &icons };
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
         auto* context = reinterpret_cast<EnumHostContext*>(lParam);
-        appendNotifyHostWindow(hwnd, context, QStringLiteral("win32Host"));
+        wchar_t className[256] = {};
+        if (GetClassNameW(hwnd, className, 256) == 0) {
+            return TRUE;
+        }
+
+        const QString windowClass = QString::fromWCharArray(className);
+        if (!isNotifyIconHostClassName(windowClass)) {
+            if (context && context->icons && gTrayDebugStats
+                && (windowClass.contains(QStringLiteral("Tray"), Qt::CaseInsensitive)
+                    || windowClass.contains(QStringLiteral("Notify"), Qt::CaseInsensitive)
+                    || windowClass.contains(QStringLiteral("Icon"), Qt::CaseInsensitive))) {
+                ++gTrayDebugStats->skippedUnknownHost;
+            }
+            return TRUE;
+        }
+
+        if (gTrayDebugStats) {
+            ++gTrayDebugStats->win32Hosts;
+        }
+        TrayIconInfo info = infoFromNotifyHostHwnd(hwnd);
+        if (info.nativeWindowHandle == 0) {
+            recordSkipReason(gTrayDebugStats, QStringLiteral("empty"));
+            return TRUE;
+        }
+        const QString skipReason = skipReasonForTrayCandidate(info);
+        if (!skipReason.isEmpty()) {
+            recordSkipReason(gTrayDebugStats, skipReason);
+            if (gTrayDebugStats) {
+                gTrayDebugStats->recordCandidate(QStringLiteral("win32Host"), info, false, skipReason);
+            }
+            return TRUE;
+        }
+
+        if (gTrayDebugStats) {
+            TrayIconInfo debugInfo = info;
+            gTrayDebugStats->recordCandidate(QStringLiteral("win32Host"), debugInfo, true, {});
+        }
+        context->icons->push_back(info);
         return TRUE;
     }, reinterpret_cast<LPARAM>(&hostContext));
-
-    for (HWND hwnd = nullptr;
-         (hwnd = FindWindowExW(HWND_MESSAGE, hwnd, nullptr, nullptr)) != nullptr;) {
-        appendNotifyHostWindow(hwnd, &hostContext, QStringLiteral("win32MessageHost"));
-    }
 
     for (TrayIconInfo& info : icons) {
         if (info.exePath.isEmpty()) {
             info.exePath = resolveExePathForIcon(info);
-        }
-        if (info.tooltip.isEmpty() && !info.exePath.isEmpty()) {
-            info.tooltip = QFileInfo(info.exePath).completeBaseName();
         }
     }
 
@@ -2377,242 +2055,4 @@ bool TrayIconEnumerator::showContextMenu(const TrayIconInfo& icon)
     bool result = false;
     result = interactWithIcon(icon, true);
     return result;
-}
-
-QString TrayIconEnumerator::lastMirrorDetail() const
-{
-    return m_lastMirrorDetail;
-}
-
-QVector<MirroredTrayMenuItem> TrayIconEnumerator::captureOpenMenuLevel(int depth,
-                                                                        QSet<quintptr>* visitedMenus)
-{
-    QVector<MirroredTrayMenuItem> items;
-    if (!m_uia || !m_uia->automation || !visitedMenus || depth > 8) {
-        return items;
-    }
-
-    HWND menuHwnd = nullptr;
-    for (int i = 0; i < 10; ++i) {
-        menuHwnd = firstUnvisitedPopupMenu(*visitedMenus);
-        if (menuHwnd) {
-            break;
-        }
-        Sleep(60);
-    }
-    if (!menuHwnd) {
-        return items;
-    }
-
-    visitedMenus->insert(reinterpret_cast<quintptr>(menuHwnd));
-
-    IUIAutomationElement* menuRoot = nullptr;
-    if (FAILED(m_uia->automation->ElementFromHandle(reinterpret_cast<UIA_HWND>(menuHwnd), &menuRoot))
-        || !menuRoot) {
-        return items;
-    }
-
-    IUIAutomationElementArray* children = directMenuChildren(m_uia->automation, menuRoot);
-    menuRoot->Release();
-    if (!children) {
-        return items;
-    }
-
-    int count = 0;
-    children->get_Length(&count);
-    items.reserve(count);
-
-    for (int i = 0; i < count; ++i) {
-        IUIAutomationElement* element = nullptr;
-        if (FAILED(children->GetElement(i, &element)) || !element) {
-            continue;
-        }
-
-        const int controlType = elementIntProperty(element, UIA_ControlTypePropertyId);
-        if (controlType != UIA_MenuItemControlTypeId
-            && controlType != UIA_SeparatorControlTypeId) {
-            element->Release();
-            continue;
-        }
-
-        MirroredTrayMenuItem item;
-        item.separator = controlType == UIA_SeparatorControlTypeId;
-        item.text = elementStringProperty(element, UIA_NamePropertyId).trimmed();
-        item.enabled = elementBoolProperty(element, UIA_IsEnabledPropertyId, true);
-        item.hasSubmenu = !item.separator && hasUsableExpandPattern(element);
-
-        IUnknown* toggleObject = nullptr;
-        if (SUCCEEDED(element->GetCurrentPattern(UIA_TogglePatternId, &toggleObject)) && toggleObject) {
-            IUIAutomationTogglePattern* toggle = nullptr;
-            if (SUCCEEDED(toggleObject->QueryInterface(__uuidof(IUIAutomationTogglePattern),
-                                                       reinterpret_cast<void**>(&toggle)))
-                && toggle) {
-                ToggleState state = ToggleState_Off;
-                if (SUCCEEDED(toggle->get_CurrentToggleState(&state))) {
-                    item.checked = state == ToggleState_On;
-                }
-                toggle->Release();
-            }
-            toggleObject->Release();
-        }
-
-        if (item.hasSubmenu && depth < 8) {
-            if (expandMenuItem(element)) {
-                item.children = captureOpenMenuLevel(depth + 1, visitedMenus);
-            }
-            item.nativeFallback = item.children.isEmpty();
-        } else if (item.hasSubmenu) {
-            item.nativeFallback = true;
-        }
-
-        if (item.separator || !item.text.isEmpty()) {
-            items.push_back(item);
-        }
-        element->Release();
-    }
-
-    children->Release();
-    return items;
-}
-
-QVector<MirroredTrayMenuItem> TrayIconEnumerator::captureContextMenu(const TrayIconInfo& icon)
-{
-    m_lastMirrorDetail.clear();
-    if (!ensureAutomation()) {
-        m_lastMirrorDetail = QStringLiteral("automation unavailable");
-        return {};
-    }
-
-    closeOpenPopupMenus();
-    if (!interactWithIcon(icon, true)) {
-        m_lastMirrorDetail = QStringLiteral("could not open native tray menu (%1)").arg(m_lastInteractionDetail);
-        return {};
-    }
-
-    Sleep(180);
-    QSet<quintptr> visitedMenus;
-    QVector<MirroredTrayMenuItem> items = captureOpenMenuLevel(0, &visitedMenus);
-    closeOpenPopupMenus();
-
-    if (items.isEmpty()) {
-        m_lastMirrorDetail = QStringLiteral("native menu opened but no readable menu items were found");
-        return {};
-    }
-
-    m_lastMirrorDetail = QStringLiteral("captured %1 top-level items from %2 menu window(s)")
-                             .arg(items.size())
-                             .arg(visitedMenus.size());
-    return items;
-}
-
-bool TrayIconEnumerator::replayOpenMenuPath(const QVector<int>& path)
-{
-    if (!m_uia || !m_uia->automation || path.isEmpty()) {
-        return false;
-    }
-
-    QSet<quintptr> visitedMenus;
-    for (int depth = 0; depth < path.size(); ++depth) {
-        HWND menuHwnd = nullptr;
-        for (int i = 0; i < 10; ++i) {
-            menuHwnd = firstUnvisitedPopupMenu(visitedMenus);
-            if (menuHwnd) {
-                break;
-            }
-            Sleep(60);
-        }
-        if (!menuHwnd) {
-            m_lastMirrorDetail = QStringLiteral("replay failed: menu level %1 was not visible").arg(depth);
-            return false;
-        }
-        visitedMenus.insert(reinterpret_cast<quintptr>(menuHwnd));
-
-        IUIAutomationElement* menuRoot = nullptr;
-        if (FAILED(m_uia->automation->ElementFromHandle(reinterpret_cast<UIA_HWND>(menuHwnd), &menuRoot))
-            || !menuRoot) {
-            m_lastMirrorDetail = QStringLiteral("replay failed: UIA menu root unavailable at level %1").arg(depth);
-            return false;
-        }
-
-        IUIAutomationElementArray* children = directMenuChildren(m_uia->automation, menuRoot);
-        menuRoot->Release();
-        if (!children) {
-            m_lastMirrorDetail = QStringLiteral("replay failed: no menu children at level %1").arg(depth);
-            return false;
-        }
-
-        QVector<IUIAutomationElement*> menuItems;
-        int childCount = 0;
-        children->get_Length(&childCount);
-        for (int i = 0; i < childCount; ++i) {
-            IUIAutomationElement* element = nullptr;
-            if (FAILED(children->GetElement(i, &element)) || !element) {
-                continue;
-            }
-            const int controlType = elementIntProperty(element, UIA_ControlTypePropertyId);
-            if (controlType == UIA_MenuItemControlTypeId || controlType == UIA_SeparatorControlTypeId) {
-                menuItems.push_back(element);
-            } else {
-                element->Release();
-            }
-        }
-        children->Release();
-
-        const int index = path.at(depth);
-        if (index < 0 || index >= menuItems.size()) {
-            for (IUIAutomationElement* item : menuItems) {
-                item->Release();
-            }
-            m_lastMirrorDetail = QStringLiteral("replay failed: index %1 outside level %2 count %3")
-                                     .arg(index)
-                                     .arg(depth)
-                                     .arg(menuItems.size());
-            return false;
-        }
-
-        IUIAutomationElement* target = menuItems.at(index);
-        if (depth == path.size() - 1) {
-            const bool ok = activateMenuItemElement(target);
-            for (IUIAutomationElement* item : menuItems) {
-                item->Release();
-            }
-            m_lastMirrorDetail = ok
-                ? QStringLiteral("replayed mirrored menu path")
-                : QStringLiteral("replay failed: target item did not activate");
-            return ok;
-        }
-
-        const bool expanded = expandMenuItem(target);
-        for (IUIAutomationElement* item : menuItems) {
-            item->Release();
-        }
-        if (!expanded) {
-            m_lastMirrorDetail = QStringLiteral("replay failed: submenu at level %1 did not expand").arg(depth);
-            return false;
-        }
-    }
-
-    return false;
-}
-
-bool TrayIconEnumerator::invokeMirroredItem(const TrayIconInfo& icon, const QVector<int>& path)
-{
-    m_lastMirrorDetail.clear();
-    if (!ensureAutomation()) {
-        m_lastMirrorDetail = QStringLiteral("automation unavailable");
-        return false;
-    }
-
-    closeOpenPopupMenus();
-    if (!interactWithIcon(icon, true)) {
-        m_lastMirrorDetail = QStringLiteral("could not reopen native tray menu (%1)").arg(m_lastInteractionDetail);
-        return false;
-    }
-
-    Sleep(160);
-    const bool ok = replayOpenMenuPath(path);
-    if (!ok) {
-        closeOpenPopupMenus();
-    }
-    return ok;
 }

@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 
 RowLayout {
     id: root
@@ -39,11 +38,14 @@ RowLayout {
     component StatusHit : Item {
         id: hit
         signal clicked()
+        signal entered()
+        signal exited()
 
         property bool active: false
         property int hitW: 28
         property int hitH: 22
         property bool interactive: true
+        property bool drawHighlight: true
 
         readonly property bool pointerOver: {
             var gp = hoverTracker.globalCursor
@@ -67,7 +69,7 @@ RowLayout {
             radius: 5
             color: hit.active ? root.activeFill
                   : (mouse.pressed ? root.pressedFill : root.hoverFill)
-            opacity: (hit.active || mouse.pressed || hit.pointerOver) ? 1 : 0
+            opacity: hit.drawHighlight && (hit.active || mouse.pressed || hit.pointerOver) ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 80 } }
         }
 
@@ -88,6 +90,8 @@ RowLayout {
             acceptedButtons: Qt.LeftButton
             cursorShape: hit.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: hit.clicked()
+            onEntered: hit.entered()
+            onExited: hit.exited()
         }
     }
 
@@ -234,6 +238,27 @@ RowLayout {
             font.pixelSize: 12
             font.weight: Font.Medium
             opacity: 0.96
+        }
+    }
+
+    StatusHit {
+        id: desktopStripHit
+        hitW: 9
+        hitH: 22
+        drawHighlight: false
+
+        onClicked: taskbarController.toggleShowDesktop()
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 2
+            height: desktopStripHit.pointerOver ? 17 : 14
+            radius: width / 2
+            color: root.darkTheme ? "#F2F2F7" : "#1D1D1F"
+            opacity: desktopStripHit.pointerOver ? 0.58 : 0
+
+            Behavior on height { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
         }
     }
 }

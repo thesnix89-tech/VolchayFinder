@@ -14,11 +14,14 @@
 #include <QUrl>
 
 #include <algorithm>
+#include <cstring>
 #include <string>
 
 #include <windows.h>
 #include <commdlg.h>
+#include <dwmapi.h>
 #include <shellapi.h>
+#include <shldisp.h>
 
 namespace {
 constexpr auto kTaskbarClass = TEXT("Shell_TrayWnd");
@@ -144,6 +147,60 @@ bool isOwnProcessWindow(HWND hwnd)
     DWORD pid = 0;
     GetWindowThreadProcessId(hwnd, &pid);
     return pid != 0 && pid == GetCurrentProcessId();
+}
+
+bool isCloakedWindow(HWND hwnd)
+{
+    BOOL cloaked = FALSE;
+    return SUCCEEDED(DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, &cloaked, sizeof(cloaked)))
+        && cloaked;
+}
+
+bool isDesktopPeekCandidate(HWND hwnd)
+{
+    if (!hwnd || !IsWindow(hwnd) || !IsWindowVisible(hwnd) || IsIconic(hwnd)) {
+        return false;
+    }
+    if (isOwnProcessWindow(hwnd) || hwnd == GetDesktopWindow() || hwnd == GetShellWindow()) {
+        return false;
+    }
+    if (GetWindow(hwnd, GW_OWNER) != nullptr) {
+        return false;
+    }
+    if (isCloakedWindow(hwnd)) {
+        return false;
+    }
+
+    const LONG exStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
+    if (exStyle & WS_EX_TOOLWINDOW) {
+        return false;
+    }
+
+    const QString className = windowClassName(hwnd);
+    if (className == QStringLiteral("WorkerW")
+        || className == QStringLiteral("Progman")
+        || className == QStringLiteral("Shell_TrayWnd")
+        || className == QStringLiteral("Shell_SecondaryTrayWnd")) {
+        return false;
+    }
+
+    const QString exePath = executablePathFromHwnd(hwnd);
+    const QString exeName = QFileInfo(exePath).fileName().toLower();
+    if (exePath.isEmpty()
+        || exeName == QStringLiteral("shellexperiencehost.exe")
+        || exeName == QStringLiteral("searchhost.exe")
+        || exeName == QStringLiteral("startmenuexperiencehost.exe")
+        || exeName == QStringLiteral("textinputhost.exe")
+        || exeName == QStringLiteral("lockapp.exe")) {
+        return false;
+    }
+
+    if (exeName == QStringLiteral("explorer.exe")) {
+        return className == QStringLiteral("CabinetWClass")
+            || className == QStringLiteral("ExploreWClass");
+    }
+
+    return true;
 }
 
 bool isDesktopForeground(HWND hwnd)
@@ -772,6 +829,148 @@ bool TaskbarController::taskbarHidden() const
 bool TaskbarController::dockAutoHidden() const
 {
     return m_dockAutoHidden;
+}
+
+bool TaskbarController::showDesktopActive() const
+{
+    return m_showDesktopActive;
+}
+
+QVector<TaskbarController::DesktopPeekWindow> TaskbarController::collectDesktopPeekWindows() const
+{
+    QVector<DesktopPeekWindow> windows;
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        auto* result = reinterpret_cast<QVector<DesktopPeekWindow>*>(lParam);
+        if (!result || !isDesktopPeekCandidate(hwnd)) {
+            return TRUE;
+        }
+
+        WINDOWPLACEMENT placement = {};
+        placement.length = sizeof(placement);
+        if (!GetWindowPlacement(hwnd, &placement)) {
+            return TRUE;
+        }
+
+        DesktopPeekWindow item;
+        item.hwndValue = reinterpret_cast<quintptr>(hwnd);
+        item.placement.resize(sizeof(WINDOWPLACEMENT));
+        std::memcpy(item.placement.data(), &placement, sizeof(WINDOWPLACEMENT));
+        result->push_back(item);
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&windows));
+    return windows;
+}
+
+bool TaskbarController::minimizeDesktopPeekWindows(bool persistent)
+{
+    QVector<DesktopPeekWindow> windows = collectDesktopPeekWindows();
+    if (windows.isEmpty()) {
+        return false;
+    }
+
+    if (!m_showDesktopActive) {
+        m_desktopPeekWindows = windows;
+        m_desktopPeekForeground = reinterpret_cast<quintptr>(GetForegroundWindow());
+    }
+
+    for (const DesktopPeekWindow& item : windows) {
+        HWND hwnd = reinterpret_cast<HWND>(item.hwndValue);
+        if (hwnd && IsWindow(hwnd) && !IsIconic(hwnd)) {
+            ShowWindow(hwnd, SW_MINIMIZE);
+        }
+    }
+
+    return true;
+}
+
+void TaskbarController::restoreDesktopPeekWindows()
+{
+    QVector<DesktopPeekWindow> windows = m_desktopPeekWindows;
+    m_desktopPeekWindows.clear();
+
+    for (const DesktopPeekWindow& item : windows) {
+        HWND hwnd = reinterpret_cast<HWND>(item.hwndValue);
+        if (!hwnd || !IsWindow(hwnd) || item.placement.size() != sizeof(WINDOWPLACEMENT)) {
+            continue;
+        }
+
+        WINDOWPLACEMENT placement = {};
+        std::memcpy(&placement, item.placement.constData(), sizeof(WINDOWPLACEMENT));
+        placement.length = sizeof(placement);
+        SetWindowPlacement(hwnd, &placement);
+        if (placement.showCmd == SW_SHOWMAXIMIZED
+            || (placement.flags & WPF_RESTORETOMAXIMIZED)) {
+            ShowWindow(hwnd, SW_MAXIMIZE);
+        } else {
+            ShowWindow(hwnd, SW_RESTORE);
+        }
+    }
+
+    HWND foreground = reinterpret_cast<HWND>(m_desktopPeekForeground);
+    if (foreground && IsWindow(foreground) && !isOwnProcessWindow(foreground)) {
+        SetForegroundWindow(foreground);
+    }
+    m_desktopPeekForeground = 0;
+}
+
+bool TaskbarController::tryShellToggleDesktop()
+{
+    HRESULT init = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    const bool shouldUninitialize = SUCCEEDED(init);
+    if (init == RPC_E_CHANGED_MODE) {
+        init = S_OK;
+    }
+    if (FAILED(init)) {
+        return false;
+    }
+
+    IShellDispatch4* shell = nullptr;
+    const HRESULT created = CoCreateInstance(CLSID_Shell,
+                                             nullptr,
+                                             CLSCTX_INPROC_SERVER,
+                                             IID_PPV_ARGS(&shell));
+    if (FAILED(created) || !shell) {
+        if (shouldUninitialize) {
+            CoUninitialize();
+        }
+        return false;
+    }
+
+    const HRESULT toggled = shell->ToggleDesktop();
+    shell->Release();
+    if (shouldUninitialize) {
+        CoUninitialize();
+    }
+    return SUCCEEDED(toggled);
+}
+
+bool TaskbarController::toggleShowDesktop()
+{
+    const bool wasShowDesktopActive = m_showDesktopActive;
+    bool ok = tryShellToggleDesktop();
+    if (!ok) {
+        if (m_showDesktopActive) {
+            restoreDesktopPeekWindows();
+            ok = true;
+        } else {
+            ok = minimizeDesktopPeekWindows(true);
+        }
+    }
+
+    if (ok) {
+        m_showDesktopActive = !m_showDesktopActive;
+        if (wasShowDesktopActive && !m_showDesktopActive) {
+            m_desktopPeekWindows.clear();
+            m_desktopPeekForeground = 0;
+        }
+        emit showDesktopActiveChanged();
+        emit shellActionLogged(m_showDesktopActive
+            ? QStringLiteral("Show desktop enabled.")
+            : QStringLiteral("Show desktop restored."));
+    } else {
+        emit shellActionLogged(QStringLiteral("Show desktop request failed."));
+    }
+    return ok;
 }
 
 bool TaskbarController::detectForegroundOccupiesScreen() const
