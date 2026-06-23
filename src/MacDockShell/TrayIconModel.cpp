@@ -10,6 +10,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QImage>
 #include <QMetaObject>
 #include <QMutexLocker>
 #include <QPixmap>
@@ -27,8 +28,9 @@ struct CoInitScope
     ~CoInitScope() { CoUninitialize(); }
 };
 
-constexpr int kTrayIconCacheVersion = 2;
+constexpr int kTrayIconCacheVersion = 5;
 constexpr int kInitialTrayRefreshDelayMs = 500;
+constexpr int kBlackWhiteLuminanceThreshold = 128;
 
 struct TrayUiaBusyScope
 {
@@ -49,6 +51,28 @@ struct TrayUiaBusyScope
 
     std::function<void(bool)> m_scope;
 };
+
+QPixmap blackWhitePixmap(const QPixmap& source)
+{
+    if (source.isNull()) {
+        return {};
+    }
+
+    QImage image = source.toImage().convertToFormat(QImage::Format_ARGB32);
+    for (int y = 0; y < image.height(); ++y) {
+        auto* line = reinterpret_cast<QRgb*>(image.scanLine(y));
+        for (int x = 0; x < image.width(); ++x) {
+            const QRgb pixel = line[x];
+            if (qAlpha(pixel) == 0) {
+                line[x] = qRgba(0, 0, 0, 0);
+                continue;
+            }
+            const int value = qGray(pixel) >= kBlackWhiteLuminanceThreshold ? 255 : 0;
+            line[x] = qRgba(value, value, value, 255);
+        }
+    }
+    return QPixmap::fromImage(image);
+}
 
 bool canQueryIconFromHwnd(const TrayIconInfo& info)
 {
@@ -263,6 +287,19 @@ void TrayIconModel::setRefreshIntervalMs(int intervalMs)
     m_refreshTimer.setInterval(clamped);
 }
 
+void TrayIconModel::setBlackWhiteIcons(bool enabled)
+{
+    if (m_blackWhiteIcons == enabled) {
+        return;
+    }
+
+    m_blackWhiteIcons = enabled;
+    m_iconUrlByStableId.clear();
+    if (m_enabled) {
+        refresh();
+    }
+}
+
 void TrayIconModel::setTrayOnScreenScope(TrayIconEnumerator::TrayOnScreenScope scope)
 {
     m_trayOnScreenScope = std::move(scope);
@@ -303,8 +340,15 @@ QString TrayIconModel::iconUrlForInfo(const TrayIconInfo& info, QString* sourceO
         }
     };
 
-    if (m_iconUrlByStableId.contains(info.stableId)) {
-        const QString cached = m_iconUrlByStableId.value(info.stableId);
+    const QString cacheKey = m_blackWhiteIcons
+        ? info.stableId + QStringLiteral("|bw")
+        : info.stableId;
+    const QString stableCacheId = m_blackWhiteIcons
+        ? info.stableId + QStringLiteral("-bw")
+        : info.stableId;
+
+    if (m_iconUrlByStableId.contains(cacheKey)) {
+        const QString cached = m_iconUrlByStableId.value(cacheKey);
         setSource(cached.isEmpty() ? QStringLiteral("hint") : QStringLiteral("cache"));
         return cached;
     }
@@ -317,20 +361,28 @@ QString TrayIconModel::iconUrlForInfo(const TrayIconInfo& info, QString* sourceO
             hIcon = reinterpret_cast<HICON>(SendMessageW(hwnd, WM_GETICON, ICON_SMALL, 0));
         }
         if (hIcon) {
-            const QPixmap pixmap = pixmapFromHicon(hIcon);
+            QPixmap pixmap = pixmapFromHicon(hIcon);
             if (!pixmap.isNull()) {
-                iconUrl = ensurePixmapInCache(m_iconCacheDir, info.stableId, pixmap);
+                if (m_blackWhiteIcons) {
+                    pixmap = blackWhitePixmap(pixmap);
+                }
+                iconUrl = ensurePixmapInCache(m_iconCacheDir, stableCacheId, pixmap);
                 if (!iconUrl.isEmpty()) {
-                    setSource(QStringLiteral("hwnd"));
+                    setSource(m_blackWhiteIcons ? QStringLiteral("hwnd-bw") : QStringLiteral("hwnd"));
                 }
             }
         }
     }
 
     if (iconUrl.isEmpty() && isUsableExecutableIconPath(info.exePath)) {
-        iconUrl = ensureIconFileInCache(m_iconCacheDir, info.stableId, info.exePath);
+        if (m_blackWhiteIcons) {
+            const QPixmap pixmap = blackWhitePixmap(extractFileIcon(info.exePath));
+            iconUrl = ensurePixmapInCache(m_iconCacheDir, stableCacheId, pixmap);
+        } else {
+            iconUrl = ensureIconFileInCache(m_iconCacheDir, stableCacheId, info.exePath);
+        }
         if (!iconUrl.isEmpty()) {
-            setSource(QStringLiteral("exe"));
+            setSource(m_blackWhiteIcons ? QStringLiteral("exe-bw") : QStringLiteral("exe"));
         }
     }
 
@@ -339,7 +391,7 @@ QString TrayIconModel::iconUrlForInfo(const TrayIconInfo& info, QString* sourceO
     }
 
     if (!iconUrl.isEmpty()) {
-        m_iconUrlByStableId.insert(info.stableId, iconUrl);
+        m_iconUrlByStableId.insert(cacheKey, iconUrl);
     }
     return iconUrl;
 }

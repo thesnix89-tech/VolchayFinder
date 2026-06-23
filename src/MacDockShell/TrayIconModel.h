@@ -52,6 +52,7 @@ public:
     bool enabled() const;
     void setEnabled(bool enabled);
     void setRefreshIntervalMs(int intervalMs);
+    void setBlackWhiteIcons(bool enabled);
     void setTrayOnScreenScope(TrayIconEnumerator::TrayOnScreenScope scope);
     void setTrayUiaBusyScope(std::function<void(bool)> scope);
     void setGuiInvoker(TrayIconEnumerator::GuiInvoker invoker);
@@ -95,5 +96,6 @@ private:
     std::function<void(bool)> m_trayUiaBusyScope;
     int m_maxVisibleIcons = 8;
     int m_debugRefreshesRemaining = 0;
+    bool m_blackWhiteIcons = false;
     bool m_enabled = false;
 };

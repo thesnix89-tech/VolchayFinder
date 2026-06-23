@@ -278,6 +278,9 @@ int main(int argc, char *argv[])
     QObject::connect(&taskbarController, &TaskbarController::trayExtrasRefreshMsChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
         trayIconModel.setRefreshIntervalMs(taskbarController.trayExtrasRefreshMs());
     });
+    QObject::connect(&taskbarController, &TaskbarController::blackWhiteTrayIconsChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
+        trayIconModel.setBlackWhiteIcons(taskbarController.blackWhiteTrayIcons());
+    });
     QObject::connect(&taskbarController, &TaskbarController::shellActiveChanged, &trayIconModel, [&trayIconModel, &taskbarController]() {
         trayIconModel.setEnabled(taskbarController.showMenuBarExtras()
                                  && taskbarController.shellActive()
@@ -289,6 +292,7 @@ int main(int argc, char *argv[])
                                  && taskbarController.showTopBar());
     });
     trayIconModel.setRefreshIntervalMs(taskbarController.trayExtrasRefreshMs());
+    trayIconModel.setBlackWhiteIcons(taskbarController.blackWhiteTrayIcons());
     trayIconModel.setTrayOnScreenScope([&taskbarController](const std::function<void()>& action) {
         taskbarController.withTrayOnScreenOnGuiThread(action);
     });

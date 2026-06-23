@@ -785,6 +785,44 @@ Window {
                         }
                     }
 
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: settingsWindow.groupDivider
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 45
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Окрашивать трей иконки в черно-белый")
+                                color: settingsWindow.primaryText
+                                font.pixelSize: 12
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                text: qsTr("Переводит иконки области уведомлений строго в #000000 и #FFFFFF")
+                                color: settingsWindow.secondaryText
+                                font.pixelSize: 10
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+
+                        MacToggle {
+                            id: blackWhiteTrayIconsToggle
+                            darkTheme: settingsWindow.darkTheme
+                            checked: taskbarController.blackWhiteTrayIcons
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: blackWhiteTrayIconsToggle.checked = !blackWhiteTrayIconsToggle.checked
+                        }
+                    }
+
                     // Separator 2
                     Rectangle {
                         Layout.fillWidth: true
@@ -1489,7 +1527,7 @@ Window {
 
                     onClicked: {
                         const shouldPinFromTaskbar = settingsWindow.pinFromTaskbarRequested
-                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, taskbarController.darkTheme, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle, showMenuBarExtrasToggle.checked);
+                        taskbarController.apply(hideTaskbarToggle.checked, keepTaskbarAutoHideOnExitToggle.checked, showTopBarToggle.checked, Math.round(iconSizeSlider.value), hoverBounceToggle.checked, dragFadeToggle.checked, staticIconsToggle.checked, separateTransientToggle.checked, taskbarController.darkTheme, startWithWindowsToggle.checked, settingsWindow.explorerIconStyle, settingsWindow.trashIconStyle, settingsWindow.menuBarIconStyle, showDownloadsToggle.checked, settingsWindow.dockLightStyle, showMenuBarExtrasToggle.checked, blackWhiteTrayIconsToggle.checked);
                         if (shouldPinFromTaskbar)
                             dockModel.syncFromWindowsTaskbarPins()
                         settingsWindow.pinFromTaskbarRequested = false

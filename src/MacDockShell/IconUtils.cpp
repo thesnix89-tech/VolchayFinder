@@ -14,6 +14,77 @@
 #include <shellapi.h>
 #include <shlobj.h>
 
+namespace {
+
+bool imageHasUsefulAlpha(const QImage& image)
+{
+    bool hasTransparent = false;
+    bool hasVisible = false;
+    bool hasPartial = false;
+
+    for (int y = 0; y < image.height(); ++y) {
+        const auto* line = reinterpret_cast<const QRgb*>(image.constScanLine(y));
+        for (int x = 0; x < image.width(); ++x) {
+            const int alpha = qAlpha(line[x]);
+            hasTransparent = hasTransparent || alpha == 0;
+            hasVisible = hasVisible || alpha > 0;
+            hasPartial = hasPartial || (alpha > 0 && alpha < 255);
+        }
+    }
+
+    return hasPartial || (hasTransparent && hasVisible);
+}
+
+QImage bitmapToArgbImage(HBITMAP bitmap, int width, int height)
+{
+    if (!bitmap || width <= 0 || height <= 0) {
+        return {};
+    }
+
+    BITMAPINFO bmi = {};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = width;
+    bmi.bmiHeader.biHeight = -height;
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+
+    QImage image(width, height, QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+
+    HDC hdc = GetDC(nullptr);
+    const int rows = GetDIBits(hdc, bitmap, 0, height, image.bits(), &bmi, DIB_RGB_COLORS);
+    ReleaseDC(nullptr, hdc);
+
+    return rows == height ? image : QImage();
+}
+
+void applyIconMask(QImage* image, HBITMAP maskBitmap)
+{
+    if (!image || image->isNull() || !maskBitmap) {
+        return;
+    }
+
+    const QImage mask = bitmapToArgbImage(maskBitmap, image->width(), image->height());
+    if (mask.isNull()) {
+        return;
+    }
+
+    for (int y = 0; y < image->height(); ++y) {
+        auto* imageLine = reinterpret_cast<QRgb*>(image->scanLine(y));
+        const auto* maskLine = reinterpret_cast<const QRgb*>(mask.constScanLine(y));
+        for (int x = 0; x < image->width(); ++x) {
+            const bool transparent = qGray(maskLine[x]) > 127;
+            const QRgb pixel = imageLine[x];
+            imageLine[x] = transparent
+                ? qRgba(qRed(pixel), qGreen(pixel), qBlue(pixel), 0)
+                : qRgba(qRed(pixel), qGreen(pixel), qBlue(pixel), 255);
+        }
+    }
+}
+
+} // namespace
+
 QImage hiconToImage(HICON hIcon)
 {
     ICONINFO iconInfo;
@@ -22,22 +93,14 @@ QImage hiconToImage(HICON hIcon)
     }
 
     BITMAP bmp = {};
-    GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp);
+    QImage image;
+    if (iconInfo.hbmColor && GetObject(iconInfo.hbmColor, sizeof(BITMAP), &bmp) != 0) {
+        image = bitmapToArgbImage(iconInfo.hbmColor, bmp.bmWidth, bmp.bmHeight);
+    }
 
-    BITMAPINFO bmi = {};
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = bmp.bmWidth;
-    bmi.bmiHeader.biHeight = -bmp.bmHeight;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-
-    QImage image(bmp.bmWidth, bmp.bmHeight, QImage::Format_ARGB32);
-    image.fill(Qt::transparent);
-
-    HDC hdc = GetDC(nullptr);
-    GetDIBits(hdc, iconInfo.hbmColor, 0, bmp.bmHeight, image.bits(), &bmi, DIB_RGB_COLORS);
-    ReleaseDC(nullptr, hdc);
+    if (!image.isNull() && !imageHasUsefulAlpha(image)) {
+        applyIconMask(&image, iconInfo.hbmMask);
+    }
 
     DeleteObject(iconInfo.hbmColor);
     DeleteObject(iconInfo.hbmMask);

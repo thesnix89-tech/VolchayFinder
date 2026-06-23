@@ -1745,6 +1745,21 @@ void TaskbarController::setShowMenuBarExtras(bool show)
     emit showMenuBarExtrasChanged();
 }
 
+bool TaskbarController::blackWhiteTrayIcons() const
+{
+    return m_blackWhiteTrayIcons;
+}
+
+void TaskbarController::setBlackWhiteTrayIcons(bool enabled)
+{
+    if (m_blackWhiteTrayIcons == enabled) {
+        return;
+    }
+    m_blackWhiteTrayIcons = enabled;
+    saveSettings();
+    emit blackWhiteTrayIconsChanged();
+}
+
 int TaskbarController::trayExtrasRefreshMs() const
 {
     return m_trayExtrasRefreshMs;
@@ -1792,6 +1807,9 @@ void TaskbarController::loadSettings()
     m_menuBarCustomIconPath = settings.value(QStringLiteral("shell/menuBarCustomIconPath")).toString();
     m_showDownloadsInDock = settings.value(QStringLiteral("shell/showDownloadsInDock"), true).toBool();
     m_showMenuBarExtras = settings.value(QStringLiteral("shell/showMenuBarExtras"), true).toBool();
+    m_blackWhiteTrayIcons = settings.value(
+        QStringLiteral("shell/blackWhiteTrayIcons"),
+        settings.value(QStringLiteral("shell/monochromeTrayIcons"), false)).toBool();
     m_trayExtrasRefreshMs = qBound(500, settings.value(QStringLiteral("shell/trayExtrasRefreshMs"), 1500).toInt(), 10000);
     m_uiLanguage = normalizeUiLanguage(settings.value(QStringLiteral("shell/uiLanguage"), QStringLiteral("system")).toString());
     reconcileWindowsStartup();
@@ -1817,6 +1835,7 @@ void TaskbarController::saveSettings()
     settings.setValue(QStringLiteral("shell/menuBarCustomIconPath"), m_menuBarCustomIconPath);
     settings.setValue(QStringLiteral("shell/showDownloadsInDock"), m_showDownloadsInDock);
     settings.setValue(QStringLiteral("shell/showMenuBarExtras"), m_showMenuBarExtras);
+    settings.setValue(QStringLiteral("shell/blackWhiteTrayIcons"), m_blackWhiteTrayIcons);
     settings.setValue(QStringLiteral("shell/trayExtrasRefreshMs"), m_trayExtrasRefreshMs);
     settings.setValue(QStringLiteral("shell/uiLanguage"), m_uiLanguage);
 }
@@ -1830,7 +1849,7 @@ void TaskbarController::updateTaskbarVisibility()
     }
 }
 
-void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras)
+void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoHideOnExit, bool showTopBar, int iconSize, bool dockHoverBounce, bool dockDragFadeEnabled, bool dockStaticIcons, bool dockSeparateTransientApps, bool darkTheme, bool startWithWindows, const QString& explorerIconStyle, const QString& trashIconStyle, const QString& menuBarIconStyle, bool showDownloadsInDock, const QString& dockLightStyle, bool showMenuBarExtras, bool blackWhiteTrayIcons)
 {
     setAutoHideWindowsTaskbar(autoHideWindowsTaskbar);
     setKeepTaskbarAutoHideOnExit(keepTaskbarAutoHideOnExit);
@@ -1848,6 +1867,7 @@ void TaskbarController::apply(bool autoHideWindowsTaskbar, bool keepTaskbarAutoH
     setMenuBarIconStyle(menuBarIconStyle);
     setShowDownloadsInDock(showDownloadsInDock);
     setShowMenuBarExtras(showMenuBarExtras);
+    setBlackWhiteTrayIcons(blackWhiteTrayIcons);
     syncWindowsStartup(startWithWindows);
     saveSettings();
     setShellActive(true);
