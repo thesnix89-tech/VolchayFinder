@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -7,525 +9,640 @@ Popup {
     id: root
     popupType: Popup.Window
     modal: false
-    focus: false
+    focus: true
     clip: true
     closePolicy: Popup.CloseOnPressOutside | Popup.CloseOnEscape
     padding: 10
-    width: 322
+    width: 320
     implicitHeight: contentColumn.implicitHeight + 20
 
     property bool darkTheme: false
+    property bool wifiOn: false
+    property bool bluetoothOn: false
+    property bool airDropOn: false
+    property bool focusOn: false
+    property real displayValue: 0.82
+    property real soundValue: 0.62
 
-    readonly property color panelBg: darkTheme ? "#2C2C2EE6" : "#E9E9EBD9"
-    readonly property color tileBg: darkTheme ? "#FFFFFF1A" : "#FFFFFFA6"
-    readonly property color labelColor: darkTheme ? "#F2F2F7" : "#1D1D1F"
-    readonly property color sublabelColor: darkTheme ? "#AEAEB2" : "#6E6E73"
-    readonly property color iconCircle: darkTheme ? "#FFFFFF22" : "#00000010"
-    readonly property color dividerColor: darkTheme ? "#FFFFFF14" : "#0000000E"
+    readonly property color panelBg: darkTheme ? "#3A3A3CF2" : "#E5E5E7F2"
+    readonly property color tileBg: darkTheme ? "#6D6D70CC" : "#777779CC"
+    readonly property color tileBgHover: darkTheme ? "#7A7A7ECC" : "#838385CC"
+    readonly property color tileBgActive: darkTheme ? "#5F5F63D9" : "#6F6F71D9"
+    readonly property color labelColor: "#FFFFFF"
+    readonly property color mutedColor: "#ECECF0"
+    readonly property color darkText: darkTheme ? "#F5F5F7" : "#1D1D1F"
+    readonly property color subtleText: darkTheme ? "#D1D1D6" : "#6E6E73"
+    readonly property color bubbleOff: darkTheme ? "#FFFFFF2A" : "#FFFFFFD9"
+    readonly property color bubbleOn: "#0A84FF"
+    readonly property color sliderTrack: darkTheme ? "#FFFFFF2A" : "#00000026"
+    readonly property color sliderFill: "#F5F5F7"
 
     background: Item {
         implicitWidth: root.width
         implicitHeight: root.implicitHeight
 
         Rectangle {
-            id: panelBgRect
             anchors.fill: parent
-            radius: 18
+            radius: 30
             color: root.panelBg
             border.width: 1
-            border.color: root.darkTheme ? "#FFFFFF18" : "#FFFFFF80"
+            border.color: root.darkTheme ? "#FFFFFF24" : "#FFFFFFD8"
 
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled: true
-                shadowColor: "#40000000"
+                shadowColor: "#4A000000"
                 shadowBlur: 1.0
-                shadowVerticalOffset: 10
                 shadowHorizontalOffset: 0
+                shadowVerticalOffset: 12
                 autoPaddingEnabled: true
             }
         }
     }
 
-    component CcTile : Rectangle {
-        id: tile
-        default property alias content: contentSlot.data
-        radius: 14
-        color: root.tileBg
-        border.width: 1
-        border.color: root.darkTheme ? "#FFFFFF14" : "#FFFFFFCC"
-        clip: true
+    component CcGlyph : Canvas {
+        id: glyph
+        property string kind: "wifi"
+        property color glyphColor: "#FFFFFF"
 
-        Item {
-            id: contentSlot
-            anchors.fill: parent
+        width: 20
+        height: 20
+        onKindChanged: requestPaint()
+        onGlyphColorChanged: requestPaint()
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.reset()
+            ctx.strokeStyle = glyphColor
+            ctx.fillStyle = glyphColor
+            ctx.lineWidth = 1.45
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+
+            if (kind === "wifi") {
+                function arc(r, a, b) {
+                    ctx.beginPath()
+                    ctx.arc(10, 15, r, a, b)
+                    ctx.stroke()
+                }
+                arc(3, Math.PI * 1.18, Math.PI * 1.82)
+                arc(6, Math.PI * 1.22, Math.PI * 1.78)
+                arc(9, Math.PI * 1.27, Math.PI * 1.73)
+                ctx.beginPath()
+                ctx.arc(10, 15, 1.35, 0, Math.PI * 2)
+                ctx.fill()
+            } else if (kind === "bluetooth") {
+                ctx.beginPath()
+                ctx.moveTo(10, 2)
+                ctx.lineTo(10, 18)
+                ctx.lineTo(15, 13)
+                ctx.lineTo(6, 7)
+                ctx.lineTo(10, 2)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.moveTo(6, 13)
+                ctx.lineTo(15, 7)
+                ctx.stroke()
+            } else if (kind === "airdrop") {
+                ctx.beginPath()
+                ctx.arc(10, 10, 7, Math.PI * 1.1, Math.PI * 1.9)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.arc(10, 10, 4.3, Math.PI * 1.1, Math.PI * 1.9)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.arc(10, 13, 1.5, 0, Math.PI * 2)
+                ctx.fill()
+            } else if (kind === "focus") {
+                ctx.beginPath()
+                ctx.arc(10, 10, 7, Math.PI * 0.18, Math.PI * 1.82)
+                ctx.arc(13, 8, 7, Math.PI * 1.75, Math.PI * 0.25, true)
+                ctx.closePath()
+                ctx.fill()
+            } else if (kind === "mirror") {
+                ctx.strokeRect(2.5, 5, 11, 8)
+                ctx.strokeRect(7, 8, 11, 8)
+            } else if (kind === "keyboard") {
+                ctx.strokeRect(2.5, 5, 15, 10)
+                for (var k = 0; k < 4; ++k) {
+                    ctx.beginPath()
+                    ctx.moveTo(5 + k * 3, 8)
+                    ctx.lineTo(6 + k * 3, 8)
+                    ctx.stroke()
+                }
+                ctx.beginPath()
+                ctx.moveTo(6, 12)
+                ctx.lineTo(14, 12)
+                ctx.stroke()
+            } else if (kind === "camera") {
+                ctx.strokeRect(4, 7, 12, 8)
+                ctx.beginPath()
+                ctx.arc(10, 11, 2.4, 0, Math.PI * 2)
+                ctx.stroke()
+                ctx.beginPath()
+                ctx.moveTo(7, 7)
+                ctx.lineTo(8, 5)
+                ctx.lineTo(12, 5)
+                ctx.lineTo(13, 7)
+                ctx.stroke()
+            } else if (kind === "sun") {
+                ctx.beginPath()
+                ctx.arc(10, 10, 3.3, 0, Math.PI * 2)
+                ctx.stroke()
+                for (var i = 0; i < 8; ++i) {
+                    var a = i * Math.PI / 4
+                    ctx.beginPath()
+                    ctx.moveTo(10 + Math.cos(a) * 5.5, 10 + Math.sin(a) * 5.5)
+                    ctx.lineTo(10 + Math.cos(a) * 8.0, 10 + Math.sin(a) * 8.0)
+                    ctx.stroke()
+                }
+            } else if (kind === "speaker") {
+                ctx.beginPath()
+                ctx.moveTo(3, 12)
+                ctx.lineTo(6, 12)
+                ctx.lineTo(10, 16)
+                ctx.lineTo(10, 4)
+                ctx.lineTo(6, 8)
+                ctx.lineTo(3, 8)
+                ctx.closePath()
+                ctx.fill()
+                ctx.beginPath()
+                ctx.arc(11, 10, 4, Math.PI * 1.75, Math.PI * 0.25)
+                ctx.stroke()
+            } else if (kind === "airplay") {
+                ctx.strokeRect(3, 4, 14, 10)
+                ctx.beginPath()
+                ctx.moveTo(10, 11)
+                ctx.lineTo(6, 17)
+                ctx.lineTo(14, 17)
+                ctx.closePath()
+                ctx.fill()
+            } else if (kind === "music") {
+                ctx.beginPath()
+                ctx.moveTo(12, 4)
+                ctx.lineTo(12, 14)
+                ctx.arc(8, 14, 3, 0, Math.PI * 2)
+                ctx.fill()
+                ctx.beginPath()
+                ctx.moveTo(12, 4)
+                ctx.lineTo(16, 5.5)
+                ctx.lineTo(16, 8)
+                ctx.lineTo(12, 6.5)
+                ctx.closePath()
+                ctx.fill()
+            } else if (kind === "play") {
+                ctx.beginPath()
+                ctx.moveTo(7, 4)
+                ctx.lineTo(16, 10)
+                ctx.lineTo(7, 16)
+                ctx.closePath()
+                ctx.fill()
+            } else if (kind === "prev") {
+                ctx.beginPath()
+                ctx.moveTo(5, 10)
+                ctx.lineTo(12, 5)
+                ctx.lineTo(12, 15)
+                ctx.closePath()
+                ctx.fill()
+                ctx.beginPath()
+                ctx.moveTo(12, 10)
+                ctx.lineTo(18, 5)
+                ctx.lineTo(18, 15)
+                ctx.closePath()
+                ctx.fill()
+            } else if (kind === "next") {
+                ctx.beginPath()
+                ctx.moveTo(15, 10)
+                ctx.lineTo(8, 5)
+                ctx.lineTo(8, 15)
+                ctx.closePath()
+                ctx.fill()
+                ctx.beginPath()
+                ctx.moveTo(8, 10)
+                ctx.lineTo(2, 5)
+                ctx.lineTo(2, 15)
+                ctx.closePath()
+                ctx.fill()
+            }
+        }
+        Component.onCompleted: requestPaint()
+    }
+
+    component IconBubble : Rectangle {
+        id: bubble
+        property string kind: "wifi"
+        property bool checked: false
+        property int bubbleSize: 36
+
+        width: bubbleSize
+        height: bubbleSize
+        radius: bubbleSize / 2
+        color: checked ? root.bubbleOn : root.bubbleOff
+
+        CcGlyph {
+            anchors.centerIn: parent
+            kind: bubble.kind
+            glyphColor: bubble.checked ? "#FFFFFF" : (root.darkTheme ? "#F5F5F7" : "#8A8A8E")
         }
     }
 
-    component CcSlider : Item {
-        id: slider
-        property real value: 0.5
-        property string icon: "sun"
-        property bool darkTheme: root.darkTheme
+    component ControlPill : Rectangle {
+        id: pill
+        signal toggled()
 
-        implicitHeight: 28
+        property string title: ""
+        property string subtitle: ""
+        property string kind: "wifi"
+        property bool checked: false
 
-        Rectangle {
-            id: track
+        Layout.fillWidth: true
+        Layout.preferredHeight: 68
+        radius: 34
+        color: mouse.containsMouse ? root.tileBgHover : (checked ? root.tileBgActive : root.tileBg)
+
+        RowLayout {
             anchors.fill: parent
-            radius: height / 2
-            color: slider.darkTheme ? "#FFFFFF18" : "#00000010"
+            anchors.leftMargin: 13
+            anchors.rightMargin: 13
+            spacing: 10
 
-            Rectangle {
-                id: fill
-                height: parent.height
-                width: Math.max(slider.value * track.width, height)
-                radius: height / 2
-                color: "#FFFFFF"
+            IconBubble {
+                kind: pill.kind
+                checked: pill.checked
+            }
 
-                Canvas {
-                    id: sliderIcon
-                    anchors.left: parent.left
-                    anchors.leftMargin: 9
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 14
-                    height: 14
-                    onPaint: {
-                        var ctx = getContext("2d")
-                        ctx.reset()
-                        ctx.strokeStyle = "#1D1D1F"
-                        ctx.fillStyle = "#1D1D1F"
-                        ctx.lineWidth = 1.1
-                        ctx.lineCap = "round"
-                        if (slider.icon === "sun") {
-                            ctx.beginPath()
-                            ctx.arc(7, 7, 3, 0, Math.PI * 2)
-                            ctx.stroke()
-                            for (var i = 0; i < 8; i++) {
-                                var a = i * Math.PI / 4
-                                ctx.beginPath()
-                                ctx.moveTo(7 + Math.cos(a) * 4.5, 7 + Math.sin(a) * 4.5)
-                                ctx.lineTo(7 + Math.cos(a) * 6, 7 + Math.sin(a) * 6)
-                                ctx.stroke()
-                            }
-                        } else {
-                            ctx.beginPath()
-                            ctx.arc(4, 9, 3.5, Math.PI * 1.1, Math.PI * 1.65)
-                            ctx.stroke()
-                            ctx.beginPath()
-                            ctx.moveTo(2, 9)
-                            ctx.lineTo(12, 9)
-                            ctx.stroke()
-                            ctx.beginPath()
-                            ctx.moveTo(10, 6)
-                            ctx.lineTo(13, 9)
-                            ctx.lineTo(10, 12)
-                            ctx.stroke()
-                        }
-                    }
-                    Component.onCompleted: requestPaint()
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+
+                Text {
+                    Layout.fillWidth: true
+                    text: pill.title
+                    color: root.labelColor
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
                 }
 
-                Connections {
-                    target: slider
-                    function onIconChanged() { sliderIcon.requestPaint() }
+                Text {
+                    Layout.fillWidth: true
+                    text: pill.subtitle
+                    color: root.mutedColor
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
                 }
             }
         }
 
         MouseArea {
+            id: mouse
             anchors.fill: parent
-            onPressed: function(mouse) { setValue(mouse.x) }
-            onPositionChanged: function(mouse) { if (pressed) setValue(mouse.x) }
-            function setValue(x) {
-                slider.value = Math.max(0, Math.min(1, x / track.width))
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: pill.toggled()
+        }
+    }
+
+    component RoundAction : Rectangle {
+        id: action
+        signal toggled()
+
+        property string kind: "keyboard"
+        property bool checked: false
+
+        Layout.preferredWidth: 62
+        Layout.preferredHeight: 62
+        radius: 31
+        color: mouse.containsMouse ? root.tileBgHover : (checked ? root.tileBgActive : root.tileBg)
+
+        IconBubble {
+            anchors.centerIn: parent
+            kind: action.kind
+            checked: action.checked
+            bubbleSize: 34
+        }
+
+        MouseArea {
+            id: mouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: action.toggled()
+        }
+    }
+
+    component FocusPill : Rectangle {
+        id: focus
+        signal toggled()
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 62
+        radius: 31
+        color: mouse.containsMouse ? root.tileBgHover : (root.focusOn ? root.tileBgActive : root.tileBg)
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 13
+            anchors.rightMargin: 14
+            spacing: 11
+
+            IconBubble {
+                kind: "focus"
+                checked: root.focusOn
+                bubbleSize: 34
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("Focus")
+                color: root.labelColor
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+        }
+
+        MouseArea {
+            id: mouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: focus.toggled()
+        }
+    }
+
+    component MediaTile : Rectangle {
+        id: media
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 144
+        radius: 32
+        color: mouse.containsMouse ? root.tileBgHover : root.tileBg
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 10
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Rectangle {
+                    Layout.preferredWidth: 52
+                    Layout.preferredHeight: 52
+                    radius: 14
+                    color: root.darkTheme ? "#FFFFFF22" : "#FFFFFF6A"
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: qsTr("Not Playing")
+                    color: root.labelColor
+                    font.pixelSize: 13
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            Item { Layout.fillHeight: true }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                Item { Layout.fillWidth: true }
+
+                CcGlyph {
+                    kind: "prev"
+                    glyphColor: root.mutedColor
+                    Layout.preferredWidth: 22
+                    Layout.preferredHeight: 22
+                }
+                CcGlyph {
+                    kind: "play"
+                    glyphColor: root.labelColor
+                    Layout.preferredWidth: 26
+                    Layout.preferredHeight: 26
+                }
+                CcGlyph {
+                    kind: "next"
+                    glyphColor: root.mutedColor
+                    Layout.preferredWidth: 22
+                    Layout.preferredHeight: 22
+                }
+            }
+        }
+
+        MouseArea {
+            id: mouse
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+        }
+    }
+
+    component SliderBar : Item {
+        id: slider
+        signal moved(real value)
+
+        property real value: 0.5
+        property string kind: "sun"
+
+        implicitHeight: 22
+
+        Rectangle {
+            id: track
+            anchors.fill: parent
+            radius: height / 2
+            color: root.sliderTrack
+
+            Rectangle {
+                id: fill
+                height: parent.height
+                width: Math.max(track.height, slider.value * track.width)
+                radius: height / 2
+                color: root.sliderFill
+            }
+
+            CcGlyph {
+                anchors.left: parent.left
+                anchors.leftMargin: 7
+                anchors.verticalCenter: parent.verticalCenter
+                width: 16
+                height: 16
+                kind: slider.kind
+                glyphColor: root.darkText
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onPressed: function(mouse) { setFromX(mouse.x) }
+            onPositionChanged: function(mouse) {
+                if (pressed)
+                    setFromX(mouse.x)
+            }
+
+            function setFromX(mouseX) {
+                slider.value = Math.max(0, Math.min(1, mouseX / Math.max(1, track.width)))
+                slider.moved(slider.value)
             }
         }
     }
 
-    component CcIconButton : Rectangle {
-        id: iconBtn
-        property string kind: "wifi"
-        property bool off: true
-        width: 30
-        height: 30
-        radius: 15
-        color: root.iconCircle
+    component SliderTile : Rectangle {
+        id: tile
+        property string title: ""
+        property string kind: "sun"
+        property real value: 0.5
+        signal moved(real value)
 
-        Canvas {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 76
+        radius: 24
+        color: root.darkTheme ? "#FFFFFF1C" : "#FFFFFFB8"
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 15
+            anchors.rightMargin: 15
+            anchors.topMargin: 12
+            anchors.bottomMargin: 12
+            spacing: 9
+
+            Text {
+                Layout.fillWidth: true
+                text: tile.title
+                color: root.darkText
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+
+            SliderBar {
+                Layout.fillWidth: true
+                kind: tile.kind
+                value: tile.value
+                onMoved: function(newValue) { tile.moved(newValue) }
+            }
+        }
+    }
+
+    component EditButton : Rectangle {
+        id: edit
+        Layout.alignment: Qt.AlignHCenter
+        Layout.preferredWidth: 96
+        Layout.preferredHeight: 30
+        radius: 15
+        color: mouse.containsMouse ? (root.darkTheme ? "#FFFFFF30" : "#00000024")
+                                  : (root.darkTheme ? "#FFFFFF22" : "#00000018")
+
+        Text {
             anchors.centerIn: parent
-            width: 16
-            height: 16
-            property color glyph: root.labelColor
-            onGlyphChanged: requestPaint()
-            onPaint: {
-                var ctx = getContext("2d")
-                ctx.reset()
-                ctx.strokeStyle = glyph
-                ctx.fillStyle = glyph
-                ctx.lineWidth = 1.1
-                ctx.lineCap = "round"
-                if (iconBtn.kind === "wifi") {
-                    function arc(r, a, b) {
-                        ctx.beginPath()
-                        ctx.arc(8, 12, r, a, b)
-                        ctx.stroke()
-                    }
-                    arc(2, Math.PI * 1.15, Math.PI * 1.85)
-                    arc(4, Math.PI * 1.2, Math.PI * 1.8)
-                    arc(6, Math.PI * 1.28, Math.PI * 1.72)
-                    ctx.beginPath()
-                    ctx.arc(8, 12, 1, 0, Math.PI * 2)
-                    ctx.fill()
-                    if (iconBtn.off) {
-                        ctx.beginPath()
-                        ctx.moveTo(3, 5)
-                        ctx.lineTo(13, 14)
-                        ctx.stroke()
-                    }
-                } else if (iconBtn.kind === "bt") {
-                    ctx.beginPath()
-                    ctx.moveTo(9, 3)
-                    ctx.lineTo(5, 7)
-                    ctx.lineTo(9, 11)
-                    ctx.lineTo(5, 15)
-                    ctx.stroke()
-                    ctx.beginPath()
-                    ctx.moveTo(11, 5)
-                    ctx.quadraticCurveTo(13, 8, 11, 11)
-                    ctx.stroke()
-                    if (iconBtn.off) {
-                        ctx.beginPath()
-                        ctx.moveTo(3, 4)
-                        ctx.lineTo(13, 14)
-                        ctx.stroke()
-                    }
-                } else {
-                    ctx.beginPath()
-                    ctx.arc(8, 6, 3, Math.PI, 0)
-                    ctx.lineTo(11, 13)
-                    ctx.lineTo(5, 13)
-                    ctx.closePath()
-                    ctx.stroke()
-                    ctx.beginPath()
-                    ctx.arc(8, 8, 1.2, 0, Math.PI * 2)
-                    ctx.stroke()
-                }
-            }
-            Component.onCompleted: requestPaint()
-            Connections {
-                target: root
-                function onDarkThemeChanged() { parent.requestPaint() }
-            }
-            Connections {
-                target: iconBtn
-                function onOffChanged() { parent.requestPaint() }
-            }
+            text: qsTr("Edit Controls")
+            color: root.darkText
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
+        }
+
+        MouseArea {
+            id: mouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
         }
     }
 
     contentItem: ColumnLayout {
         id: contentColumn
-        spacing: 8
-        width: parent.width
+        width: root.width - root.padding * 2
+        spacing: 10
 
-        // ── Top row: connectivity | focus + mirror ──
-        Item {
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 130
-
-            Row {
-                anchors.fill: parent
-                spacing: 8
-
-                CcTile {
-                    width: parent.width * 0.615
-                    height: parent.height
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 0
-
-                        Repeater {
-                            model: [
-                                { kind: "wifi", title: qsTr("Wi-Fi"), subtitle: qsTr("Off") },
-                                { kind: "bt", title: qsTr("Bluetooth"), subtitle: qsTr("Off") },
-                                { kind: "airdrop", title: qsTr("AirDrop"), subtitle: qsTr("Receiving: Off") }
-                            ]
-                            delegate: Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 38
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    spacing: 10
-
-                                    CcIconButton {
-                                        kind: modelData.kind
-                                        off: true
-                                    }
-
-                                    ColumnLayout {
-                                        spacing: 1
-                                        Layout.fillWidth: true
-                                        Text {
-                                            text: modelData.title
-                                            color: root.labelColor
-                                            font.pixelSize: 13
-                                            font.weight: Font.Medium
-                                        }
-                                        Text {
-                                            text: modelData.subtitle
-                                            color: root.sublabelColor
-                                            font.pixelSize: 11
-                                        }
-                                    }
-                                }
-
-                                Rectangle {
-                                    anchors.bottom: parent.bottom
-                                    width: parent.width
-                                    height: 1
-                                    color: root.dividerColor
-                                    visible: index < 2
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Column {
-                    width: parent.width * 0.385 - 8
-                    height: parent.height
-                    spacing: 8
-
-                    CcTile {
-                        width: parent.width
-                        height: (parent.height - parent.spacing) / 2
-
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 5
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "☾"
-                                font.pixelSize: 17
-                                color: root.labelColor
-                            }
-                            Text {
-                                width: parent.width
-                                text: qsTr("Focus")
-                                color: root.labelColor
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }
-
-                    CcTile {
-                        width: parent.width
-                        height: (parent.height - parent.spacing) / 2
-
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 5
-                            Canvas {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                width: 18
-                                height: 14
-                                onPaint: {
-                                    var ctx = getContext("2d")
-                                    ctx.reset()
-                                    ctx.strokeStyle = root.labelColor
-                                    ctx.lineWidth = 1.2
-                                    ctx.strokeRect(1, 2, 10, 8)
-                                    ctx.strokeRect(6, 5, 10, 8)
-                                }
-                                Component.onCompleted: requestPaint()
-                            }
-                            Text {
-                                width: parent.width
-                                text: qsTr("Screen Mirroring")
-                                color: root.labelColor
-                                font.pixelSize: 11
-                                font.weight: Font.Medium
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Display ──
-        CcTile {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 68
+            spacing: 10
 
             ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
+                Layout.preferredWidth: 142
+                Layout.fillHeight: true
                 spacing: 8
 
-                Text {
-                    text: qsTr("Display")
-                    color: root.labelColor
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
+                ControlPill {
+                    title: qsTr("Wi-Fi")
+                    subtitle: root.wifiOn ? qsTr("Connected") : qsTr("Not Connected")
+                    kind: "wifi"
+                    checked: root.wifiOn
+                    onToggled: root.wifiOn = !root.wifiOn
                 }
 
-                CcSlider {
-                    Layout.fillWidth: true
-                    icon: "sun"
-                    value: 0.72
+                ControlPill {
+                    title: qsTr("Bluetooth")
+                    subtitle: root.bluetoothOn ? qsTr("On") : qsTr("Off")
+                    kind: "bluetooth"
+                    checked: root.bluetoothOn
+                    onToggled: root.bluetoothOn = !root.bluetoothOn
+                }
+
+                ControlPill {
+                    title: qsTr("AirDrop")
+                    subtitle: root.airDropOn ? qsTr("Everyone") : qsTr("Off")
+                    kind: "airdrop"
+                    checked: root.airDropOn
+                    onToggled: root.airDropOn = !root.airDropOn
                 }
             }
-        }
-
-        // ── Sound ──
-        CcTile {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 68
 
             ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 8
+                Layout.fillWidth: true
+                spacing: 10
 
-                Text {
-                    text: qsTr("Sound")
-                    color: root.labelColor
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
+                MediaTile {}
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: 10
 
-                    CcSlider {
-                        Layout.fillWidth: true
-                        icon: "sound"
-                        value: 0.42
+                    RoundAction {
+                        kind: "keyboard"
                     }
 
-                    Rectangle {
-                        width: 30
-                        height: 30
-                        radius: 15
-                        color: root.iconCircle
-                        Canvas {
-                            anchors.centerIn: parent
-                            width: 14
-                            height: 14
-                            onPaint: {
-                                var ctx = getContext("2d")
-                                ctx.reset()
-                                ctx.strokeStyle = root.labelColor
-                                ctx.fillStyle = root.labelColor
-                                ctx.lineWidth = 1
-                                ctx.beginPath()
-                                ctx.moveTo(2, 10)
-                                ctx.lineTo(5, 7)
-                                ctx.lineTo(8, 9)
-                                ctx.lineTo(12, 4)
-                                ctx.stroke()
-                                ctx.beginPath()
-                                ctx.moveTo(9, 4)
-                                ctx.lineTo(12, 4)
-                                ctx.lineTo(12, 7)
-                                ctx.stroke()
-                            }
-                            Component.onCompleted: requestPaint()
-                        }
+                    RoundAction {
+                        kind: "mirror"
                     }
                 }
             }
         }
 
-        // ── Music ──
-        CcTile {
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 56
+            spacing: 10
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
+            RoundAction {
+                kind: "camera"
+            }
 
-                Rectangle {
-                    width: 36
-                    height: 36
-                    radius: 8
-                    gradient: Gradient {
-                        GradientStop { position: 0; color: "#FC3C44" }
-                        GradientStop { position: 1; color: "#FA2D55" }
-                    }
-                    Text {
-                        anchors.centerIn: parent
-                        text: "♫"
-                        color: "white"
-                        font.pixelSize: 16
-                    }
-                }
-
-                Text {
-                    text: qsTr("Music")
-                    color: root.labelColor
-                    font.pixelSize: 14
-                    font.weight: Font.DemiBold
-                    Layout.fillWidth: true
-                }
-
-                Row {
-                    spacing: 16
-                    Canvas {
-                        width: 12
-                        height: 14
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.reset()
-                            ctx.fillStyle = root.labelColor
-                            ctx.beginPath()
-                            ctx.moveTo(1, 1)
-                            ctx.lineTo(11, 7)
-                            ctx.lineTo(1, 13)
-                            ctx.closePath()
-                            ctx.fill()
-                        }
-                        Component.onCompleted: requestPaint()
-                    }
-                    Canvas {
-                        width: 14
-                        height: 12
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.reset()
-                            ctx.fillStyle = root.labelColor
-                            ctx.beginPath()
-                            ctx.moveTo(0, 1)
-                            ctx.lineTo(5, 1)
-                            ctx.lineTo(5, 11)
-                            ctx.lineTo(0, 11)
-                            ctx.closePath()
-                            ctx.fill()
-                            ctx.beginPath()
-                            ctx.moveTo(6, 1)
-                            ctx.lineTo(11, 1)
-                            ctx.lineTo(14, 6)
-                            ctx.lineTo(11, 11)
-                            ctx.lineTo(6, 11)
-                            ctx.closePath()
-                            ctx.fill()
-                        }
-                        Component.onCompleted: requestPaint()
-                    }
-                }
+            FocusPill {
+                onToggled: root.focusOn = !root.focusOn
             }
         }
+
+        SliderTile {
+            title: qsTr("Display")
+            kind: "sun"
+            value: root.displayValue
+            onMoved: function(newValue) { root.displayValue = newValue }
+        }
+
+        SliderTile {
+            title: qsTr("Sound")
+            kind: "speaker"
+            value: root.soundValue
+            onMoved: function(newValue) { root.soundValue = newValue }
+        }
+
+        EditButton {}
     }
 }
